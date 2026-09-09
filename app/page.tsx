@@ -16,6 +16,7 @@ export default function Dashboard() {
       <div className="grid-links">
         <a href="/lookup">🔎 Look up property</a>
         <a href="/import">📋 Import expired listings (CSV)</a>
+        <a href="/watchlist">📉 Import watchlist (price reductions / stale listings)</a>
       </div>
     </div>
   );

@@ -16,6 +16,16 @@ database, either one contact at a time or all at once with **Push all N to
 Notion** (skips anyone already pushed, runs sequentially to stay well under
 Notion's rate limit).
 
+**Watchlist import:** a separate `/watchlist` page for MLS "Price
+Reductions" or "Stale Listings" exports — these aren't leads, so there's no
+Tracerfy lookup. Rows go straight into your existing **Property Research**
+database (`Research Status = "Not started"` on a new entry; on a repeat
+import for the same address, only the price/DOM/status fields refresh —
+`Research Status`, `Owner / CRM Contact`, `Campaign`, `Comparable Sales`,
+and the manual analysis fields are never touched). If that same address
+later comes through the Expired import, its price-reduction/stale history
+shows up automatically in the CRM record's Compliance Notes.
+
 ## Local development
 
 Requires Node.js (LTS) installed.
@@ -46,10 +56,10 @@ Start with the sandbox Tracerfy base URL until you're ready to spend real credit
 
 ### Setting up the Notion connection
 
-1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) → **New integration**. Name it something like "Prospecting Portal", pick your workspace, and give it **Insert content** capability (that's all this app needs).
+1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) → **New integration**. Name it something like "Prospecting Portal", pick your workspace, and give it **Insert content** + **Update content** capability (the app both creates new records and refreshes existing ones).
 2. Copy the **Internal Integration Secret** it gives you → that's `NOTION_API_KEY`.
-3. Open your **Clients / Leads** database in Notion → **···** menu (top right) → **Connections** → add the integration you just created. This grants it access to that one database only, not your whole workspace.
-4. `NOTION_LEADS_DATABASE_ID` is already set to the right value in `.env.example` — no need to look it up yourself.
+3. Open **both** your **Clients / Leads** and **Property Research** databases in Notion → **···** menu (top right) → **Connections** → add the integration you just created to each. This grants it access to only those two databases, not your whole workspace.
+4. `NOTION_LEADS_DATABASE_ID` and `NOTION_PROPERTY_RESEARCH_DATABASE_ID` are already set to the right values in `.env.example` — no need to look them up yourself.
 
 ## Deploying to Netlify
 
@@ -136,3 +146,6 @@ snapshot as of that timestamp," not a guarantee.
 - Saved/quick searches via Tracerfy's Property Search + Templates endpoints
 - Recurring property monitors
 - Daily call queue dashboard
+- Market-stats aggregation (median price/DOM/absorption) and buyer-inventory
+  matching — deliberately skipped; the former overlaps with the
+  `local-market-report-analyst` skill, and neither has a real need yet

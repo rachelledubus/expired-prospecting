@@ -7,6 +7,7 @@ import {
   formatPhone,
   type Person,
 } from "@/lib/tracerfy";
+import { queryPropertyByAddress } from "@/lib/propertyResearch";
 
 const NOTION_VERSION = "2022-06-28";
 
@@ -45,11 +46,30 @@ export async function POST(request: Request) {
   const email = bestEmail(person);
   const scrubDate = new Date().toISOString().slice(0, 10);
 
+  // If this property was previously logged as a price reduction or stale
+  // listing (via the Watchlist import), surface that history here -- it's
+  // useful call context ("this has been sitting/reducing for a while before
+  // it even expired") that would otherwise require checking a second
+  // database by hand.
+  const priorResearch = await queryPropertyByAddress(address);
+  const priorResearchNote =
+    priorResearch &&
+    (priorResearch.originalPrice != null || priorResearch.priceChanges != null || priorResearch.dom != null)
+      ? `Previously tracked in Property Research (${priorResearch.listingStatus ?? "status unknown"}): ${
+          priorResearch.originalPrice != null ? `started at $${priorResearch.originalPrice.toLocaleString()}` : ""
+        }${
+          priorResearch.finalPrice != null ? `, last list $${priorResearch.finalPrice.toLocaleString()}` : ""
+        }${priorResearch.priceChanges != null ? `, ${priorResearch.priceChanges} price change(s)` : ""}${
+          priorResearch.dom != null ? `, ${priorResearch.dom} DOM` : ""
+        } — see ${priorResearch.url}.`
+      : null;
+
   const complianceNotes = [
     `Tracerfy lookup${requestId ? ` ${requestId}` : ""} at ${timestamp ?? new Date().toISOString()}.`,
     person.litigator ? "LITIGATOR — do not contact." : null,
     person.deceased ? "Marked deceased by Tracerfy." : null,
     sourceSearch ? `Sourced from MLS saved search: ${sourceSearch}.` : null,
+    priorResearchNote,
   ]
     .filter(Boolean)
     .join(" ");
