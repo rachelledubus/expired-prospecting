@@ -1,24 +1,33 @@
 # Kit expired-report opt-in → Notion CRM + fulfillment
 
-This is the public intake handoff for the **Expired Listing Private Property Analysis Report** offer.
+This is the public intake handoff for the **Expired Listing Private Property Analysis Report**.
 
-## What the offer actually is
+## Offer model
 
-This is **not** an instant-download PDF or generic CMA. The live offer in Notion is a property-specific, 10-page private relaunch analysis that Rachelle personally reviews, prints, packages, and mails as a physical report kit.
+This is **not** an instant-download PDF or generic CMA. It is a property-specific, 10-page private relaunch analysis that Rachelle reviews, prints, packages, and mails as a physical report kit.
 
-The funnel therefore promises **request + personalized preparation + physical mail fulfillment**, not instant report delivery.
+Launch flow:
 
-## Architecture
+`Kit landing page → double opt-in → signed Kit webhook → Clients / Leads → existing Mailing Kit workflow`
 
-`Kit landing page → double opt-in confirmation → Kit V4 webhook → Clients / Leads → existing Mailing Kit workflow`
+The private prospecting portal remains password-gated. Only the webhook route is public.
 
-The rest of `portal.rachellesellsrealestate.com` remains password-gated. The middleware exposes only this webhook route in addition to the existing login routes.
+## Important confirmation rule
 
-The webhook verifies Kit's `X-Kit-Signature` HMAC against the exact raw request body, rejects signatures older than 5 minutes, and ignores any event that is not `subscriber.subscribed_to_form` for the configured form ID.
+Kit exposes two separate V4 events that matter here:
 
-## Landing page: exact launch positioning
+- `subscriber.subscribed_to_form` — the subscriber joined the landing-page form.
+- `subscriber.activated` — the subscriber transitioned to active after confirmation.
 
-### Page title / SEO title
+The webhook endpoint must subscribe to **both**.
+
+A new double-opt-in signup normally arrives inactive. The form event is therefore **not fulfillment authorization**. The integration creates an archived pending CRM audit row with `Permission to Follow Up = Unknown` and an explicit **DO NOT CONTACT / DO NOT FULFILL** note. When the matching subscriber later activates, the pending record becomes a live inbound request and enters the Mailing Kit queue.
+
+An already-active Kit subscriber can be fulfilled directly from the form event because the email address is already confirmed and the form submission itself is an explicit report request.
+
+## Landing page copy
+
+### SEO title
 
 **Private Property Analysis for Expired Listings | Rachelle Dubus**
 
@@ -36,7 +45,7 @@ Request a private, property-specific review of your expired listing. I’ll look
 
 **No generic CMA. No automatic “your home was overpriced” conclusion. No obligation to list with me.**
 
-### What the report covers
+### Three value blocks
 
 **What stood out**  
 The strongest signals in the listing record—what appeared to work, where momentum changed, and which details deserve a closer look.
@@ -53,30 +62,28 @@ The unanswered questions I would want resolved before recommending a new price, 
 
 I build each analysis around one property. Some of the most important answers—why a contract ended, what buyers repeatedly said, or what changed during the listing—may not exist in MLS or public records. The report separates what the evidence shows from what still needs seller context.
 
-### Form heading
+## Launch form
+
+### Heading
 
 **Request your private property analysis**
 
-### Form fields
+### Fields
 
 1. **First name** — required
 2. **Email** — required
 3. **Property Address** — required
 4. **Mailing Address (if different from the property)** — optional
-5. **Phone** — optional
-6. **Phone/Text Follow-Up Permission** — optional checkbox
 
-Recommended optional checkbox text:
+That is the complete launch form. **Do not collect a phone number at launch.**
 
-> Yes — you may call or text me about this property and my analysis request.
+Why: phone/text consent would require a separate explicit consent mechanism, and Kit's checkbox/dropdown form controls are Tag-based rather than ordinary custom-field values. That adds implementation and compliance complexity without being needed to fulfill the physical report. If a homeowner later replies and explicitly asks for a call, that can be documented in the CRM at that time.
 
-Do **not** make the phone field or phone/text permission required.
+### Consent / expectation text
 
-### Consent / expectation text under the form
+By submitting, you’re asking me to prepare and mail the requested property analysis and to email you about that request. You can ask me to stop contacting you at any time.
 
-By submitting, you’re asking me to prepare and mail the requested property analysis and to email you about that request. Phone/text follow-up is optional and is only treated as permitted when you check the separate box above. You can ask me to stop contacting you at any time.
-
-Use any additional brokerage-required privacy/TCPA disclosure without changing the core distinction above.
+Add any brokerage-required privacy disclosure without changing the scope above.
 
 ### Button
 
@@ -84,11 +91,7 @@ Use any additional brokerage-required privacy/TCPA disclosure without changing t
 
 Do not use urgency language, countdown timers, fake scarcity, “free home valuation,” or “instant report.”
 
-## Thank-you state before email confirmation
-
-Keep Kit double opt-in enabled.
-
-After the form is submitted, show:
+## Pre-confirmation thank-you state
 
 ### Check your inbox to confirm your request
 
@@ -96,9 +99,9 @@ I have the property information. Before I queue the analysis, confirm your email
 
 Once confirmed, the request will enter my report-preparation workflow. Because this is a property-specific review rather than an instant automated valuation, I do not promise an immediate report download.
 
-## Kit confirmation email
+## Kit Confirmation Email
 
-Use Kit's built-in **Confirmation Email** rather than creating a separate Visual Automation just to acknowledge the request. Kit recommends double opt-in, and confirmed subscribers are the ones Kit can email normally.
+Keep double opt-in enabled and use Kit's built-in Confirmation Email. A separate Visual Automation is not required at launch.
 
 ### Subject
 
@@ -106,13 +109,13 @@ Use Kit's built-in **Confirmation Email** rather than creating a separate Visual
 
 ### Body
 
-Hi {{ subscriber.first_name | default: "there" }},
+Hi {{ subscriber.first_name | strip | default: "there" }},
 
 I received your request for a Private Property Analysis.
 
 Before I start reviewing the listing history and queue the report for mailing, please confirm that this is the right email address for your request.
 
-**[Confirm my request]**
+**[Confirm My Request]**
 
 Once you confirm, I’ll review the property individually—not run it through a generic CMA—and work from the actual listing record, pricing history, presentation, and relevant comparable evidence.
 
@@ -136,82 +139,79 @@ The packet is intentionally not an instant automated valuation. I want the analy
 
 If you remember something that may matter—especially a failed contract, repeated showing feedback, condition or renovation details, or a major change during the listing—you can reply to my email and tell me.
 
-**Rachelle Dubus**  
-SW Broward Realtor  
-contact@rachellesellsrealestate.com
-
-## Do we need a Visual Automation at launch?
-
-**No.** Do not create one just because Kit offers it.
-
-At launch, the built-in double-opt-in confirmation email handles the subscriber-facing acknowledgment, while the signed webhook handles CRM + fulfillment routing. The existing Notion workflow handles report preparation and follow-up.
-
-Add a Kit Visual Automation later only if live usage proves that a separate post-confirmation email sequence has a real job to do. If one is eventually added, the dedicated landing page/form can be the entry point and an Email Sequence can be the action; Kit supports that pattern.
-
 ## Webhook endpoint
 
-Create a Kit V4 webhook endpoint with:
+Create one current-generation Kit V4 **webhook endpoint** with:
 
 - URL: `https://portal.rachellesellsrealestate.com/api/kit-expired-optin`
-- Event: `subscriber.subscribed_to_form`
+- Events:
+  - `subscriber.subscribed_to_form`
+  - `subscriber.activated`
 
-When Kit creates the endpoint, save the endpoint signing secret immediately.
+Save the endpoint signing secret immediately; Kit only returns it in plaintext when the endpoint is created or its secret is rotated.
 
 Set these Netlify environment variables:
 
 ```env
-KIT_EXPIRED_FORM_ID=<numeric form id>
+KIT_EXPIRED_FORM_ID=<numeric landing-page/form id>
 KIT_EXPIRED_WEBHOOK_SECRET=<Kit endpoint signing secret>
 ```
 
-The existing portal environment must also contain:
+The existing portal must also retain:
 
 ```env
 NOTION_API_KEY=...
 NOTION_LEADS_DATABASE_ID=9f7f408a-fdce-82f5-a49c-01dfb37a4c4c
 ```
 
-## CRM + fulfillment behavior
+## CRM behavior
 
-For a new confirmed email address, the webhook creates a `Clients / Leads` row with:
+### New, unconfirmed signup
+
+The form event creates an intentionally non-actionable audit row:
 
 - Source = Website
 - Lead Type = Expired Listing
 - Service Need = Expired Seller
-- Pipeline Stage = New
+- Pipeline Stage = Archived
+- Permission to Follow Up = Unknown
+- no Prospecting Channel is added
+- no Mailing Kit queue is opened
+- Compliance Notes contains the Kit form event + a clear `UNCONFIRMED — do not contact and do not fulfill` instruction
+
+This keeps an unconfirmed/bot/typo signup out of daily work while giving the later activation event a durable correlation record in Notion.
+
+### Confirmed request
+
+When `subscriber.activated` matches that pending report request—or when an already-active subscriber submits the form—the record becomes actionable:
+
+- Pipeline Stage = New when the pending record was Archived
 - Permission to Follow Up = Yes
-- Prospecting Channel = Email + Direct Mail
-- Call + Text only when explicit phone/text permission is present
-- Property address when submitted
-- Separate Mailing Address when submitted
-- Mailing Kit Routing = Queued when the property address is present
-- Mailing Kit Routing = Exception when the property address is missing
-- Mailing Kit Routed At = the Kit event time
-- Compliance Notes with Kit event ID, form ID/name, subscriber ID, event timestamp, fulfillment request, submitted addresses, and exact consent scope
+- Prospecting Channel adds Email + Direct Mail
+- Property Address fills when submitted and blank in CRM
+- separate Mailing Address fills when submitted and blank in CRM
+- Mailing Kit Routing = Queued when Property Address exists
+- Mailing Kit Routing = Exception when Property Address is missing
+- Mailing Kit Routed At = confirmation/form-event time when routing is first opened
+- Compliance Notes records the exact confirmation event and states that this launch form authorizes **Email + requested physical mail fulfillment only; no phone/text permission is collected**
 
-For an existing CRM record with the same email address, the webhook adds the new consent/fulfillment evidence and fills blank phone/address fields without overwriting the live pipeline/source/workflow state.
+Existing live pipeline/source/workflow state is otherwise preserved. Existing meaningful Mailing Kit states are never downgraded merely because another request arrives.
 
-If an existing record's Mailing Kit Routing is already `Complete`, `Suppressed`, `Exception`, or otherwise in a meaningful state, the webhook does not downgrade that state merely because a new event arrived. The request remains visible in Compliance Notes for manual review.
+Stable form/subscriber confirmation markers plus Kit event UUIDs make retries idempotent.
 
-The Kit event UUID is written to `Compliance Notes`. Retries with the same event UUID are treated as duplicates.
+## Production test
 
-Do not auto-merge by property address. Multiple decision-makers can legitimately share one property, and one contact can also have more than one property.
+Run this after the Kit page, webhook endpoint, Netlify variables, and branch deploy are ready:
 
-## One-time production test
-
-After deployment and Kit configuration:
-
-1. Submit the landing page with a test email, property address, and **no** phone/text permission.
-2. Confirm the pre-confirmation thank-you state tells the user to check email.
-3. Click the Kit confirmation button.
-4. Confirm exactly one CRM row is created or updated.
-5. Confirm `Source = Website`, `Lead Type = Expired Listing`, `Service Need = Expired Seller`, and `Permission to Follow Up = Yes`.
-6. Confirm `Prospecting Channel` contains Email + Direct Mail, but **not** Call/Text.
-7. Confirm `Mailing Kit Routing = Queued` and the routed timestamp is present.
-8. Repeat with a separate mailing address and explicit phone/text permission; confirm the mailing address is saved and Call + Text are added.
-9. Test a malformed submission without property address if Kit allows it; it must route to `Exception`, not silently appear fulfillment-ready.
-10. Retry the same webhook event if available; confirm the event UUID prevents duplicate CRM work.
-11. Confirm normal portal pages still redirect unauthenticated visitors to `/login` while the webhook accepts valid signed Kit POSTs.
+1. Submit the landing page with a fresh test email and valid property address.
+2. **Do not confirm yet.** Verify the CRM row is Archived, Permission = Unknown, has the UNCONFIRMED warning, and is **not** in the Mailing Kit queue.
+3. Verify the landing page tells you to check your inbox.
+4. Open the confirmation email and click **Confirm My Request**.
+5. Verify the same CRM row moves to New, Permission = Yes, and adds Email + Direct Mail.
+6. Verify `Mailing Kit Routing = Queued` and its routed timestamp is present.
+7. Repeat once using a separate Mailing Address and confirm it populates correctly.
+8. Confirm normal portal pages still redirect unauthenticated visitors to `/login` while the webhook accepts valid signed Kit POSTs.
+9. If possible, replay the same webhook event and confirm the stable markers prevent duplicate work.
 
 ## Done when
 
@@ -219,8 +219,9 @@ The external funnel is live only when:
 
 - the landing page is published and its final URL is recorded in Notion;
 - double opt-in + the confirmation email are active;
-- `KIT_EXPIRED_FORM_ID` and `KIT_EXPIRED_WEBHOOK_SECRET` are set in Netlify;
-- the draft PR is deployed/merged;
-- the email-only/direct-mail test passes;
-- the explicit phone/text-permission test passes; and
-- a confirmed request visibly lands in the existing Mailing Kit fulfillment queue.
+- the webhook endpoint subscribes to both form-subscribe + subscriber-activated events;
+- `KIT_EXPIRED_FORM_ID` + `KIT_EXPIRED_WEBHOOK_SECRET` are set in Netlify;
+- the PR is deployed/merged;
+- the unconfirmed test stays out of fulfillment;
+- the confirmed test enters the existing Mailing Kit queue; and
+- the separate mailing-address test passes.
