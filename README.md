@@ -12,7 +12,9 @@ Tracerfy lookup per address (Tracerfy's docs describe batch/array support,
 but its own live API schema doesn't implement it — confirmed directly
 against the endpoint, so each row is looked up individually) → push
 qualified leads straight into your real Notion "Clients / Leads" CRM
-database.
+database, either one contact at a time or all at once with **Push all N to
+Notion** (skips anyone already pushed, runs sequentially to stay well under
+Notion's rate limit).
 
 ## Local development
 

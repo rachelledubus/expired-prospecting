@@ -55,6 +55,9 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RowResult[] | null>(null);
   const [pushStatus, setPushStatus] = useState<Record<PushKey, PushState>>({});
+  const [bulkPushProgress, setBulkPushProgress] = useState<{ current: number; total: number } | null>(
+    null
+  );
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -152,7 +155,44 @@ export default function ImportPage() {
     }
   }
 
+  async function handlePushAllToNotion() {
+    if (!results) return;
+
+    const toPush: { rowResult: RowResult; person: Person; key: string }[] = [];
+    results.forEach((row, i) => {
+      if (row.rowError || !row.hit || row.persons_count === 0) return;
+      row.persons.forEach((person, j) => {
+        const key = `${i}-${j}`;
+        if (pushStatus[key]?.status === "done") return;
+        toPush.push({ rowResult: row, person, key });
+      });
+    });
+
+    if (toPush.length === 0) return;
+
+    setBulkPushProgress({ current: 0, total: toPush.length });
+    for (let i = 0; i < toPush.length; i++) {
+      const { rowResult, person, key } = toPush[i];
+      await handlePushToNotion(rowResult, person, key);
+      setBulkPushProgress({ current: i + 1, total: toPush.length });
+    }
+    setBulkPushProgress(null);
+  }
+
   const hitCount = results?.filter((r) => r.hit).length ?? 0;
+  const pushablePersonCount =
+    results?.reduce((sum, row) => {
+      if (row.rowError || !row.hit) return sum;
+      return sum + row.persons.length;
+    }, 0) ?? 0;
+  const remainingToPush =
+    results?.reduce((sum, row, i) => {
+      if (row.rowError || !row.hit) return sum;
+      return (
+        sum +
+        row.persons.filter((_, j) => pushStatus[`${i}-${j}`]?.status !== "done").length
+      );
+    }, 0) ?? 0;
 
   return (
     <div className="page">
@@ -200,9 +240,20 @@ export default function ImportPage() {
 
       {results && (
         <div style={{ marginTop: 20 }}>
-          <p className="meta">
-            {results.length} address(es) checked · {hitCount} with owner/contact info found
-          </p>
+          <div className="top-bar" style={{ marginBottom: 0 }}>
+            <p className="meta" style={{ marginTop: 0 }}>
+              {results.length} address(es) checked · {hitCount} with owner/contact info found
+            </p>
+            {pushablePersonCount > 0 && (
+              <button onClick={handlePushAllToNotion} disabled={!!bulkPushProgress || remainingToPush === 0}>
+                {bulkPushProgress
+                  ? `Pushing ${bulkPushProgress.current} of ${bulkPushProgress.total}...`
+                  : remainingToPush === 0
+                    ? "All pushed to CRM"
+                    : `Push all ${remainingToPush} to Notion`}
+              </button>
+            )}
+          </div>
 
           {results.map((row, i) => (
             <div className="panel" key={i} style={{ marginTop: 12 }}>
