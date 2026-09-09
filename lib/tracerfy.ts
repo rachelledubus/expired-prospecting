@@ -50,13 +50,15 @@ export function formatPhone(number: string) {
 
 /**
  * Outreach eligibility per person, derived from Tracerfy's own DNC/TCPA/litigator
- * flags. A litigator record is suppressed entirely. Otherwise: any clean phone
- * allows calling; a mailing address always allows mail unless suppressed.
+ * flags. A litigator record is suppressed entirely (no calling, texting, or
+ * mailing). A deceased record blocks calling but still allows mail -- agents
+ * commonly work these as probate/estate leads, mailing the estate or heirs
+ * at the same address rather than calling the deceased owner's number.
  */
 export function outreachEligibility(person: Person): string[] {
-  if (person.litigator || person.deceased) return ["None"];
+  if (person.litigator) return ["None"];
 
-  const hasCallablePhone = person.phones?.some((p) => !p.dnc && !p.tcpa);
+  const hasCallablePhone = !person.deceased && person.phones?.some((p) => !p.dnc && !p.tcpa);
   const hasMailAddress = Boolean(person.mailing_address?.street);
 
   const eligibility: string[] = [];
