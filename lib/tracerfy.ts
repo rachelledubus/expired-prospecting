@@ -50,18 +50,22 @@ export function formatPhone(number: string) {
 
 /**
  * Outreach eligibility per person, derived from Tracerfy's own DNC/TCPA/litigator
- * flags. A litigator record is suppressed entirely (no calling, texting, or
- * mailing). A deceased record blocks calling but still allows mail -- agents
- * commonly work these as probate/estate leads, mailing the estate or heirs
- * at the same address rather than calling the deceased owner's number.
+ * flags. "Litigator" and "Deceased" are called out explicitly (matching the
+ * Notion Outreach Eligibility options) so it's visible at a glance why a
+ * record is restricted, rather than burying the reason in Compliance Notes.
+ * A litigator record is suppressed entirely (no calling, texting, or
+ * mailing). A deceased record blocks calling but still allows mail --
+ * agents commonly work these as probate/estate leads, mailing the estate or
+ * heirs at the same address rather than calling the deceased owner's number.
  */
 export function outreachEligibility(person: Person): string[] {
-  if (person.litigator) return ["None"];
+  if (person.litigator) return ["Litigator"];
 
   const hasCallablePhone = !person.deceased && person.phones?.some((p) => !p.dnc && !p.tcpa);
   const hasMailAddress = Boolean(person.mailing_address?.street);
 
   const eligibility: string[] = [];
+  if (person.deceased) eligibility.push("Deceased");
   if (hasCallablePhone) eligibility.push("Call");
   if (hasMailAddress) eligibility.push("Mail");
   return eligibility.length > 0 ? eligibility : ["None"];

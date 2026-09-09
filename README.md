@@ -60,12 +60,12 @@ Start with the sandbox Tracerfy base URL until you're ready to spend real credit
 ## What gets written to Notion
 
 Pushing a matched contact ("Add to Notion") creates one page in your
-**Clients / Leads** database using its existing fields only — no new
-properties or select options are added:
+**Clients / Leads** database:
 
 - `Name`, `Address`, `Phone`, `Email` — from the Tracerfy match
 - `Source` = "MLS Pull", `Lead Type` = "Expired Listing", `Service Need` = "Expired Seller", `Pipeline Stage` = "New" (matching your CRM's own conventions)
-- `DNC Status` and `Outreach Eligibility` — derived from Tracerfy's per-phone `dnc`/`tcpa` flags and the person's `litigator` flag (a litigator or deceased record is always set to "None")
+- `DNC Status` — derived from Tracerfy's per-phone `dnc` flag
+- `Outreach Eligibility` — derived from Tracerfy's `dnc`/`tcpa`/`litigator`/`deceased` flags: `Litigator` on its own if flagged (fully suppressed — no call, text, or mail); `Deceased` + `Mail` if the owner is deceased but has a mailing address (blocks calling, still allows working it as a probate/estate lead); otherwise `Call` and/or `Mail` based on what's actually usable. "Deceased" and "Litigator" were added as new options on this field (2026-09-09) specifically so the reason is visible at a glance in table/board view, not just buried in Compliance Notes.
 - `DNC Scrub Date` = today
 - `Compliance Notes` — the Tracerfy request ID/timestamp and a plain-language summary of what was checked
 
