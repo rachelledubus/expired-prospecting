@@ -98,6 +98,29 @@ CRM guide treats those as things you set after actually working the lead,
 and none of the existing `Next Action` options represent "not yet
 attempted," so guessing one would misrepresent the record.
 
+On a brand-new record only (never on an update, so it can't erase any
+touch history you've since logged), the push also sets `Prospecting
+Channel` to `Call` or `Direct Mail` based on the contact's outreach
+eligibility — a lightweight "which method to try first" recommendation
+using a field your CRM already had, no schema change needed for this one.
+
+## Avoiding duplicate Tracerfy charges
+
+Since credits cost real money, every lookup — single or CSV — checks
+Notion for an existing record at that address **before** calling Tracerfy.
+If found, you see what's already there (name, pipeline stage, last DNC
+scrub date, a link to open it) instead of paying for the same property
+twice. A "Refresh anyway" button (single lookup) or "Refresh this one
+anyway" (per CSV row) explicitly re-runs Tracerfy if you actually want
+fresh data. The CSV import page also has a "Refresh Tracerfy data even for
+addresses already in your CRM" checkbox to skip this check for an entire
+import at once.
+
+The import page also has an optional "Saved search name" field (e.g. "New
+Expireds") — if filled in, it's recorded in `Compliance Notes` on anything
+pushed from that batch, so you have context later on why a lead entered
+the system.
+
 ## Compliance note
 
 The DNC/TCPA/litigator flags shown here come straight from Tracerfy's data

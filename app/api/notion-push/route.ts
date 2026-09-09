@@ -11,15 +11,17 @@ import {
 const NOTION_VERSION = "2022-06-28";
 
 export async function POST(request: Request) {
-  const { person, address, city, state, zip, requestId, timestamp } = (await request.json()) as {
-    person: Person;
-    address: string;
-    city: string;
-    state: string;
-    zip: string;
-    requestId?: string;
-    timestamp?: string;
-  };
+  const { person, address, city, state, zip, requestId, timestamp, sourceSearch } =
+    (await request.json()) as {
+      person: Person;
+      address: string;
+      city: string;
+      state: string;
+      zip: string;
+      requestId?: string;
+      timestamp?: string;
+      sourceSearch?: string;
+    };
 
   const apiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_LEADS_DATABASE_ID;
@@ -47,9 +49,21 @@ export async function POST(request: Request) {
     `Tracerfy lookup${requestId ? ` ${requestId}` : ""} at ${timestamp ?? new Date().toISOString()}.`,
     person.litigator ? "LITIGATOR — do not contact." : null,
     person.deceased ? "Marked deceased by Tracerfy." : null,
+    sourceSearch ? `Sourced from MLS saved search: ${sourceSearch}.` : null,
   ]
     .filter(Boolean)
     .join(" ");
+
+  // Recommended first-touch channel, using the CRM's existing Prospecting
+  // Channel field. Only applied when CREATING a new record -- never on an
+  // update, since that field is also where manually-logged touch history
+  // lives, and overwriting it would erase that.
+  const eligibility = outreachEligibility(person);
+  const recommendedChannel = eligibility.includes("Call")
+    ? "Call"
+    : eligibility.includes("Mail")
+      ? "Direct Mail"
+      : null;
 
   const allPhones = person.phones?.length
     ? person.phones
@@ -153,6 +167,9 @@ export async function POST(request: Request) {
         "Lead Type": { select: { name: "Expired Listing" } },
         "Service Need": { select: { name: "Expired Seller" } },
         "Pipeline Stage": { select: { name: "New" } },
+        ...(recommendedChannel
+          ? { "Prospecting Channel": { multi_select: [{ name: recommendedChannel }] } }
+          : {}),
         ...refreshableProperties,
       },
     }),

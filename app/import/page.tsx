@@ -9,6 +9,7 @@ import {
   type LookupResult,
   type Person,
 } from "@/lib/tracerfy";
+import type { ExistingLeadRecord } from "@/lib/notion";
 
 type ColumnMap = {
   address: string;
@@ -39,7 +40,7 @@ function guessColumn(headers: string[], field: keyof ColumnMap): string {
 }
 
 type PushKey = string;
-type RowResult = LookupResult & { rowError?: string };
+type RowResult = LookupResult & { rowError?: string; alreadyInCrm?: ExistingLeadRecord[] };
 type PushState = {
   status: "loading" | "done" | "error";
   message?: string;
@@ -58,6 +59,9 @@ export default function ImportPage() {
   const [bulkPushProgress, setBulkPushProgress] = useState<{ current: number; total: number } | null>(
     null
   );
+  const [forceAll, setForceAll] = useState(false);
+  const [refreshingRow, setRefreshingRow] = useState<number | null>(null);
+  const [sourceSearch, setSourceSearch] = useState("");
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -101,7 +105,7 @@ export default function ImportPage() {
       const res = await fetch("/api/bulk-lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows }),
+        body: JSON.stringify({ rows, forceAll }),
       });
       const data = await res.json();
 
@@ -115,6 +119,40 @@ export default function ImportPage() {
       setError("Something went wrong reaching the lookup service.");
     } finally {
       setProcessing(false);
+    }
+  }
+
+  async function handleForceRefreshRow(i: number) {
+    if (!results) return;
+    const row = results[i];
+    setRefreshingRow(i);
+    try {
+      const res = await fetch("/api/property-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: row.address,
+          city: row.city,
+          state: row.state,
+          zip: row.zip,
+          force: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Refresh failed.");
+        return;
+      }
+      setResults((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        next[i] = data;
+        return next;
+      });
+    } catch {
+      setError("Something went wrong reaching the lookup service.");
+    } finally {
+      setRefreshingRow(null);
     }
   }
 
@@ -132,6 +170,7 @@ export default function ImportPage() {
           zip: rowResult.zip,
           requestId: rowResult.meta?.request_id,
           timestamp: rowResult.meta?.timestamp,
+          sourceSearch: sourceSearch.trim() || undefined,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -209,6 +248,15 @@ export default function ImportPage() {
           <label htmlFor="csv">CSV file</label>
           <input id="csv" type="file" accept=".csv" onChange={handleFile} />
         </div>
+        <div className="field">
+          <label htmlFor="sourceSearch">Saved search name (optional)</label>
+          <input
+            id="sourceSearch"
+            placeholder="e.g. New Expireds"
+            value={sourceSearch}
+            onChange={(e) => setSourceSearch(e.target.value)}
+          />
+        </div>
 
         {headers.length > 0 && (
           <>
@@ -230,6 +278,18 @@ export default function ImportPage() {
                 </select>
               </div>
             ))}
+            <div className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                id="forceAll"
+                type="checkbox"
+                style={{ width: "auto" }}
+                checked={forceAll}
+                onChange={(e) => setForceAll(e.target.checked)}
+              />
+              <label htmlFor="forceAll" style={{ margin: 0 }}>
+                Refresh Tracerfy data even for addresses already in your CRM
+              </label>
+            </div>
             <button onClick={handleProcess} disabled={!mappingComplete || processing}>
               {processing ? "Processing..." : `Process ${csvRows.length} properties`}
             </button>
@@ -265,6 +325,27 @@ export default function ImportPage() {
                 <p className="error" style={{ marginTop: 8 }}>
                   {row.rowError}
                 </p>
+              ) : row.alreadyInCrm ? (
+                <div style={{ marginTop: 8 }}>
+                  <p className="muted">Already researched — no Tracerfy credits spent:</p>
+                  {row.alreadyInCrm.map((r) => (
+                    <p key={r.url} className="muted" style={{ marginTop: 4 }}>
+                      <strong>{r.name}</strong> — {r.pipelineStage ?? "unknown stage"} · scrubbed{" "}
+                      {r.dncScrubDate ?? "unknown date"} ·{" "}
+                      <a href={r.url} target="_blank" rel="noreferrer">
+                        Open in Notion
+                      </a>
+                    </p>
+                  ))}
+                  <button
+                    className="secondary"
+                    style={{ marginTop: 8 }}
+                    onClick={() => handleForceRefreshRow(i)}
+                    disabled={refreshingRow === i}
+                  >
+                    {refreshingRow === i ? "Refreshing..." : "Refresh this one anyway (~5 credits)"}
+                  </button>
+                </div>
               ) : !row.hit || row.persons_count === 0 ? (
                 <p className="muted" style={{ marginTop: 8 }}>
                   No owner/contact records found.

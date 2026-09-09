@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { formatPhone, outreachEligibility, dncStatus, type LookupResult, type Person } from "@/lib/tracerfy";
 
+type ExistingRecord = {
+  url: string;
+  name: string;
+  pipelineStage: string | null;
+  dncScrubDate: string | null;
+};
+
 export default function LookupPage() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -11,6 +18,7 @@ export default function LookupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
+  const [existingRecords, setExistingRecords] = useState<ExistingRecord[] | null>(null);
   const [pushStatus, setPushStatus] = useState<
     Record<
       number,
@@ -23,23 +31,28 @@ export default function LookupPage() {
     >
   >({});
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function runLookup(force: boolean) {
     setLoading(true);
     setError(null);
     setResult(null);
+    setExistingRecords(null);
     setPushStatus({});
 
     try {
       const res = await fetch("/api/property-lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, city, state, zip }),
+        body: JSON.stringify({ address, city, state, zip, force }),
       });
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error ?? "Lookup failed.");
+        return;
+      }
+
+      if (data.existingRecords) {
+        setExistingRecords(data.existingRecords);
         return;
       }
 
@@ -49,6 +62,11 @@ export default function LookupPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    runLookup(false);
   }
 
   async function handlePushToNotion(person: Person, index: number) {
@@ -128,6 +146,28 @@ export default function LookupPage() {
           {error && <p className="error">{error}</p>}
         </form>
       </div>
+
+      {existingRecords && (
+        <div className="panel" style={{ marginTop: 20 }}>
+          <strong>Already researched</strong>
+          <p className="muted" style={{ marginTop: 4 }}>
+            Found {existingRecords.length} record{existingRecords.length > 1 ? "s" : ""} at this address in
+            your CRM — no Tracerfy credits spent.
+          </p>
+          {existingRecords.map((r) => (
+            <p key={r.url} className="muted" style={{ marginTop: 8 }}>
+              <strong>{r.name}</strong> — {r.pipelineStage ?? "unknown stage"} · scrubbed{" "}
+              {r.dncScrubDate ?? "unknown date"} ·{" "}
+              <a href={r.url} target="_blank" rel="noreferrer">
+                Open in Notion
+              </a>
+            </p>
+          ))}
+          <button style={{ marginTop: 12 }} onClick={() => runLookup(true)} disabled={loading}>
+            {loading ? "Searching..." : "Refresh Tracerfy data anyway (~5 credits)"}
+          </button>
+        </div>
+      )}
 
       {result && (
         <div style={{ marginTop: 20 }}>

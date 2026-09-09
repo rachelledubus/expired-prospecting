@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
+import { queryLeadsByAddress } from "@/lib/notion";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { address, city, state, zip } = body;
+  const { address, city, state, zip, force } = body;
 
   if (!address || !city || !state || !zip) {
     return NextResponse.json(
       { error: "Address, city, state, and zip are all required." },
       { status: 400 }
     );
+  }
+
+  const fullAddress = `${address}, ${city}, ${state} ${zip}`;
+
+  if (!force) {
+    const existingRecords = await queryLeadsByAddress(fullAddress);
+    if (existingRecords.length > 0) {
+      return NextResponse.json({ existingRecords });
+    }
   }
 
   const base = process.env.TRACERFY_API_BASE;
