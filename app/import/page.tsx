@@ -96,7 +96,10 @@ export default function ImportPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Bulk lookup failed.");
+        const detail = data.tracerfyResponse
+          ? ` Tracerfy said: ${JSON.stringify(data.tracerfyResponse)}`
+          : "";
+        setError((data.error ?? "Bulk lookup failed.") + detail);
         setResults(data.completed ?? null);
         return;
       }

@@ -52,10 +52,17 @@ export async function POST(request: Request) {
     });
 
     if (!tracerfyRes.ok) {
-      const errorBody = await tracerfyRes.json().catch(() => null);
+      const rawText = await tracerfyRes.text();
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        // Tracerfy didn't return JSON; fall through to raw text below.
+      }
       return NextResponse.json(
         {
-          error: errorBody?.error ?? `Tracerfy batch lookup failed (${tracerfyRes.status}).`,
+          error: `Tracerfy batch lookup failed (${tracerfyRes.status}).`,
+          tracerfyResponse: parsed ?? rawText,
           completed: results,
         },
         { status: tracerfyRes.status }
