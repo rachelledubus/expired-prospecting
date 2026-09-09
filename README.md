@@ -7,9 +7,12 @@ which stays untouched.
 **Phase 1:** password-gated login → property lookup form → Tracerfy →
 results, with DNC/TCPA/litigator status shown per contact.
 
-**Phase 2:** CSV import of MLS "Expired" exports → column mapping → bulk
-Tracerfy lookups (batched 15 at a time) → push qualified leads straight into
-your real Notion "Clients / Leads" CRM database.
+**Phase 2:** CSV import of MLS "Expired" exports → column mapping → a
+Tracerfy lookup per address (Tracerfy's docs describe batch/array support,
+but its own live API schema doesn't implement it — confirmed directly
+against the endpoint, so each row is looked up individually) → push
+qualified leads straight into your real Notion "Clients / Leads" CRM
+database.
 
 ## Local development
 

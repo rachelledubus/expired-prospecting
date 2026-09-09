@@ -39,6 +39,7 @@ function guessColumn(headers: string[], field: keyof ColumnMap): string {
 }
 
 type PushKey = string;
+type RowResult = LookupResult & { rowError?: string };
 
 export default function ImportPage() {
   const [headers, setHeaders] = useState<string[]>([]);
@@ -46,7 +47,7 @@ export default function ImportPage() {
   const [columnMap, setColumnMap] = useState<ColumnMap>({ address: "", city: "", state: "", zip: "" });
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<LookupResult[] | null>(null);
+  const [results, setResults] = useState<RowResult[] | null>(null);
   const [pushStatus, setPushStatus] = useState<Record<PushKey, "loading" | "done" | "error">>({});
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -96,11 +97,7 @@ export default function ImportPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        const detail = data.tracerfyResponse
-          ? ` Tracerfy said: ${JSON.stringify(data.tracerfyResponse)}`
-          : "";
-        setError((data.error ?? "Bulk lookup failed.") + detail);
-        setResults(data.completed ?? null);
+        setError(data.error ?? "Bulk lookup failed.");
         return;
       }
 
@@ -193,7 +190,11 @@ export default function ImportPage() {
                 {row.address}, {row.city} {row.state} {row.zip}
               </strong>
 
-              {!row.hit || row.persons_count === 0 ? (
+              {row.rowError ? (
+                <p className="error" style={{ marginTop: 8 }}>
+                  {row.rowError}
+                </p>
+              ) : !row.hit || row.persons_count === 0 ? (
                 <p className="muted" style={{ marginTop: 8 }}>
                   No owner/contact records found.
                 </p>

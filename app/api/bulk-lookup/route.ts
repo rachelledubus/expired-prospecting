@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
 import type { LookupResult } from "@/lib/tracerfy";
 
-const BATCH_SIZE = 15;
-
 type Row = { address: string; city: string; state: string; zip: string };
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size));
-  }
-  return chunks;
-}
 
 export async function POST(request: Request) {
   const { rows } = (await request.json()) as { rows: Row[] };
@@ -30,47 +20,48 @@ export async function POST(request: Request) {
     );
   }
 
-  const batches = chunk(rows, BATCH_SIZE);
-  const results: LookupResult[] = [];
+  // Tracerfy's trace/lookup endpoint only accepts one address object per
+  // request (its docs describe array/batch support, but the live API's own
+  // OpenAPI schema shows a single flat object with no array variant — this
+  // was confirmed directly against the endpoint, not assumed). So we call it
+  // once per row, sequentially. Its rate limit is 500 items/minute, well
+  // above what a manual CSV import needs.
+  const results: (LookupResult & { rowError?: string })[] = [];
 
-  for (const batch of batches) {
+  for (const row of rows) {
     const tracerfyRes = await fetch(`${base}/trace/lookup/`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(
-        batch.map((row) => ({
-          address: row.address,
-          city: row.city,
-          state: row.state,
-          zip: row.zip,
-          find_owner: true,
-        }))
-      ),
+      body: JSON.stringify({
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        zip: row.zip,
+        find_owner: true,
+      }),
     });
 
     if (!tracerfyRes.ok) {
       const rawText = await tracerfyRes.text();
-      let parsed: unknown = null;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        // Tracerfy didn't return JSON; fall through to raw text below.
-      }
-      return NextResponse.json(
-        {
-          error: `Tracerfy batch lookup failed (${tracerfyRes.status}).`,
-          tracerfyResponse: parsed ?? rawText,
-          completed: results,
-        },
-        { status: tracerfyRes.status }
-      );
+      results.push({
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        zip: row.zip,
+        hit: false,
+        persons_count: 0,
+        credits_deducted: 0,
+        persons: [],
+        rowError: `Tracerfy error (${tracerfyRes.status}): ${rawText.slice(0, 300)}`,
+      });
+      continue;
     }
 
-    const batchResults: LookupResult[] = await tracerfyRes.json();
-    results.push(...batchResults);
+    const data: LookupResult = await tracerfyRes.json();
+    results.push(data);
   }
 
   return NextResponse.json({ results });
