@@ -13,11 +13,31 @@ export default function Dashboard() {
         </form>
       </div>
 
-      <div className="grid-links">
-        <a href="/lookup">🔎 Look up property</a>
-        <a href="/import">📋 Import expired listings (CSV)</a>
-        <a href="/watchlist">📉 Import watchlist (price reductions / stale listings)</a>
-      </div>
+      <div className="section-label">Today</div>
+      <a className="action-card" href="/import">
+        <div className="action-title">1. Process Expireds</div>
+        <div className="muted">Upload New Expireds + High-Value Expireds</div>
+        <div className="fed-by">
+          Fed by Matrix saved searches: <span className="tag">🔥 New Expireds</span>
+          <span className="tag">💰 High-Value Expireds</span>
+        </div>
+      </a>
+
+      <div className="section-label">Weekly</div>
+      <a className="action-card" href="/watchlist">
+        <div className="action-title">2. Send Research Candidates</div>
+        <div className="muted">Upload selected Price Reduction / Stale listings</div>
+        <div className="fed-by">
+          Fed by Matrix saved searches: <span className="tag">📉 Price Reductions</span>
+          <span className="tag">⏳ Stale Listings</span>
+        </div>
+      </a>
+
+      <div className="section-label">Anytime</div>
+      <a className="action-card" href="/lookup">
+        <div className="action-title">3. Look Up One Property</div>
+        <div className="muted">Manual single-address skip trace — no CSV needed</div>
+      </a>
     </div>
   );
 }

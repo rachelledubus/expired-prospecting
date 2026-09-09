@@ -93,22 +93,6 @@ button.secondary {
   margin-top: 8px;
 }
 
-.grid-links {
-  display: grid;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.grid-links a {
-  display: block;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--text);
-  background: var(--panel);
-}
-
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -159,4 +143,48 @@ button.secondary {
   font-size: 0.75rem;
   color: var(--muted);
   margin-top: 16px;
+}
+
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 28px 0 10px;
+}
+
+.section-label:first-of-type {
+  margin-top: 8px;
+}
+
+.action-card {
+  display: block;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  text-decoration: none;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.action-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.fed-by {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.tag {
+  display: inline-block;
+  background: #f1f1ee;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-right: 6px;
+  font-size: 0.75rem;
 }
