@@ -45,6 +45,9 @@ export async function POST(request: Request) {
           .map((p) => `${p.number} (${p.dnc ? "DNC" : "clear"}${p.tcpa ? ", TCPA flag" : ""})`)
           .join("; ")}`
       : "No phones returned.",
+    person.emails && person.emails.length > 1
+      ? `Other emails found: ${person.emails.slice(1).map((e) => e.email).join("; ")}`
+      : null,
   ]
     .filter(Boolean)
     .join(" ");
