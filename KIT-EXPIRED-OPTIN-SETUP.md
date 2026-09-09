@@ -8,7 +8,7 @@ This is **not** an instant-download PDF or generic CMA. It is a property-specifi
 
 Launch flow:
 
-`Kit landing page → double opt-in → signed Kit webhook → Clients / Leads → existing Mailing Kit workflow`
+`Kit landing page → double opt-in → signed Kit webhook → Clients / Leads + Property Research → ⚙️ Requested Report — Queue → native Notion automation → Mailing Kit workflow`
 
 The private prospecting portal remains password-gated. Only the webhook route is public.
 
@@ -21,9 +21,9 @@ Kit exposes two separate V4 events that matter here:
 
 The webhook endpoint must subscribe to **both**.
 
-A new double-opt-in signup normally arrives inactive. The form event is therefore **not fulfillment authorization**. The integration creates an archived pending CRM audit row with `Permission to Follow Up = Unknown` and an explicit **DO NOT CONTACT / DO NOT FULFILL** note. When the matching subscriber later activates, the pending record becomes a live inbound request and enters the Mailing Kit queue.
+A new double-opt-in signup normally arrives inactive. The form event is therefore **not fulfillment authorization**. The integration creates an archived pending CRM audit row with `Permission to Follow Up = Unknown` and an explicit **DO NOT CONTACT / DO NOT FULFILL** note. When the matching subscriber later activates, the pending record becomes a confirmed inbound request.
 
-An already-active Kit subscriber can be fulfilled directly from the form event because the email address is already confirmed and the form submission itself is an explicit report request.
+An already-active Kit subscriber can be treated as confirmed from the explicit report-form submission because their email is already active and the form submission itself is the request.
 
 ## Landing page copy
 
@@ -77,7 +77,7 @@ I build each analysis around one property. Some of the most important answers—
 
 That is the complete launch form. **Do not collect a phone number at launch.**
 
-Why: phone/text consent would require a separate explicit consent mechanism, and Kit's checkbox/dropdown form controls are Tag-based rather than ordinary custom-field values. That adds implementation and compliance complexity without being needed to fulfill the physical report. If a homeowner later replies and explicitly asks for a call, that can be documented in the CRM at that time.
+Why: phone/text consent is not needed to fulfill this offer and would add a separate consent branch. If a homeowner later explicitly asks for a call or text, document that permission separately in the CRM.
 
 ### Consent / expectation text
 
@@ -162,13 +162,14 @@ The existing portal must also retain:
 ```env
 NOTION_API_KEY=...
 NOTION_LEADS_DATABASE_ID=9f7f408a-fdce-82f5-a49c-01dfb37a4c4c
+NOTION_PROPERTY_RESEARCH_DATABASE_ID=5f4009da-260f-47ca-8120-0519d9134afe
 ```
 
-## CRM behavior
+## CRM + Property Research behavior
 
 ### New, unconfirmed signup
 
-The form event creates an intentionally non-actionable audit row:
+The form event creates an intentionally non-actionable CRM audit row:
 
 - Source = Website
 - Lead Type = Expired Listing
@@ -183,35 +184,64 @@ This keeps an unconfirmed/bot/typo signup out of daily work while giving the lat
 
 ### Confirmed request
 
-When `subscriber.activated` matches that pending report request—or when an already-active subscriber submits the form—the record becomes actionable:
+When `subscriber.activated` matches that pending report request—or when an already-active subscriber submits the form—the integration prepares the deterministic intake inputs:
 
 - Pipeline Stage = New when the pending record was Archived
 - Permission to Follow Up = Yes
 - Prospecting Channel adds Email + Direct Mail
-- Property Address fills when submitted and blank in CRM
-- separate Mailing Address fills when submitted and blank in CRM
-- Mailing Kit Routing = Queued when Property Address exists
-- Mailing Kit Routing = Exception when Property Address is missing
-- Mailing Kit Routed At = confirmation/form-event time when routing is first opened
-- Compliance Notes records the exact confirmation event and states that this launch form authorizes **Email + requested physical mail fulfillment only; no phone/text permission is collected**
+- Property Address fills when the CRM field is blank
+- Mailing Address uses the separately supplied address when present; otherwise it defaults to the Property Address because the form field is explicitly labeled “if different”
+- a matching Property Research record is found or a minimal `Research Status = Not started` shell is created
+- Property Research is linked to the CRM through the existing Owner / CRM Contact ↔ Related Property relation
+- Mailing Kit Routing is left/set to **Not Evaluated** for the native requested-report queue
+- Compliance Notes records the exact confirmed request, property, mailing-address behavior, Property Research URL, Kit event ID, and consent scope
 
-Existing live pipeline/source/workflow state is otherwise preserved. Existing meaningful Mailing Kit states are never downgraded merely because another request arrives.
+The webhook does **not** create a task or stamp `Queued`. Those are owned by the native Notion automation below.
 
-Stable form/subscriber confirmation markers plus Kit event UUIDs make retries idempotent.
+Existing live pipeline/source/workflow state is otherwise preserved. Existing hard suppression remains suppression and blocks automatic fulfillment.
+
+Kit event UUIDs provide retry idempotency while allowing the same subscriber to make a legitimate future request.
+
+## Native Notion handoff
+
+The CRM view **`⚙️ Requested Report — Queue`** is already created. It includes only confirmed Website expired-seller requests with Email + Direct Mail permission, `Mailing Kit Routing = Not Evaluated`, a mailing address, and a linked Property Research record.
+
+Create one native database automation in **Clients / Leads**:
+
+- **Name:** `Mailer — Queue requested report`
+- **Run on:** `⚙️ Requested Report — Queue`
+- **Trigger when:** Page added; Permission to Follow Up edited; Prospecting Channel edited; Mailing Address edited; Related Property edited; Mailing Kit Routing edited; Pipeline Stage edited; Compliance Notes edited.
+
+Actions:
+
+1. Create a Tasks ✧ page named `Prepare requested Private Property Analysis — [Address]`.
+2. Set the task to Do Next / Work Block / 45 min / Medium energy / Priority Tier 2 High Value / Must Happen / Supports Revenue / Platinum.
+3. Task Next Instruction: open the linked Property Research record; CURRENT = use Latest Report Kit, BLOCKED = resolve the source-data blocker, READY FOR AI or REFRESH NEEDED = run **Generate Expired Listing Report Kit** using **Route D — Confirmed Kit / Website Request**; then use **Mailer Setup & Send Process** and validate the USPS address before postage.
+4. Edit the CRM trigger row: `Mailing Kit Routing = Queued`.
+5. Set `Mailing Kit Routed At = Now`.
+6. Set `Call Disposition = Mailer Requested`.
+7. Set `Next Action = Prepare requested private property analysis`.
+
+Do **not** add Call/Text or alter Outreach Eligibility to force this through the cold mail-only automation. The requested-report lane is intentionally separate.
+
+Setting `Mailing Kit Routing = Queued` removes the row from `⚙️ Requested Report — Queue`, which is the native idempotency guard for task creation.
 
 ## Production test
 
-Run this after the Kit page, webhook endpoint, Netlify variables, and branch deploy are ready:
+Run this after the Kit page, webhook endpoint, Netlify variables, branch deploy, and native Requested Report automation are ready:
 
 1. Submit the landing page with a fresh test email and valid property address.
-2. **Do not confirm yet.** Verify the CRM row is Archived, Permission = Unknown, has the UNCONFIRMED warning, and is **not** in the Mailing Kit queue.
+2. **Do not confirm yet.** Verify the CRM row is Archived, Permission = Unknown, has the UNCONFIRMED warning, and has no actionable mailing route.
 3. Verify the landing page tells you to check your inbox.
 4. Open the confirmation email and click **Confirm My Request**.
 5. Verify the same CRM row moves to New, Permission = Yes, and adds Email + Direct Mail.
-6. Verify `Mailing Kit Routing = Queued` and its routed timestamp is present.
-7. Repeat once using a separate Mailing Address and confirm it populates correctly.
-8. Confirm normal portal pages still redirect unauthenticated visitors to `/login` while the webhook accepts valid signed Kit POSTs.
-9. If possible, replay the same webhook event and confirm the stable markers prevent duplicate work.
+6. Verify Mailing Address equals the property address when the optional different-mailing-address field was left blank.
+7. Verify a matching Property Research row exists and is linked to the CRM. A new shell should be `Research Status = Not started`; no MLS facts should be invented.
+8. Verify the confirmed CRM record briefly qualifies for `⚙️ Requested Report — Queue` and the native automation creates exactly one task.
+9. Verify the automation changes Mailing Kit Routing to Queued, stamps Mailing Kit Routed At, sets Mailer Requested, and sets the concrete Next Action.
+10. Repeat once using a separate Mailing Address and confirm both CRM + Property Research preserve the separate mailing destination.
+11. Confirm normal portal pages still redirect unauthenticated visitors to `/login` while the webhook accepts valid signed Kit POSTs.
+12. If possible, replay the same Kit webhook event and confirm the event marker prevents duplicate webhook mutations and the Notion queue state prevents duplicate task creation.
 
 ## Done when
 
@@ -221,7 +251,9 @@ The external funnel is live only when:
 - double opt-in + the confirmation email are active;
 - the webhook endpoint subscribes to both form-subscribe + subscriber-activated events;
 - `KIT_EXPIRED_FORM_ID` + `KIT_EXPIRED_WEBHOOK_SECRET` are set in Netlify;
+- the native `Mailer — Queue requested report` automation is active;
 - the PR is deployed/merged;
-- the unconfirmed test stays out of fulfillment;
-- the confirmed test enters the existing Mailing Kit queue; and
-- the separate mailing-address test passes.
+- an unconfirmed request remains non-actionable;
+- a confirmed request creates/links Property Research and enters the requested-report queue;
+- exactly one fulfillment task is created and the CRM becomes Queued; and
+- both default-to-property-address and separate-mailing-address tests pass.
