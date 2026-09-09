@@ -11,7 +11,9 @@ export default function LookupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
-  const [pushStatus, setPushStatus] = useState<Record<number, "loading" | "done" | "error">>({});
+  const [pushStatus, setPushStatus] = useState<
+    Record<number, { status: "loading" | "done" | "error"; message?: string }>
+  >({});
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +45,7 @@ export default function LookupPage() {
 
   async function handlePushToNotion(person: Person, index: number) {
     if (!result) return;
-    setPushStatus((prev) => ({ ...prev, [index]: "loading" }));
+    setPushStatus((prev) => ({ ...prev, [index]: { status: "loading" } }));
     try {
       const res = await fetch("/api/notion-push", {
         method: "POST",
@@ -58,10 +60,17 @@ export default function LookupPage() {
           timestamp: result.meta?.timestamp,
         }),
       });
-      if (!res.ok) throw new Error();
-      setPushStatus((prev) => ({ ...prev, [index]: "done" }));
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setPushStatus((prev) => ({
+          ...prev,
+          [index]: { status: "error", message: data?.error ?? `Failed (${res.status})` },
+        }));
+        return;
+      }
+      setPushStatus((prev) => ({ ...prev, [index]: { status: "done" } }));
     } catch {
-      setPushStatus((prev) => ({ ...prev, [index]: "error" }));
+      setPushStatus((prev) => ({ ...prev, [index]: { status: "error", message: "Network error" } }));
     }
   }
 
@@ -162,12 +171,16 @@ export default function LookupPage() {
                   <div style={{ marginTop: 10 }}>
                     <button
                       className="secondary"
-                      disabled={status === "loading" || status === "done"}
+                      disabled={status?.status === "loading" || status?.status === "done"}
                       onClick={() => handlePushToNotion(person, i)}
                     >
-                      {status === "done" ? "Added to CRM" : status === "loading" ? "Adding..." : "Add to Notion"}
+                      {status?.status === "done"
+                        ? "Added to CRM"
+                        : status?.status === "loading"
+                          ? "Adding..."
+                          : "Add to Notion"}
                     </button>
-                    {status === "error" && <span className="error"> Failed — try again.</span>}
+                    {status?.status === "error" && <span className="error"> {status.message}</span>}
                   </div>
                 </div>
               );

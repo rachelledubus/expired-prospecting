@@ -40,6 +40,7 @@ function guessColumn(headers: string[], field: keyof ColumnMap): string {
 
 type PushKey = string;
 type RowResult = LookupResult & { rowError?: string };
+type PushState = { status: "loading" | "done" | "error"; message?: string };
 
 export default function ImportPage() {
   const [headers, setHeaders] = useState<string[]>([]);
@@ -48,7 +49,7 @@ export default function ImportPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RowResult[] | null>(null);
-  const [pushStatus, setPushStatus] = useState<Record<PushKey, "loading" | "done" | "error">>({});
+  const [pushStatus, setPushStatus] = useState<Record<PushKey, PushState>>({});
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -110,7 +111,7 @@ export default function ImportPage() {
   }
 
   async function handlePushToNotion(rowResult: LookupResult, person: Person, key: string) {
-    setPushStatus((prev) => ({ ...prev, [key]: "loading" }));
+    setPushStatus((prev) => ({ ...prev, [key]: { status: "loading" } }));
     try {
       const res = await fetch("/api/notion-push", {
         method: "POST",
@@ -125,10 +126,17 @@ export default function ImportPage() {
           timestamp: rowResult.meta?.timestamp,
         }),
       });
-      if (!res.ok) throw new Error();
-      setPushStatus((prev) => ({ ...prev, [key]: "done" }));
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setPushStatus((prev) => ({
+          ...prev,
+          [key]: { status: "error", message: data?.error ?? `Failed (${res.status})` },
+        }));
+        return;
+      }
+      setPushStatus((prev) => ({ ...prev, [key]: { status: "done" } }));
     } catch {
-      setPushStatus((prev) => ({ ...prev, [key]: "error" }));
+      setPushStatus((prev) => ({ ...prev, [key]: { status: "error", message: "Network error" } }));
     }
   }
 
@@ -201,7 +209,7 @@ export default function ImportPage() {
               ) : (
                 row.persons.map((person, j) => {
                   const key = `${i}-${j}`;
-                  const status = pushStatus[key];
+                  const push = pushStatus[key];
                   return (
                     <div className="person-card" key={j}>
                       <strong>{person.full_name}</strong>
@@ -224,12 +232,16 @@ export default function ImportPage() {
                       <div style={{ marginTop: 10 }}>
                         <button
                           className="secondary"
-                          disabled={status === "loading" || status === "done"}
+                          disabled={push?.status === "loading" || push?.status === "done"}
                           onClick={() => handlePushToNotion(row, person, key)}
                         >
-                          {status === "done" ? "Added to CRM" : status === "loading" ? "Adding..." : "Add to Notion"}
+                          {push?.status === "done"
+                            ? "Added to CRM"
+                            : push?.status === "loading"
+                              ? "Adding..."
+                              : "Add to Notion"}
                         </button>
-                        {status === "error" && <span className="error"> Failed — try again.</span>}
+                        {push?.status === "error" && <span className="error"> {push.message}</span>}
                       </div>
                     </div>
                   );
