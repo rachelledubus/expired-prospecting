@@ -40,7 +40,7 @@ function guessColumn(headers: string[], field: keyof ColumnMap): string {
 
 type PushKey = string;
 type RowResult = LookupResult & { rowError?: string };
-type PushState = { status: "loading" | "done" | "error"; message?: string };
+type PushState = { status: "loading" | "done" | "error"; message?: string; action?: "created" | "updated" };
 
 export default function ImportPage() {
   const [headers, setHeaders] = useState<string[]>([]);
@@ -134,7 +134,7 @@ export default function ImportPage() {
         }));
         return;
       }
-      setPushStatus((prev) => ({ ...prev, [key]: { status: "done" } }));
+      setPushStatus((prev) => ({ ...prev, [key]: { status: "done", action: data?.action } }));
     } catch {
       setPushStatus((prev) => ({ ...prev, [key]: { status: "error", message: "Network error" } }));
     }
@@ -236,7 +236,9 @@ export default function ImportPage() {
                           onClick={() => handlePushToNotion(row, person, key)}
                         >
                           {push?.status === "done"
-                            ? "Added to CRM"
+                            ? push.action === "updated"
+                              ? "Updated in CRM"
+                              : "Added to CRM"
                             : push?.status === "loading"
                               ? "Adding..."
                               : "Add to Notion"}

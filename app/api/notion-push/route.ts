@@ -24,6 +24,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const notionHeaders = {
+    Authorization: `Bearer ${apiKey}`,
+    "Notion-Version": NOTION_VERSION,
+    "Content-Type": "application/json",
+  };
+
+  const fullAddress = `${address}, ${city}, ${state} ${zip}`;
+  const name = person.full_name || "Unknown";
   const phone = bestPhone(person);
   const email = bestEmail(person);
   const scrubDate = new Date().toISOString().slice(0, 10);
@@ -41,45 +49,91 @@ export async function POST(request: Request) {
     .filter(Boolean)
     .join(" ");
 
-  const properties: Record<string, unknown> = {
-    Name: { title: [{ text: { content: person.full_name || "Unknown" } }] },
-    Address: { rich_text: [{ text: { content: `${address}, ${city}, ${state} ${zip}` } }] },
-    Source: { select: { name: "MLS Pull" } },
-    "Lead Type": { select: { name: "Expired Listing" } },
-    "Service Need": { select: { name: "Expired Seller" } },
-    "Pipeline Stage": { select: { name: "New" } },
+  // Fields that reflect a fresh compliance/contact check -- safe to overwrite
+  // on a re-push without disturbing anything the record's owner has since
+  // set (Pipeline Stage, Next Action, Call Notes, etc.).
+  const refreshableProperties: Record<string, unknown> = {
     "DNC Status": { select: { name: dncStatus(person) } },
     "Outreach Eligibility": {
-      multi_select: outreachEligibility(person).map((name) => ({ name })),
+      multi_select: outreachEligibility(person).map((n) => ({ name: n })),
     },
     "DNC Scrub Date": { date: { start: scrubDate } },
     "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
   };
+  if (phone) refreshableProperties.Phone = { phone_number: phone };
+  if (email) refreshableProperties.Email = { email };
 
-  if (phone) properties.Phone = { phone_number: phone };
-  if (email) properties.Email = { email };
-
-  const notionRes = await fetch("https://api.notion.com/v1/pages", {
+  // Look for an existing lead at this address with this name before
+  // creating a new page, so re-pushing the same match updates it in place
+  // instead of duplicating it.
+  const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Notion-Version": NOTION_VERSION,
-      "Content-Type": "application/json",
-    },
+    headers: notionHeaders,
     body: JSON.stringify({
-      parent: { type: "database_id", database_id: databaseId },
-      properties,
+      filter: {
+        and: [
+          { property: "Address", rich_text: { equals: fullAddress } },
+          { property: "Name", title: { equals: name } },
+        ],
+      },
+      page_size: 1,
     }),
   });
 
-  const data = await notionRes.json();
+  const queryData = await queryRes.json();
 
-  if (!notionRes.ok) {
+  if (!queryRes.ok) {
     return NextResponse.json(
-      { error: data?.message ?? "Notion write failed." },
-      { status: notionRes.status }
+      { error: queryData?.message ?? "Notion lookup failed." },
+      { status: queryRes.status }
     );
   }
 
-  return NextResponse.json({ ok: true, url: data.url });
+  const existingPage = queryData.results?.[0];
+
+  if (existingPage) {
+    const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
+      method: "PATCH",
+      headers: notionHeaders,
+      body: JSON.stringify({ properties: refreshableProperties }),
+    });
+    const updateData = await updateRes.json();
+
+    if (!updateRes.ok) {
+      return NextResponse.json(
+        { error: updateData?.message ?? "Notion update failed." },
+        { status: updateRes.status }
+      );
+    }
+
+    return NextResponse.json({ ok: true, url: updateData.url, action: "updated" });
+  }
+
+  const createRes = await fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: notionHeaders,
+    body: JSON.stringify({
+      parent: { type: "database_id", database_id: databaseId },
+      properties: {
+        Name: { title: [{ text: { content: name } }] },
+        Address: { rich_text: [{ text: { content: fullAddress } }] },
+        Source: { select: { name: "MLS Pull" } },
+        "Lead Type": { select: { name: "Expired Listing" } },
+        "Service Need": { select: { name: "Expired Seller" } },
+        "Pipeline Stage": { select: { name: "New" } },
+        ...refreshableProperties,
+      },
+    }),
+  });
+
+  const createData = await createRes.json();
+
+  if (!createRes.ok) {
+    return NextResponse.json(
+      { error: createData?.message ?? "Notion write failed." },
+      { status: createRes.status }
+    );
+  }
+
+  return NextResponse.json({ ok: true, url: createData.url, action: "created" });
 }

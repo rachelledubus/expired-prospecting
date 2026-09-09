@@ -59,8 +59,14 @@ Start with the sandbox Tracerfy base URL until you're ready to spend real credit
 
 ## What gets written to Notion
 
-Pushing a matched contact ("Add to Notion") creates one page in your
-**Clients / Leads** database:
+Pushing a matched contact ("Add to Notion") first checks for an existing
+page with the same `Name` and `Address` in your **Clients / Leads**
+database. If one exists, it's **updated in place** (button shows "Updated
+in CRM") — only the compliance/contact fields refresh (`Phone`, `Email`,
+`DNC Status`, `Outreach Eligibility`, `DNC Scrub Date`, `Compliance Notes`);
+`Pipeline Stage`, `Lead Type`, `Source`, and anything else you've since set
+on the record are left alone. If no match exists, it creates a new page
+(button shows "Added to CRM") with:
 
 - `Name`, `Address`, `Phone`, `Email` — from the Tracerfy match
 - `Source` = "MLS Pull", `Lead Type` = "Expired Listing", `Service Need` = "Expired Seller", `Pipeline Stage` = "New" (matching your CRM's own conventions)

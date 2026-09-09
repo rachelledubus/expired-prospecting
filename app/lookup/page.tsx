@@ -12,7 +12,7 @@ export default function LookupPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
   const [pushStatus, setPushStatus] = useState<
-    Record<number, { status: "loading" | "done" | "error"; message?: string }>
+    Record<number, { status: "loading" | "done" | "error"; message?: string; action?: "created" | "updated" }>
   >({});
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +68,7 @@ export default function LookupPage() {
         }));
         return;
       }
-      setPushStatus((prev) => ({ ...prev, [index]: { status: "done" } }));
+      setPushStatus((prev) => ({ ...prev, [index]: { status: "done", action: data?.action } }));
     } catch {
       setPushStatus((prev) => ({ ...prev, [index]: { status: "error", message: "Network error" } }));
     }
@@ -175,7 +175,9 @@ export default function LookupPage() {
                       onClick={() => handlePushToNotion(person, i)}
                     >
                       {status?.status === "done"
-                        ? "Added to CRM"
+                        ? status.action === "updated"
+                          ? "Updated in CRM"
+                          : "Added to CRM"
                         : status?.status === "loading"
                           ? "Adding..."
                           : "Add to Notion"}
