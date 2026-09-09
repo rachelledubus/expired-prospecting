@@ -156,9 +156,10 @@ export async function upsertWatchlistProperty(
  * record and a two-way CRM relation before any mailing automation can run.
  *
  * This intentionally creates only the minimum research shell. It does not
- * invent MLS facts, prices, DOM, comps, or analysis. A brand-new request starts
- * at Research Status = Not started so the deliberate research workflow remains
- * load-bearing.
+ * invent MLS facts, listing status, prices, DOM, comps, or analysis. A new
+ * request starts at Research Status = Not started; the deliberate research
+ * workflow must verify that the listing is actually Expired before the report
+ * can pass its quality gate.
  */
 export async function ensureRequestedProperty(
   address: string,
@@ -212,7 +213,6 @@ export async function ensureRequestedProperty(
       parent: { type: "database_id", database_id: databaseId },
       properties: {
         "Property Address": { title: [{ text: { content: address.slice(0, 2000) } }] },
-        "Listing Status": { select: { name: "Expired" } },
         "Research Status": { status: { name: "Not started" } },
         "Owner / CRM Contact": { relation: [{ id: crmPageId }] },
         ...(mailingAddress
