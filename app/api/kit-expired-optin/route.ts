@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
+import { ensureRequestedProperty } from "@/lib/propertyResearch";
 
 const NOTION_VERSION = "2022-06-28";
 const SIGNATURE_TOLERANCE_SECONDS = 300;
@@ -83,33 +84,41 @@ function plainText(property: any): string {
 
 function appendComplianceNote(existing: string, note: string): string {
   const combined = [existing.trim(), note.trim()].filter(Boolean).join("\n\n");
-  // Preserve the newest event evidence if older notes have already reached
-  // Notion's 2,000-character limit for a single rich-text value.
   return combined.length <= 2000 ? combined : combined.slice(combined.length - 2000);
 }
 
-function pendingMarker(formId: string, subscriberId: number) {
+function pendingPrefix(formId: string, subscriberId: number) {
   return `Pending Kit expired-report request | form ${formId} | subscriber ${subscriberId}`;
 }
 
-function confirmedMarker(formId: string, subscriberId: number) {
-  return `Confirmed Kit expired-report request | form ${formId} | subscriber ${subscriberId}`;
+function consumedPrefix(formId: string, subscriberId: number) {
+  return `Consumed Kit expired-report request | form ${formId} | subscriber ${subscriberId}`;
+}
+
+function eventMarker(eventId: string) {
+  return `Kit report event ${eventId}`;
 }
 
 function submittedAddresses(subscriber: KitSubscriber) {
   const fields = subscriber.fields ?? {};
+  const propertyAddress = normalizedField(fields, [
+    "Property Address",
+    "property_address",
+    "Expired Property Address",
+  ]);
+  const separateMailingAddress = normalizedField(fields, [
+    "Mailing Address",
+    "mailing_address",
+    "Send Report To",
+    "Report Mailing Address",
+  ]);
+
   return {
-    propertyAddress: normalizedField(fields, [
-      "Property Address",
-      "property_address",
-      "Expired Property Address",
-    ]),
-    mailingAddress: normalizedField(fields, [
-      "Mailing Address",
-      "mailing_address",
-      "Send Report To",
-      "Report Mailing Address",
-    ]),
+    propertyAddress,
+    separateMailingAddress,
+    // The form label says "Mailing Address (if different from the property)".
+    // Blank therefore intentionally means "send it to the property address."
+    effectiveMailingAddress: separateMailingAddress || propertyAddress,
   };
 }
 
@@ -139,6 +148,21 @@ async function findCrmPageByEmail(
   return queryData.results?.[0] ?? null;
 }
 
+async function patchCrmPage(
+  pageId: string,
+  properties: Record<string, unknown>,
+  notionApiKey: string
+) {
+  const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+    method: "PATCH",
+    headers: notionHeaders(notionApiKey),
+    body: JSON.stringify({ properties }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message ?? "Notion update failed.");
+  return data;
+}
+
 async function recordPendingRequest(
   event: KitEvent,
   subscriber: KitSubscriber,
@@ -152,36 +176,32 @@ async function recordPendingRequest(
     notionApiKey,
     notionDatabaseId
   );
-  const marker = pendingMarker(expectedFormId, subscriber.id);
+  const marker = pendingPrefix(expectedFormId, subscriber.id);
   const pendingNote = [
     `${marker}.`,
-    `Kit form event ${event.id}; form ${form.id}${form.name ? ` (${form.name})` : ""}; event ${event.created}.`,
+    `${eventMarker(event.id)}; form ${form.id}${form.name ? ` (${form.name})` : ""}; event ${event.created}.`,
     `Subscriber state: ${subscriber.state ?? "unknown"}.`,
     "UNCONFIRMED — do not contact and do not fulfill the physical report yet.",
   ].join(" ");
 
   if (existingPage) {
     const existingCompliance = plainText(existingPage.properties?.["Compliance Notes"]);
-    if (existingCompliance.includes(`Kit form event ${event.id};`)) {
+    if (existingCompliance.includes(eventMarker(event.id))) {
       return { skipped: true, reason: "duplicate_pending_event", url: existingPage.url };
     }
 
-    const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
-      method: "PATCH",
-      headers: notionHeaders(notionApiKey),
-      body: JSON.stringify({
-        properties: {
-          "Compliance Notes": richText(appendComplianceNote(existingCompliance, pendingNote)),
-        },
-      }),
-    });
-    const updateData = await updateRes.json();
-    if (!updateRes.ok) throw new Error(updateData?.message ?? "Notion pending update failed.");
+    const updateData = await patchCrmPage(
+      existingPage.id,
+      {
+        "Compliance Notes": richText(appendComplianceNote(existingCompliance, pendingNote)),
+      },
+      notionApiKey
+    );
     return { action: "pending_existing", url: updateData.url };
   }
 
-  // A brand-new unconfirmed signup is kept out of active work queues. It exists
-  // only as the durable correlation record needed for subscriber.activated.
+  // A brand-new unconfirmed signup exists only as a durable confirmation
+  // correlation record. It is intentionally kept out of every active queue.
   const name = subscriber.first_name?.trim() || subscriber.email_address.split("@")[0];
   const createRes = await fetch("https://api.notion.com/v1/pages", {
     method: "POST",
@@ -214,133 +234,171 @@ async function finalizeConfirmedRequest(
   notionDatabaseId: string,
   options: { requirePending: boolean; form?: KitForm }
 ) {
-  const existingPage = await findCrmPageByEmail(
+  let existingPage = await findCrmPageByEmail(
     subscriber.email_address,
     notionApiKey,
     notionDatabaseId
   );
-  const pending = pendingMarker(expectedFormId, subscriber.id);
-  const confirmed = confirmedMarker(expectedFormId, subscriber.id);
+  const pending = pendingPrefix(expectedFormId, subscriber.id);
+  let existingCompliance = plainText(existingPage?.properties?.["Compliance Notes"]);
+
+  // Kit retries the same event when an endpoint does not acknowledge it. Event
+  // UUIDs are the idempotency key; unlike a subscriber/form marker, they still
+  // allow the same homeowner to make a genuine second request later.
+  if (existingCompliance.includes(eventMarker(event.id))) {
+    return { skipped: true, reason: "duplicate_event", url: existingPage?.url };
+  }
 
   if (options.requirePending) {
     if (!existingPage) return { skipped: true, reason: "activation_without_pending_request" };
-    const existingCompliance = plainText(existingPage.properties?.["Compliance Notes"]);
     if (!existingCompliance.includes(pending)) {
       return { skipped: true, reason: "activation_unrelated_to_report_form", url: existingPage.url };
     }
   }
 
-  const { propertyAddress, mailingAddress } = submittedAddresses(subscriber);
-  const requestedRouting = propertyAddress ? "Queued" : "Exception";
+  const { propertyAddress, separateMailingAddress, effectiveMailingAddress } =
+    submittedAddresses(subscriber);
+
+  const desiredChannels = new Set<string>(["Email", "Direct Mail"]);
+  const existingChannels =
+    existingPage?.properties?.["Prospecting Channel"]?.multi_select?.map(
+      (option: { name: string }) => option.name
+    ) ?? [];
+  for (const channel of existingChannels) desiredChannels.add(channel);
+
+  const currentPipeline = existingPage?.properties?.["Pipeline Stage"]?.select?.name;
+  const currentAddress = plainText(existingPage?.properties?.Address);
+  const currentMailingAddress = plainText(existingPage?.properties?.["Mailing Address"]);
+
+  const baseProperties: Record<string, unknown> = {
+    "Permission to Follow Up": { select: { name: "Yes" } },
+    "Prospecting Channel": {
+      multi_select: Array.from(desiredChannels).map((name) => ({ name })),
+    },
+  };
+  if (currentPipeline === "Archived") {
+    baseProperties["Pipeline Stage"] = { select: { name: "New" } };
+  }
+  if (propertyAddress && !currentAddress) {
+    baseProperties.Address = richText(propertyAddress);
+  }
+  if (effectiveMailingAddress && !currentMailingAddress) {
+    baseProperties["Mailing Address"] = richText(effectiveMailingAddress);
+  }
+
+  let crmPage: any;
+  if (existingPage) {
+    crmPage = await patchCrmPage(existingPage.id, baseProperties, notionApiKey);
+  } else {
+    const name = subscriber.first_name?.trim() || subscriber.email_address.split("@")[0];
+    const createProperties: Record<string, unknown> = {
+      Name: { title: [{ text: { content: name } }] },
+      Email: { email: subscriber.email_address },
+      Source: { select: { name: "Website" } },
+      "Lead Type": { select: { name: "Expired Listing" } },
+      "Service Need": { select: { name: "Expired Seller" } },
+      "Pipeline Stage": { select: { name: "New" } },
+      ...baseProperties,
+    };
+    if (propertyAddress) createProperties.Address = richText(propertyAddress);
+    if (effectiveMailingAddress) {
+      createProperties["Mailing Address"] = richText(effectiveMailingAddress);
+    }
+
+    const createRes = await fetch("https://api.notion.com/v1/pages", {
+      method: "POST",
+      headers: notionHeaders(notionApiKey),
+      body: JSON.stringify({
+        parent: { type: "database_id", database_id: notionDatabaseId },
+        properties: createProperties,
+      }),
+    });
+    crmPage = await createRes.json();
+    if (!createRes.ok) throw new Error(crmPage?.message ?? "Notion confirmed create failed.");
+    existingCompliance = "";
+  }
+
+  let propertyResult:
+    | { action: "created" | "linked" | "existing"; id: string; url: string }
+    | null = null;
+  if (propertyAddress && effectiveMailingAddress) {
+    const ensured = await ensureRequestedProperty(
+      propertyAddress,
+      effectiveMailingAddress,
+      crmPage.id
+    );
+    if ("error" in ensured) throw new Error(ensured.error);
+    propertyResult = ensured;
+  }
+
+  const eligibility =
+    existingPage?.properties?.["Outreach Eligibility"]?.multi_select?.map(
+      (option: { name: string }) => option.name
+    ) ?? [];
+  const callDisposition = existingPage?.properties?.["Call Disposition"]?.select?.name;
+  const currentRouting = existingPage?.properties?.["Mailing Kit Routing"]?.select?.name;
+  const hardSuppressed =
+    eligibility.includes("Litigator") ||
+    eligibility.includes("None") ||
+    callDisposition === "Do Not Contact" ||
+    currentRouting === "Suppressed";
+
+  let nextRouting = currentRouting ?? null;
+  if (hardSuppressed) {
+    nextRouting = "Suppressed";
+  } else if (!currentRouting || currentRouting === "Not Evaluated" || currentRouting === "Complete") {
+    // "Not Evaluated" is the handoff state. The native requested-report
+    // automation owns task creation, Routed At, Next Action, and Queued.
+    nextRouting = "Not Evaluated";
+  }
+
+  // Consume the pending correlation marker after a successful activation so a
+  // later unrelated re-activation cannot resurrect an old report request.
+  let complianceBase = existingCompliance;
+  if (options.requirePending) {
+    complianceBase = complianceBase.replace(
+      pending,
+      consumedPrefix(expectedFormId, subscriber.id)
+    );
+  }
+
   const confirmationNote = [
-    `${confirmed}.`,
-    `Kit confirmation event ${event.id}; event ${event.created}.`,
+    `Confirmed Kit expired-report request | form ${expectedFormId} | subscriber ${subscriber.id} | event ${event.id}.`,
+    `${eventMarker(event.id)}; event ${event.created}.`,
     options.form
-      ? `Confirmed/active while joining form ${options.form.id}${options.form.name ? ` (${options.form.name})` : ""}.`
-      : "Subscriber transitioned to active after double opt-in confirmation.",
-    "Consent scope from this launch form: Email + requested physical mail fulfillment only; no phone/text permission is collected by this form.",
-    "Fulfillment requested: personalized physical report kit by mail.",
+      ? `Subscriber was already active when joining form ${options.form.id}${options.form.name ? ` (${options.form.name})` : ""}.`
+      : "Subscriber activated after double-opt-in confirmation.",
+    "Consent scope from this launch form: Email + requested physical mail fulfillment only; no phone/text permission is collected.",
     propertyAddress
-      ? `Submitted property: ${propertyAddress}.`
-      : "Property address missing — fulfillment needs manual resolution.",
-    mailingAddress
-      ? `Submitted mailing address: ${mailingAddress}.`
-      : "No separate mailing address supplied — verify where to send before fulfillment.",
+      ? `Requested property: ${propertyAddress}.`
+      : "Property address missing — routing must remain unresolved.",
+    separateMailingAddress
+      ? `Separate mailing address supplied: ${separateMailingAddress}.`
+      : effectiveMailingAddress
+        ? `Mailing address defaults to the property address per the form wording: ${effectiveMailingAddress}.`
+        : "Mailing address missing — routing must remain unresolved.",
+    propertyResult ? `Property Research: ${propertyResult.url}.` : null,
+    hardSuppressed ? "Existing CRM suppression blocks automatic fulfillment; review manually." : null,
   ]
     .filter(Boolean)
     .join(" ");
 
-  if (existingPage) {
-    const existingCompliance = plainText(existingPage.properties?.["Compliance Notes"]);
-    if (existingCompliance.includes(confirmed)) {
-      return { skipped: true, reason: "request_already_confirmed", url: existingPage.url };
-    }
-
-    const desiredChannels = new Set<string>(["Email", "Direct Mail"]);
-    const existingChannels =
-      existingPage.properties?.["Prospecting Channel"]?.multi_select?.map(
-        (option: { name: string }) => option.name
-      ) ?? [];
-    for (const channel of existingChannels) desiredChannels.add(channel);
-
-    const currentAddress = plainText(existingPage.properties?.Address);
-    const currentMailingAddress = plainText(existingPage.properties?.["Mailing Address"]);
-    const currentRouting = existingPage.properties?.["Mailing Kit Routing"]?.select?.name;
-    const currentRoutedAt = existingPage.properties?.["Mailing Kit Routed At"]?.date?.start;
-    const currentPipeline = existingPage.properties?.["Pipeline Stage"]?.select?.name;
-
-    const properties: Record<string, unknown> = {
-      "Permission to Follow Up": { select: { name: "Yes" } },
-      "Prospecting Channel": {
-        multi_select: Array.from(desiredChannels).map((name) => ({ name })),
-      },
-      "Compliance Notes": richText(appendComplianceNote(existingCompliance, confirmationNote)),
-    };
-
-    // A fresh confirmed inbound request reopens an archived relationship, but
-    // otherwise never overwrites the user's live pipeline stage.
-    if (currentPipeline === "Archived") {
-      properties["Pipeline Stage"] = { select: { name: "New" } };
-    }
-    if (propertyAddress && !currentAddress) properties.Address = richText(propertyAddress);
-    if (mailingAddress && !currentMailingAddress) {
-      properties["Mailing Address"] = richText(mailingAddress);
-    }
-
-    // Never downgrade a completed/suppressed/exception workflow. A fresh request
-    // only opens the fulfillment queue when the record is not already in a
-    // meaningful mailing state.
-    if (!currentRouting || currentRouting === "Not Evaluated") {
-      properties["Mailing Kit Routing"] = { select: { name: requestedRouting } };
-      if (!currentRoutedAt) {
-        properties["Mailing Kit Routed At"] = { date: { start: event.created } };
-      }
-    }
-
-    const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
-      method: "PATCH",
-      headers: notionHeaders(notionApiKey),
-      body: JSON.stringify({ properties }),
-    });
-    const updateData = await updateRes.json();
-    if (!updateRes.ok) throw new Error(updateData?.message ?? "Notion confirmed update failed.");
-
-    return { action: "confirmed_updated", url: updateData.url, fulfillment: requestedRouting };
+  const finalProperties: Record<string, unknown> = {
+    "Compliance Notes": richText(appendComplianceNote(complianceBase, confirmationNote)),
+  };
+  if (nextRouting && nextRouting !== currentRouting) {
+    finalProperties["Mailing Kit Routing"] = { select: { name: nextRouting } };
   }
 
-  // This path is for an already-active Kit subscriber who submits the report
-  // form. Their email is already confirmed, so no pending CRM row is necessary.
-  const name = subscriber.first_name?.trim() || subscriber.email_address.split("@")[0];
-  const createProperties: Record<string, unknown> = {
-    Name: { title: [{ text: { content: name } }] },
-    Email: { email: subscriber.email_address },
-    Source: { select: { name: "Website" } },
-    "Lead Type": { select: { name: "Expired Listing" } },
-    "Service Need": { select: { name: "Expired Seller" } },
-    "Pipeline Stage": { select: { name: "New" } },
-    "Permission to Follow Up": { select: { name: "Yes" } },
-    "Prospecting Channel": {
-      multi_select: [{ name: "Email" }, { name: "Direct Mail" }],
-    },
-    "Mailing Kit Routing": { select: { name: requestedRouting } },
-    "Mailing Kit Routed At": { date: { start: event.created } },
-    "Compliance Notes": richText(confirmationNote),
+  const finalPage = await patchCrmPage(crmPage.id, finalProperties, notionApiKey);
+
+  return {
+    action: existingPage ? "confirmed_updated" : "confirmed_created",
+    url: finalPage.url,
+    property: propertyResult?.url ?? null,
+    routing: nextRouting,
+    awaitingNativeQueue: nextRouting === "Not Evaluated",
   };
-  if (propertyAddress) createProperties.Address = richText(propertyAddress);
-  if (mailingAddress) createProperties["Mailing Address"] = richText(mailingAddress);
-
-  const createRes = await fetch("https://api.notion.com/v1/pages", {
-    method: "POST",
-    headers: notionHeaders(notionApiKey),
-    body: JSON.stringify({
-      parent: { type: "database_id", database_id: notionDatabaseId },
-      properties: createProperties,
-    }),
-  });
-  const createData = await createRes.json();
-  if (!createRes.ok) throw new Error(createData?.message ?? "Notion confirmed create failed.");
-
-  return { action: "confirmed_created", url: createData.url, fulfillment: requestedRouting };
 }
 
 async function processEvent(
@@ -361,9 +419,8 @@ async function processEvent(
       return { skipped: true, reason: "different_form" };
     }
 
-    // For an already-active subscriber, the address is already confirmed and
-    // the form submission itself is an explicit report request. New double-
-    // opt-in signups arrive inactive and are held until subscriber.activated.
+    // Already-active subscribers have a confirmed email, so their explicit form
+    // submission can be treated as a confirmed request immediately.
     if (subscriber.state === "active") {
       return finalizeConfirmedRequest(
         event,
