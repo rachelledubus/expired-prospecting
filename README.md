@@ -77,6 +77,20 @@ match exists, it creates a new page (button shows "Added to CRM") with:
 - `DNC Scrub Date` = today
 - `Compliance Notes` — the Tracerfy request ID/timestamp and a litigator/deceased flag if applicable (the full phone/email list lives in `All Phones`/`All Emails` instead)
 
+## Duplicate detection across different names
+
+The dedupe check above only matches on exact `Name` + `Address`, which can't
+catch a pre-existing combined household record (e.g. "Ricardo & Sandra
+Castro") when Tracerfy identifies each owner separately (e.g. "Ricardo
+Castro" and "Sandra Rivera" — note Tracerfy's public-records data doesn't
+always agree with what you already have on file for a name). Rather than
+guess whether those refer to the same people and silently merge them, every
+push also checks for *any other* record at the same address and lists them
+in a `Possible Other Names` field (added 2026-09-09) — the app's response
+also surfaces a warning in the UI when this happens. Treat that as a prompt
+to go check Notion and decide yourself whether to merge, not an automatic
+action.
+
 `Next Action` and `Lead Temp` are intentionally left blank on import — your
 CRM guide treats those as things you set after actually working the lead,
 and none of the existing `Next Action` options represent "not yet

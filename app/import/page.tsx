@@ -40,7 +40,12 @@ function guessColumn(headers: string[], field: keyof ColumnMap): string {
 
 type PushKey = string;
 type RowResult = LookupResult & { rowError?: string };
-type PushState = { status: "loading" | "done" | "error"; message?: string; action?: "created" | "updated" };
+type PushState = {
+  status: "loading" | "done" | "error";
+  message?: string;
+  action?: "created" | "updated";
+  otherRecordsAtAddress?: number;
+};
 
 export default function ImportPage() {
   const [headers, setHeaders] = useState<string[]>([]);
@@ -134,7 +139,14 @@ export default function ImportPage() {
         }));
         return;
       }
-      setPushStatus((prev) => ({ ...prev, [key]: { status: "done", action: data?.action } }));
+      setPushStatus((prev) => ({
+        ...prev,
+        [key]: {
+          status: "done",
+          action: data?.action,
+          otherRecordsAtAddress: data?.otherRecordsAtAddress,
+        },
+      }));
     } catch {
       setPushStatus((prev) => ({ ...prev, [key]: { status: "error", message: "Network error" } }));
     }
@@ -244,6 +256,13 @@ export default function ImportPage() {
                               : "Add to Notion"}
                         </button>
                         {push?.status === "error" && <span className="error"> {push.message}</span>}
+                        {push?.status === "done" && !!push.otherRecordsAtAddress && (
+                          <p className="error" style={{ marginTop: 6 }}>
+                            ⚠️ {push.otherRecordsAtAddress} other record{push.otherRecordsAtAddress > 1 ? "s" : ""} found at
+                            this address under a different name — check "Possible Other Names" on this
+                            record before assuming it's a new lead.
+                          </p>
+                        )}
                       </div>
                     </div>
                   );

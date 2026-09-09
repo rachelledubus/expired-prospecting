@@ -12,7 +12,15 @@ export default function LookupPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
   const [pushStatus, setPushStatus] = useState<
-    Record<number, { status: "loading" | "done" | "error"; message?: string; action?: "created" | "updated" }>
+    Record<
+      number,
+      {
+        status: "loading" | "done" | "error";
+        message?: string;
+        action?: "created" | "updated";
+        otherRecordsAtAddress?: number;
+      }
+    >
   >({});
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +76,14 @@ export default function LookupPage() {
         }));
         return;
       }
-      setPushStatus((prev) => ({ ...prev, [index]: { status: "done", action: data?.action } }));
+      setPushStatus((prev) => ({
+        ...prev,
+        [index]: {
+          status: "done",
+          action: data?.action,
+          otherRecordsAtAddress: data?.otherRecordsAtAddress,
+        },
+      }));
     } catch {
       setPushStatus((prev) => ({ ...prev, [index]: { status: "error", message: "Network error" } }));
     }
@@ -183,6 +198,13 @@ export default function LookupPage() {
                           : "Add to Notion"}
                     </button>
                     {status?.status === "error" && <span className="error"> {status.message}</span>}
+                    {status?.status === "done" && !!status.otherRecordsAtAddress && (
+                      <p className="error" style={{ marginTop: 6 }}>
+                        ⚠️ {status.otherRecordsAtAddress} other record{status.otherRecordsAtAddress > 1 ? "s" : ""} found
+                        at this address under a different name — check "Possible Other Names" on this
+                        record before assuming it's a new lead.
+                      </p>
+                    )}
                   </div>
                 </div>
               );

@@ -64,36 +64,19 @@ export async function POST(request: Request) {
     ? person.emails.map((e) => e.email).join("\n")
     : "None returned.";
 
-  // Fields that reflect a fresh compliance/contact check -- safe to overwrite
-  // on a re-push without disturbing anything the record's owner has since
-  // set (Pipeline Stage, Next Action, Call Notes, etc.).
-  const refreshableProperties: Record<string, unknown> = {
-    "DNC Status": { select: { name: dncStatus(person) } },
-    "Outreach Eligibility": {
-      multi_select: outreachEligibility(person).map((n) => ({ name: n })),
-    },
-    "DNC Scrub Date": { date: { start: scrubDate } },
-    "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
-    "All Phones": { rich_text: [{ text: { content: allPhones.slice(0, 2000) } }] },
-    "All Emails": { rich_text: [{ text: { content: allEmails.slice(0, 2000) } }] },
-  };
-  if (phone) refreshableProperties.Phone = { phone_number: phone };
-  if (email) refreshableProperties.Email = { email };
-
-  // Look for an existing lead at this address with this name before
-  // creating a new page, so re-pushing the same match updates it in place
-  // instead of duplicating it.
+  // Look up everything already in Notion at this address -- both to find an
+  // exact Name match to update in place, and to flag any OTHER record at the
+  // same address under a different name (e.g. a pre-existing combined
+  // household record like "Ricardo & Sandra Castro" that a per-person
+  // Tracerfy match under "Ricardo Castro" wouldn't otherwise catch). We never
+  // auto-merge those -- just surface them in "Possible Other Names" so it's
+  // a one-glance manual decision, not a silent duplicate.
   const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
     method: "POST",
     headers: notionHeaders,
     body: JSON.stringify({
-      filter: {
-        and: [
-          { property: "Address", rich_text: { equals: fullAddress } },
-          { property: "Name", title: { equals: name } },
-        ],
-      },
-      page_size: 1,
+      filter: { property: "Address", rich_text: { equals: fullAddress } },
+      page_size: 20,
     }),
   });
 
@@ -106,7 +89,34 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingPage = queryData.results?.[0];
+  const getTitle = (page: any): string =>
+    page.properties?.Name?.title?.map((t: any) => t.plain_text).join("") ?? "";
+  const getSource = (page: any): string | null => page.properties?.Source?.select?.name ?? null;
+
+  const allAtAddress: any[] = queryData.results ?? [];
+  const existingPage = allAtAddress.find((p) => getTitle(p) === name);
+  const otherRecords = allAtAddress.filter((p) => getTitle(p) !== name);
+
+  const possibleOtherNames = otherRecords
+    .map((p) => `${getTitle(p) || "(untitled)"} — ${p.url}${getSource(p) ? ` (${getSource(p)})` : ""}`)
+    .join("\n");
+
+  // Fields that reflect a fresh compliance/contact check -- safe to overwrite
+  // on a re-push without disturbing anything the record's owner has since
+  // set (Pipeline Stage, Next Action, Call Notes, etc.).
+  const refreshableProperties: Record<string, unknown> = {
+    "DNC Status": { select: { name: dncStatus(person) } },
+    "Outreach Eligibility": {
+      multi_select: outreachEligibility(person).map((n) => ({ name: n })),
+    },
+    "DNC Scrub Date": { date: { start: scrubDate } },
+    "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
+    "All Phones": { rich_text: [{ text: { content: allPhones.slice(0, 2000) } }] },
+    "All Emails": { rich_text: [{ text: { content: allEmails.slice(0, 2000) } }] },
+    "Possible Other Names": { rich_text: [{ text: { content: possibleOtherNames.slice(0, 2000) } }] },
+  };
+  if (phone) refreshableProperties.Phone = { phone_number: phone };
+  if (email) refreshableProperties.Email = { email };
 
   if (existingPage) {
     const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
@@ -123,7 +133,12 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, url: updateData.url, action: "updated" });
+    return NextResponse.json({
+      ok: true,
+      url: updateData.url,
+      action: "updated",
+      otherRecordsAtAddress: otherRecords.length,
+    });
   }
 
   const createRes = await fetch("https://api.notion.com/v1/pages", {
@@ -152,5 +167,10 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, url: createData.url, action: "created" });
+  return NextResponse.json({
+    ok: true,
+    url: createData.url,
+    action: "created",
+    otherRecordsAtAddress: otherRecords.length,
+  });
 }
