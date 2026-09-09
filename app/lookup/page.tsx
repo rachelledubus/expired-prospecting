@@ -1,52 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-type Phone = {
-  number: string;
-  type: string;
-  dnc: boolean;
-  tcpa: boolean;
-  carrier?: string;
-  rank?: number;
-};
-
-type Email = {
-  email: string;
-  rank?: number;
-};
-
-type Person = {
-  full_name: string;
-  deceased: boolean;
-  property_owner: boolean;
-  litigator: boolean;
-  mailing_address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-  };
-  phones: Phone[];
-  emails: Email[];
-};
-
-type LookupResult = {
-  hit: boolean;
-  persons_count: number;
-  credits_deducted: number;
-  persons: Person[];
-  meta: {
-    request_id: string;
-    timestamp: string;
-  };
-};
-
-function formatPhone(number: string) {
-  const digits = number.replace(/\D/g, "");
-  if (digits.length !== 10) return number;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
+import { formatPhone, outreachEligibility, dncStatus, type LookupResult, type Person } from "@/lib/tracerfy";
 
 export default function LookupPage() {
   const [address, setAddress] = useState("");
@@ -56,12 +11,14 @@ export default function LookupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
+  const [pushStatus, setPushStatus] = useState<Record<number, "loading" | "done" | "error">>({});
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setResult(null);
+    setPushStatus({});
 
     try {
       const res = await fetch("/api/property-lookup", {
@@ -81,6 +38,30 @@ export default function LookupPage() {
       setError("Something went wrong reaching the lookup service.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePushToNotion(person: Person, index: number) {
+    if (!result) return;
+    setPushStatus((prev) => ({ ...prev, [index]: "loading" }));
+    try {
+      const res = await fetch("/api/notion-push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          person,
+          address,
+          city,
+          state,
+          zip,
+          requestId: result.meta?.request_id,
+          timestamp: result.meta?.timestamp,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setPushStatus((prev) => ({ ...prev, [index]: "done" }));
+    } catch {
+      setPushStatus((prev) => ({ ...prev, [index]: "error" }));
     }
   }
 
@@ -131,48 +112,66 @@ export default function LookupPage() {
               <p>No owner/contact records found for this address.</p>
             </div>
           ) : (
-            result.persons.map((person, i) => (
-              <div className="person-card" key={i}>
-                <strong>{person.full_name}</strong>
-                {person.deceased && <span className="badge bad">DECEASED</span>}
-                {person.litigator && <span className="badge bad">LITIGATOR — DO NOT CONTACT</span>}
-                {person.property_owner && <span className="badge ok">OWNER</span>}
+            result.persons.map((person, i) => {
+              const status = pushStatus[i];
+              return (
+                <div className="person-card" key={i}>
+                  <strong>{person.full_name}</strong>
+                  {person.deceased && <span className="badge bad">DECEASED</span>}
+                  {person.litigator && <span className="badge bad">LITIGATOR — DO NOT CONTACT</span>}
+                  {person.property_owner && <span className="badge ok">OWNER</span>}
 
-                {person.mailing_address && (
-                  <p className="muted" style={{ marginTop: 8 }}>
-                    Mailing: {person.mailing_address.street}, {person.mailing_address.city}{" "}
-                    {person.mailing_address.state} {person.mailing_address.zip}
+                  <p className="muted" style={{ marginTop: 6 }}>
+                    DNC: {dncStatus(person)} · Eligible for: {outreachEligibility(person).join(", ")}
                   </p>
-                )}
 
-                {person.phones?.length > 0 && (
-                  <div style={{ marginTop: 10 }}>
-                    {person.phones.map((phone, j) => (
-                      <div className="phone-row" key={j}>
-                        <span>{formatPhone(phone.number)}</span>
-                        <span className="muted">{phone.type}</span>
-                        {phone.dnc ? (
-                          <span className="badge bad">DNC</span>
-                        ) : (
-                          <span className="badge ok">NOT ON DNC</span>
-                        )}
-                        {phone.tcpa && <span className="badge warn">TCPA FLAG</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {person.mailing_address && (
+                    <p className="muted" style={{ marginTop: 4 }}>
+                      Mailing: {person.mailing_address.street}, {person.mailing_address.city}{" "}
+                      {person.mailing_address.state} {person.mailing_address.zip}
+                    </p>
+                  )}
 
-                {person.emails?.length > 0 && (
+                  {person.phones?.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      {person.phones.map((phone, j) => (
+                        <div className="phone-row" key={j}>
+                          <span>{formatPhone(phone.number)}</span>
+                          <span className="muted">{phone.type}</span>
+                          {phone.dnc ? (
+                            <span className="badge bad">DNC</span>
+                          ) : (
+                            <span className="badge ok">NOT ON DNC</span>
+                          )}
+                          {phone.tcpa && <span className="badge warn">TCPA FLAG</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {person.emails?.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      {person.emails.map((email, k) => (
+                        <div key={k} className="muted">
+                          {email.email}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div style={{ marginTop: 10 }}>
-                    {person.emails.map((email, k) => (
-                      <div key={k} className="muted">
-                        {email.email}
-                      </div>
-                    ))}
+                    <button
+                      className="secondary"
+                      disabled={status === "loading" || status === "done"}
+                      onClick={() => handlePushToNotion(person, i)}
+                    >
+                      {status === "done" ? "Added to CRM" : status === "loading" ? "Adding..." : "Add to Notion"}
+                    </button>
+                    {status === "error" && <span className="error"> Failed — try again.</span>}
                   </div>
-                )}
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
 
           <p className="meta">
