@@ -63,17 +63,19 @@ Pushing a matched contact ("Add to Notion") first checks for an existing
 page with the same `Name` and `Address` in your **Clients / Leads**
 database. If one exists, it's **updated in place** (button shows "Updated
 in CRM") — only the compliance/contact fields refresh (`Phone`, `Email`,
-`DNC Status`, `Outreach Eligibility`, `DNC Scrub Date`, `Compliance Notes`);
-`Pipeline Stage`, `Lead Type`, `Source`, and anything else you've since set
-on the record are left alone. If no match exists, it creates a new page
-(button shows "Added to CRM") with:
+`All Phones`, `All Emails`, `DNC Status`, `Outreach Eligibility`, `DNC
+Scrub Date`, `Compliance Notes`); `Pipeline Stage`, `Lead Type`, `Source`,
+and anything else you've since set on the record are left alone. If no
+match exists, it creates a new page (button shows "Added to CRM") with:
 
-- `Name`, `Address`, `Phone`, `Email` — from the Tracerfy match
+- `Name`, `Address` — from the lookup
+- `Phone`, `Email` — the single best contact (first phone that's clean of DNC/TCPA, or the first phone if none are clean; the top-ranked email) so click-to-call/click-to-email still works on these fields
+- `All Phones`, `All Emails` — every phone and email Tracerfy returned, one per line, so nothing is hidden when a record has many (real records can easily return 5-10+ of each). New fields added 2026-09-09 specifically for this — previously extra contacts were only mentioned in Compliance Notes text.
 - `Source` = "MLS Pull", `Lead Type` = "Expired Listing", `Service Need` = "Expired Seller", `Pipeline Stage` = "New" (matching your CRM's own conventions)
 - `DNC Status` — derived from Tracerfy's per-phone `dnc` flag
-- `Outreach Eligibility` — derived from Tracerfy's `dnc`/`tcpa`/`litigator`/`deceased` flags: `Litigator` on its own if flagged (fully suppressed — no call, text, or mail); `Deceased` + `Mail` if the owner is deceased but has a mailing address (blocks calling, still allows working it as a probate/estate lead); otherwise `Call` and/or `Mail` based on what's actually usable. "Deceased" and "Litigator" were added as new options on this field (2026-09-09) specifically so the reason is visible at a glance in table/board view, not just buried in Compliance Notes.
+- `Outreach Eligibility` — derived from Tracerfy's `dnc`/`tcpa`/`litigator`/`deceased` flags: `Litigator` on its own if flagged (fully suppressed — no call, text, or mail); `Deceased` + `Mail` if the owner is deceased but has a mailing address (blocks calling, still allows working it as a probate/estate lead); otherwise `Call` and/or `Mail` based on what's actually usable. "Deceased" and "Litigator" were added as new options on this field (2026-09-09) specifically so the reason is visible at a glance in table/board view.
 - `DNC Scrub Date` = today
-- `Compliance Notes` — the Tracerfy request ID/timestamp and a plain-language summary of what was checked
+- `Compliance Notes` — the Tracerfy request ID/timestamp and a litigator/deceased flag if applicable (the full phone/email list lives in `All Phones`/`All Emails` instead)
 
 `Next Action` and `Lead Temp` are intentionally left blank on import — your
 CRM guide treats those as things you set after actually working the lead,

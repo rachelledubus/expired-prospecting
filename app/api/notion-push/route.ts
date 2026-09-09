@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import { outreachEligibility, dncStatus, bestPhone, bestEmail, type Person } from "@/lib/tracerfy";
+import {
+  outreachEligibility,
+  dncStatus,
+  bestPhone,
+  bestEmail,
+  formatPhone,
+  type Person,
+} from "@/lib/tracerfy";
 
 const NOTION_VERSION = "2022-06-28";
 
@@ -40,17 +47,22 @@ export async function POST(request: Request) {
     `Tracerfy lookup${requestId ? ` ${requestId}` : ""} at ${timestamp ?? new Date().toISOString()}.`,
     person.litigator ? "LITIGATOR — do not contact." : null,
     person.deceased ? "Marked deceased by Tracerfy." : null,
-    person.phones?.length
-      ? `Phones checked: ${person.phones
-          .map((p) => `${p.number} (${p.dnc ? "DNC" : "clear"}${p.tcpa ? ", TCPA flag" : ""})`)
-          .join("; ")}`
-      : "No phones returned.",
-    person.emails && person.emails.length > 1
-      ? `Other emails found: ${person.emails.slice(1).map((e) => e.email).join("; ")}`
-      : null,
   ]
     .filter(Boolean)
     .join(" ");
+
+  const allPhones = person.phones?.length
+    ? person.phones
+        .map(
+          (p) =>
+            `${formatPhone(p.number)} · ${p.type}${p.dnc ? " · DNC" : ""}${p.tcpa ? " · TCPA" : ""}`
+        )
+        .join("\n")
+    : "None returned.";
+
+  const allEmails = person.emails?.length
+    ? person.emails.map((e) => e.email).join("\n")
+    : "None returned.";
 
   // Fields that reflect a fresh compliance/contact check -- safe to overwrite
   // on a re-push without disturbing anything the record's owner has since
@@ -62,6 +74,8 @@ export async function POST(request: Request) {
     },
     "DNC Scrub Date": { date: { start: scrubDate } },
     "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
+    "All Phones": { rich_text: [{ text: { content: allPhones.slice(0, 2000) } }] },
+    "All Emails": { rich_text: [{ text: { content: allEmails.slice(0, 2000) } }] },
   };
   if (phone) refreshableProperties.Phone = { phone_number: phone };
   if (email) refreshableProperties.Email = { email };
