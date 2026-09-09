@@ -118,6 +118,12 @@ async function processOptInEvent(
     "property_address",
     "Expired Property Address",
   ]);
+  const mailingAddress = normalizedField(fields, [
+    "Mailing Address",
+    "mailing_address",
+    "Send Report To",
+    "Report Mailing Address",
+  ]);
   const phone = normalizedField(fields, ["Phone", "Phone Number", "phone_number"]);
   const phoneTextPermission = isAffirmative(
     normalizedField(fields, [
@@ -128,13 +134,17 @@ async function processOptInEvent(
   );
 
   const consentScope = phoneTextPermission
-    ? "email + phone/text follow-up explicitly captured"
-    : "email follow-up for requested report; no phone/text permission inferred";
+    ? "email + requested physical mail fulfillment + phone/text follow-up explicitly captured"
+    : "email + requested physical mail fulfillment; no phone/text permission inferred";
   const inboundNote = [
     `Kit opt-in event ${event.id}: Expired Listing Private Property Analysis Report.`,
     `Form ${form.id}${form.name ? ` (${form.name})` : ""}; subscriber ${subscriber.id}; event ${event.created}.`,
     `Consent scope: ${consentScope}.`,
-    propertyAddress ? `Submitted property: ${propertyAddress}.` : null,
+    "Fulfillment requested: personalized physical report kit by mail.",
+    propertyAddress ? `Submitted property: ${propertyAddress}.` : "Property address missing — fulfillment needs manual resolution.",
+    mailingAddress
+      ? `Submitted mailing address: ${mailingAddress}.`
+      : "No separate mailing address supplied — verify where to send before fulfillment.",
     phone ? `Submitted phone: ${phone}.` : null,
   ]
     .filter(Boolean)
@@ -158,11 +168,13 @@ async function processOptInEvent(
   if (!queryRes.ok) throw new Error(queryData?.message ?? "Notion lookup failed.");
 
   const existingPage = queryData.results?.[0];
-  const desiredChannels = new Set<string>(["Email"]);
+  const desiredChannels = new Set<string>(["Email", "Direct Mail"]);
   if (phone && phoneTextPermission) {
     desiredChannels.add("Call");
     desiredChannels.add("Text");
   }
+
+  const requestedRouting = propertyAddress ? "Queued" : "Exception";
 
   if (existingPage) {
     const existingCompliance = plainText(existingPage.properties?.["Compliance Notes"]);
@@ -186,8 +198,25 @@ async function processOptInEvent(
 
     const currentPhone = existingPage.properties?.Phone?.phone_number;
     const currentAddress = plainText(existingPage.properties?.Address);
+    const currentMailingAddress = plainText(existingPage.properties?.["Mailing Address"]);
+    const currentRouting = existingPage.properties?.["Mailing Kit Routing"]?.select?.name;
+    const currentRoutedAt = existingPage.properties?.["Mailing Kit Routed At"]?.date?.start;
+
     if (phone && !currentPhone) properties.Phone = { phone_number: phone };
     if (propertyAddress && !currentAddress) properties.Address = richText(propertyAddress);
+    if (mailingAddress && !currentMailingAddress) {
+      properties["Mailing Address"] = richText(mailingAddress);
+    }
+
+    // Never downgrade a completed/suppressed/exception workflow. A fresh request
+    // only opens the fulfillment queue when the record is not already in a
+    // meaningful mailing state.
+    if (!currentRouting || currentRouting === "Not Evaluated") {
+      properties["Mailing Kit Routing"] = { select: { name: requestedRouting } };
+      if (!currentRoutedAt) {
+        properties["Mailing Kit Routed At"] = { date: { start: event.created } };
+      }
+    }
 
     const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
       method: "PATCH",
@@ -197,7 +226,7 @@ async function processOptInEvent(
     const updateData = await updateRes.json();
     if (!updateRes.ok) throw new Error(updateData?.message ?? "Notion update failed.");
 
-    return { action: "updated", url: updateData.url };
+    return { action: "updated", url: updateData.url, fulfillment: requestedRouting };
   }
 
   const name = subscriber.first_name?.trim() || subscriber.email_address.split("@")[0];
@@ -212,9 +241,12 @@ async function processOptInEvent(
     "Prospecting Channel": {
       multi_select: Array.from(desiredChannels).map((name) => ({ name })),
     },
+    "Mailing Kit Routing": { select: { name: requestedRouting } },
+    "Mailing Kit Routed At": { date: { start: event.created } },
     "Compliance Notes": richText(inboundNote),
   };
   if (propertyAddress) createProperties.Address = richText(propertyAddress);
+  if (mailingAddress) createProperties["Mailing Address"] = richText(mailingAddress);
   if (phone) createProperties.Phone = { phone_number: phone };
 
   const createRes = await fetch("https://api.notion.com/v1/pages", {
@@ -228,7 +260,7 @@ async function processOptInEvent(
   const createData = await createRes.json();
   if (!createRes.ok) throw new Error(createData?.message ?? "Notion create failed.");
 
-  return { action: "created", url: createData.url };
+  return { action: "created", url: createData.url, fulfillment: requestedRouting };
 }
 
 export async function POST(request: Request) {
