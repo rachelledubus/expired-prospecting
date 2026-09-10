@@ -11,7 +11,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
-  const secret = process.env.PORTAL_SESSION_SECRET;
+  // Prefer a dedicated signing secret when configured. Falling back to the
+  // existing portal password keeps sessions cryptographically signed without
+  // making a missing optional env var take the whole portal offline.
+  const secret = process.env.PORTAL_SESSION_SECRET || process.env.PORTAL_PASSWORD;
   if (!secret) {
     return NextResponse.json(
       { error: "Portal session security is not configured." },
