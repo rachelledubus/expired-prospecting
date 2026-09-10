@@ -7,17 +7,29 @@ import {
   buildMatrixIntakeFile,
   calculateMarketMetrics,
   statusSummary,
+  validateMatrixExport,
   type MatrixExportKind,
   type MatrixIntakeFile,
 } from "@/lib/mls-intake";
 import {
+  normalizeAddress,
+  normalizeCity,
+  normalizeZip,
   runMlsStatusCheck,
   type CurrentMarketColumnMap,
   type ExpiredColumnMap,
   type StatusDecision,
 } from "@/lib/mls-status";
+import {
+  dncStatus,
+  formatPhone,
+  outreachEligibility,
+  type LookupResult,
+  type Person,
+} from "@/lib/tracerfy";
+import type { ExistingLeadRecord } from "@/lib/notion";
 
-const KIND_LABELS: Record<MatrixExportKind, string> = {
+const LABEL: Record<MatrixExportKind, string> = {
   expired: "Expired Listings",
   current: "Current Market Status",
   active: "Active Inventory",
@@ -33,7 +45,6 @@ const EXPIRED_MAP: ExpiredColumnMap = {
   zip: MATRIX_COLUMNS.zip,
   folio: "",
 };
-
 const CURRENT_MAP: CurrentMarketColumnMap = {
   address: MATRIX_COLUMNS.address,
   city: MATRIX_COLUMNS.city,
@@ -44,225 +55,250 @@ const CURRENT_MAP: CurrentMarketColumnMap = {
   mls: MATRIX_COLUMNS.mls,
 };
 
-function money(value: number | null) {
-  if (value === null) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
-}
+type RowResult = LookupResult & { rowError?: string; alreadyInCrm?: ExistingLeadRecord[] };
+type PushState = { status: "loading" | "done" | "error"; message?: string };
 
-function number(value: number | null) {
-  if (value === null) return "—";
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value);
+function money(v: number | null) {
+  return v === null
+    ? "—"
+    : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
 }
 
 export default function MlsIntakePage() {
   const [files, setFiles] = useState<MatrixIntakeFile[]>([]);
-  const [overrides, setOverrides] = useState<Record<string, MatrixExportKind>>({});
-  const [reviewOverrides, setReviewOverrides] = useState<Record<number, "clear" | "relisted">>({});
+  const [kinds, setKinds] = useState<Record<string, MatrixExportKind>>({});
+  const [reviews, setReviews] = useState<Record<number, "clear" | "relisted">>({});
+  const [results, setResults] = useState<RowResult[] | null>(null);
+  const [push, setPush] = useState<Record<string, PushState>>({});
+  const [processing, setProcessing] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [forceAll, setForceAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function effectiveKind(file: MatrixIntakeFile) {
-    return overrides[file.id] ?? file.kind;
-  }
+  const kindOf = (f: MatrixIntakeFile) => kinds[f.id] ?? f.kind;
+  const validation = (f: MatrixIntakeFile) => validateMatrixExport(kindOf(f), f.headers, f.rows);
+  const resetResearch = () => { setResults(null); setPush({}); setError(null); };
 
-  async function handleFiles(selected: FileList | null) {
-    if (!selected?.length) return;
+  async function addFiles(list: FileList | null) {
+    if (!list?.length) return;
     setError(null);
-    const parsedFiles = await Promise.all(
-      Array.from(selected).map(
-        (file) =>
-          new Promise<MatrixIntakeFile>((resolve, reject) => {
-            Papa.parse<Record<string, string>>(file, {
-              header: true,
-              skipEmptyLines: true,
-              complete: (parsed) => {
-                const headers = parsed.meta.fields ?? [];
-                resolve(buildMatrixIntakeFile(file.name, headers, parsed.data, `${file.name}-${file.size}-${file.lastModified}`));
-              },
-              error: reject,
-            });
-          })
-      )
-    ).catch((err) => {
-      setError(`Could not read one of the CSV files: ${err instanceof Error ? err.message : String(err)}`);
-      return null;
-    });
-    if (!parsedFiles) return;
-    setFiles((previous) => {
-      const byId = new Map(previous.map((f) => [f.id, f]));
-      for (const file of parsedFiles) byId.set(file.id, file);
-      return Array.from(byId.values());
-    });
-    setReviewOverrides({});
+    try {
+      const parsed = await Promise.all(Array.from(list).map((file) => new Promise<MatrixIntakeFile>((resolve, reject) => {
+        Papa.parse<Record<string, string>>(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (r) => resolve(buildMatrixIntakeFile(
+            file.name,
+            r.meta.fields ?? [],
+            r.data,
+            `${file.name}-${file.size}-${file.lastModified}`
+          )),
+          error: reject,
+        });
+      })));
+      setFiles((old) => {
+        const next = new Map(old.map((f) => [f.id, f]));
+        parsed.forEach((f) => next.set(f.id, f));
+        return [...next.values()];
+      });
+      setReviews({});
+      resetResearch();
+    } catch (e) {
+      setError(`Could not read CSV: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
-  const expiredFile = files.find((f) => effectiveKind(f) === "expired" && f.errors.length === 0);
-  const currentFile = files.find((f) => effectiveKind(f) === "current" && f.errors.length === 0);
+  const expiredFiles = files.filter((f) => kindOf(f) === "expired" && !validation(f).errors.length);
+  const currentFiles = files.filter((f) => kindOf(f) === "current" && !validation(f).errors.length);
+  const currentFile = currentFiles[currentFiles.length - 1];
+  const marketFiles = files.filter((f) => ["active", "new", "closed"].includes(kindOf(f)) && !validation(f).errors.length);
 
-  const statusDecisions = useMemo<StatusDecision[] | null>(() => {
-    if (!expiredFile || !currentFile) return null;
-    return runMlsStatusCheck(expiredFile.rows, EXPIRED_MAP, currentFile.rows, CURRENT_MAP);
-  }, [expiredFile, currentFile]);
+  const expiredRows = useMemo(() => {
+    const unique = new Map<string, Record<string, string>>();
+    expiredFiles.forEach((f) => f.rows.forEach((row) => {
+      const a = normalizeAddress(String(row[MATRIX_COLUMNS.address] ?? ""));
+      const c = normalizeCity(String(row[MATRIX_COLUMNS.city] ?? ""));
+      const z = normalizeZip(String(row[MATRIX_COLUMNS.zip] ?? ""));
+      if (a && z) unique.set(`${a}|${c}|${z}`, unique.get(`${a}|${c}|${z}`) ?? row);
+    }));
+    return [...unique.values()];
+  }, [expiredFiles]);
 
-  const effectiveDecisions = useMemo(() =>
-    statusDecisions?.map((d) => ({ ...d, status: reviewOverrides[d.sourceIndex] ?? d.status })) ?? [],
-    [statusDecisions, reviewOverrides]
-  );
+  const rawExpiredCount = expiredFiles.reduce((n, f) => n + f.rows.length, 0);
+  const duplicateCount = Math.max(0, rawExpiredCount - expiredRows.length);
 
-  const clearCount = effectiveDecisions.filter((d) => d.status === "clear").length;
-  const relistedCount = effectiveDecisions.filter((d) => d.status === "relisted").length;
-  const unresolvedReviews = statusDecisions?.filter((d) => d.status === "review" && !reviewOverrides[d.sourceIndex]) ?? [];
+  const decisions = useMemo<StatusDecision[] | null>(() => {
+    if (!expiredRows.length || !currentFile) return null;
+    return runMlsStatusCheck(expiredRows, EXPIRED_MAP, currentFile.rows, CURRENT_MAP);
+  }, [expiredRows, currentFile]);
 
-  const unknownFiles = files.filter((f) => effectiveKind(f) === "unknown");
-  const brokenFiles = files.filter((f) => f.errors.length > 0);
-  const marketFiles = files.filter((f) => ["active", "new", "closed"].includes(effectiveKind(f)) && f.errors.length === 0);
-  const ready = files.length > 0 && unknownFiles.length === 0 && brokenFiles.length === 0 && unresolvedReviews.length === 0;
+  const effective = decisions?.map((d) => ({ ...d, status: reviews[d.sourceIndex] ?? d.status })) ?? [];
+  const clearIndexes = new Set(effective.filter((d) => d.status === "clear").map((d) => d.sourceIndex));
+  const clearCount = clearIndexes.size;
+  const relistedCount = effective.filter((d) => d.status === "relisted").length;
+  const unresolved = decisions?.filter((d) => d.status === "review" && !reviews[d.sourceIndex]) ?? [];
 
-  function removeFile(id: string) {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-    setOverrides((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setReviewOverrides({});
+  async function researchClear() {
+    if (!decisions || unresolved.length || !clearCount) return;
+    const rows = expiredRows.map((row, i) => ({
+      i,
+      address: String(row[MATRIX_COLUMNS.address] ?? "").trim(),
+      city: String(row[MATRIX_COLUMNS.city] ?? "").trim(),
+      state: "FL",
+      zip: String(row[MATRIX_COLUMNS.zip] ?? "").trim(),
+    })).filter((r) => clearIndexes.has(r.i) && r.address && r.city && r.zip)
+      .map(({ i: _i, ...r }) => r);
+
+    setProcessing(true); resetResearch();
+    try {
+      const response = await fetch("/api/bulk-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows, forceAll }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Bulk lookup failed");
+      setResults(data.results);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Bulk lookup failed");
+    } finally { setProcessing(false); }
   }
+
+  async function pushPerson(row: LookupResult, person: Person, key: string) {
+    setPush((p) => ({ ...p, [key]: { status: "loading" } }));
+    try {
+      const response = await fetch("/api/notion-push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          person,
+          address: row.address,
+          city: row.city,
+          state: "FL",
+          zip: row.zip,
+          requestId: row.meta?.request_id,
+          timestamp: row.meta?.timestamp,
+          sourceSearch: expiredFiles.map((f) => f.filename).join(" + "),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error ?? `Failed (${response.status})`);
+      setPush((p) => ({ ...p, [key]: { status: "done" } }));
+    } catch (e) {
+      setPush((p) => ({ ...p, [key]: { status: "error", message: e instanceof Error ? e.message : "Push failed" } }));
+    }
+  }
+
+  async function pushAll() {
+    if (!results) return;
+    setPushing(true);
+    for (let ri = 0; ri < results.length; ri += 1) {
+      const row = results[ri];
+      if (row.rowError || !row.hit) continue;
+      for (let pi = 0; pi < row.persons.length; pi += 1) {
+        const key = `${ri}-${pi}`;
+        if (push[key]?.status !== "done") await pushPerson(row, row.persons[pi], key);
+      }
+    }
+    setPushing(false);
+  }
+
+  const unknown = files.filter((f) => kindOf(f) === "unknown");
+  const broken = files.filter((f) => validation(f).errors.length);
+  const missingCurrent = expiredFiles.length > 0 && !currentFile;
+  const pushable = results?.reduce((n, r) => n + (r.hit && !r.rowError ? r.persons.length : 0), 0) ?? 0;
+  const pushed = (Object.values(push) as PushState[]).filter((s) => s.status === "done").length;
 
   return (
     <div className="page">
       <div className="top-bar">
-        <div>
-          <h1>MLS Intake</h1>
-          <p className="muted">Run your Matrix saved searches, export the CSVs, then drop them here. The portal handles the sorting and analysis.</p>
-        </div>
+        <div><h1>MLS Intake</h1><p className="muted">Export your saved Matrix searches, drop the CSVs here, and continue from one screen.</p></div>
         <a href="/">&larr; Dashboard</a>
       </div>
 
       <div className="panel">
-        <h2 style={{ marginTop: 0 }}>Drop Matrix exports</h2>
-        <p className="muted">Upload one or several CSVs at once. Known MIAMI Matrix columns are mapped automatically.</p>
-        <input type="file" accept=".csv,text/csv" multiple onChange={(e) => handleFiles(e.target.files)} />
+        <h2 style={{ marginTop: 0 }}>1. Drop Matrix exports</h2>
+        <input type="file" accept=".csv,text/csv" multiple onChange={(e) => addFiles(e.target.files)} />
         {error && <p className="error">{error}</p>}
       </div>
 
-      {files.length > 0 && (
-        <div className="panel" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Recognized exports</h2>
-          {files.map((file) => {
-            const kind = effectiveKind(file);
-            const statuses = statusSummary(file.rows);
-            return (
-              <div className="person-card" key={file.id}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-                  <div>
-                    <strong>{file.errors.length ? "⚠" : kind === "unknown" ? "🟡" : "✓"} {KIND_LABELS[kind]}</strong>
-                    <p className="muted" style={{ marginTop: 4 }}>{file.filename} · {file.rows.length} rows · {file.confidence} confidence</p>
-                  </div>
-                  <button className="secondary" onClick={() => removeFile(file.id)}>Remove</button>
-                </div>
+      {files.length > 0 && <div className="panel" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>2. Recognized exports</h2>
+        {files.map((f) => {
+          const k = kindOf(f); const v = validation(f); const statuses = statusSummary(f.rows);
+          return <div className="person-card" key={f.id}>
+            <strong>{v.errors.length ? "⚠" : k === "unknown" ? "🟡" : "✓"} {LABEL[k]}</strong>
+            <p className="muted">{f.filename} · {f.rows.length} rows · {f.confidence} confidence</p>
+            {statuses.length > 0 && <p className="meta">{statuses.map((s) => `${s.label}: ${s.count}`).join(" · ")}</p>}
+            {v.errors.map((m) => <p className="error" key={m}>{m}</p>)}
+            {v.warnings.map((m) => <p className="muted" key={m}>⚠ {m}</p>)}
+            {k === "unknown" && <select value={k} onChange={(e) => { setKinds((old) => ({ ...old, [f.id]: e.target.value as MatrixExportKind })); setReviews({}); resetResearch(); }}>
+              <option value="unknown">Choose export type...</option><option value="current">Current Market Status</option><option value="expired">Expired Listings</option><option value="active">Active Inventory</option><option value="new">New Listings</option><option value="closed">Closed Sales</option>
+            </select>}
+            <button className="secondary" onClick={() => { setFiles((old) => old.filter((x) => x.id !== f.id)); setReviews({}); resetResearch(); }}>Remove</button>
+          </div>;
+        })}
+      </div>}
 
-                {file.reasons.map((reason) => <p className="meta" key={reason} style={{ marginTop: 5 }}>{reason}</p>)}
-                {file.errors.map((message) => <p className="error" key={message}>{message}. Re-export using the expected Matrix export preset.</p>)}
-                {file.warnings.map((message) => <p className="muted" key={message}>⚠ {message}</p>)}
+      {marketFiles.length > 0 && <div className="panel" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>3. Market data</h2>
+        {marketFiles.map((f) => { const m = calculateMarketMetrics(f.rows); return <div className="person-card" key={f.id}>
+          <strong>{LABEL[kindOf(f)]} · {m.listings} listings</strong>
+          <p className="muted">Median list {money(m.medianListPrice)} · Median sale {money(m.medianSalePrice)} · Median DOM {m.medianDom ?? "—"} · Median CDOM {m.medianCdom ?? "—"}{m.medianSaleToList ? ` · Sale-to-list ${(m.medianSaleToList * 100).toFixed(1)}%` : ""}</p>
+        </div>; })}
+      </div>}
 
-                {statuses.length > 0 && (
-                  <p className="meta" style={{ marginTop: 8 }}>
-                    Statuses: {statuses.map((s) => `${s.label}: ${s.count}`).join(" · ")}
-                  </p>
-                )}
+      {(expiredFiles.length > 0 || currentFile) && <div className="panel" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>4. Expired status gate</h2>
+        {!currentFile && <p className="muted">Upload your fresh Current Market Status export to continue.</p>}
+        {decisions && <>
+          {expiredFiles.length > 1 && <p className="meta">{expiredFiles.length} expired exports combined · {expiredRows.length} unique properties{duplicateCount ? ` · ${duplicateCount} duplicate row(s) removed` : ""}</p>}
+          {currentFiles.length > 1 && <p className="muted">⚠ Multiple current-status exports found; the most recently uploaded one is being used.</p>}
+          <p className="meta">{decisions.length} checked · 🟢 {clearCount} clear · 🔴 {relistedCount} relisted · 🟡 {unresolved.length} review</p>
+          {unresolved.map((d) => { const row = expiredRows[d.sourceIndex]; return <div className="person-card" key={d.sourceIndex}>
+            <strong>{row[MATRIX_COLUMNS.address]}, {row[MATRIX_COLUMNS.city]} {row[MATRIX_COLUMNS.zip]}</strong>
+            <p className="muted">{d.reason}</p>
+            {d.matched && <p className="meta">Possible match: {d.matched.address}{d.matched.status ? ` · ${d.matched.status}` : ""}{d.matched.mls ? ` · MLS ${d.matched.mls}` : ""}</p>}
+            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "clear" })); resetResearch(); }}>Mark CLEAR</button>{" "}
+            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "relisted" })); resetResearch(); }}>Mark RELISTED</button>
+          </div>; })}
+          {!unresolved.length && <>
+            <p className="muted">✓ Gate complete. Only CLEAR properties can reach paid lookup.</p>
+            <label><input type="checkbox" checked={forceAll} onChange={(e) => setForceAll(e.target.checked)} /> Refresh addresses already in CRM</label>
+            <div style={{ marginTop: 10 }}><button disabled={processing || !clearCount} onClick={researchClear}>{processing ? "Researching..." : `5. Research ${clearCount} CLEAR properties`}</button></div>
+          </>}
+        </>}
+      </div>}
 
-                {kind === "unknown" && (
-                  <div style={{ marginTop: 10 }}>
-                    <label htmlFor={`kind-${file.id}`}>What did you export?</label>
-                    <select id={`kind-${file.id}`} value={kind} onChange={(e) => setOverrides((prev) => ({ ...prev, [file.id]: e.target.value as MatrixExportKind }))}>
-                      <option value="unknown">Choose...</option>
-                      <option value="current">Current Market Status</option>
-                      <option value="expired">Expired Listings</option>
-                      <option value="active">Active Inventory</option>
-                      <option value="new">New Listings</option>
-                      <option value="closed">Closed Sales</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-            );
+      {results && <div className="panel" style={{ marginTop: 16 }}>
+        <div className="top-bar"><div><h2 style={{ marginTop: 0 }}>5. Research results</h2><p className="meta">{results.length} addresses processed · {pushable} owner record(s) can be sent to Notion</p></div>
+          {pushable > 0 && <button disabled={pushing || pushed === pushable} onClick={pushAll}>{pushing ? "Pushing..." : pushed === pushable ? "All pushed ✓" : `Push all ${pushable - pushed} to Notion`}</button>}
+        </div>
+        {results.map((row, ri) => <div className="person-card" key={`${row.address}-${ri}`}>
+          <strong>{row.address}, {row.city} FL {row.zip}</strong>
+          {row.rowError ? <p className="error">{row.rowError}</p> : row.alreadyInCrm ? <p className="muted">Already researched in CRM — no Tracerfy credits spent.</p> : !row.hit ? <p className="muted">No owner/contact records found.</p> : row.persons.map((person, pi) => {
+            const key = `${ri}-${pi}`; return <div key={key} style={{ marginTop: 10 }}>
+              <strong>{person.full_name}</strong>{person.litigator && <span className="badge bad">LITIGATOR — DO NOT CONTACT</span>}{person.deceased && <span className="badge bad">DECEASED</span>}
+              <p className="muted">DNC: {dncStatus(person)} · Eligible for: {outreachEligibility(person).join(", ")}</p>
+              {person.phones?.map((phone, i) => <div className="phone-row" key={i}><span>{formatPhone(phone.number)}</span><span className="muted">{phone.type}</span>{phone.dnc ? <span className="badge bad">DNC</span> : <span className="badge ok">CLEAR</span>}{phone.tcpa && <span className="badge warn">TCPA</span>}</div>)}
+              {push[key]?.status === "error" && <p className="error">{push[key].message}</p>}
+            </div>;
           })}
-        </div>
-      )}
+        </div>)}
+      </div>}
 
-      {marketFiles.length > 0 && (
-        <div className="panel" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Market data</h2>
-          <p className="muted">Calculated automatically from the uploaded Matrix exports. No Tracerfy requests are made.</p>
-          {marketFiles.map((file) => {
-            const metrics = calculateMarketMetrics(file.rows);
-            return (
-              <div className="person-card" key={`market-${file.id}`}>
-                <strong>{KIND_LABELS[effectiveKind(file)]} · {metrics.listings} listings</strong>
-                <p className="muted" style={{ marginTop: 7 }}>
-                  Median list: {money(metrics.medianListPrice)} · Median sale: {money(metrics.medianSalePrice)} · Median DOM: {number(metrics.medianDom)} · Median CDOM: {number(metrics.medianCdom)}
-                  {metrics.medianSaleToList !== null ? ` · Sale-to-list: ${(metrics.medianSaleToList * 100).toFixed(1)}%` : ""}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {files.length > 0 && <div className="panel" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Completion</h2>
+        {unknown.length > 0 ? <p className="muted">Classify {unknown.length} ambiguous export(s).</p>
+          : broken.length > 0 ? <p className="muted">Fix {broken.length} invalid export(s).</p>
+          : missingCurrent ? <p className="muted">Upload Current Market Status.</p>
+          : unresolved.length > 0 ? <p className="muted">Resolve {unresolved.length} possible relist match(es).</p>
+          : results && pushable > 0 && pushed === pushable ? <p className="muted">✓ Intake, research, and CRM push complete.</p>
+          : decisions && !results && clearCount > 0 ? <p className="muted">✓ Intake complete. Research the CLEAR properties above; no re-upload is required.</p>
+          : <p className="muted">✓ Uploaded files are recognized and valid.</p>}
+      </div>}
 
-      {(expiredFile || currentFile) && (
-        <div className="panel" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Expired prospecting gate</h2>
-          {!expiredFile && <p className="muted">Add your expired-listing CSV.</p>}
-          {!currentFile && <p className="muted">Add your fresh Current Market Status CSV before any expired property can continue.</p>}
-
-          {statusDecisions && (
-            <>
-              <p className="meta">{statusDecisions.length} checked · 🟢 {clearCount} clear · 🔴 {relistedCount} relisted · 🟡 {unresolvedReviews.length} review</p>
-              {unresolvedReviews.map((decision) => {
-                const row = expiredFile!.rows[decision.sourceIndex];
-                return (
-                  <div className="person-card" key={decision.sourceIndex}>
-                    <strong>{row[MATRIX_COLUMNS.address]}, {row[MATRIX_COLUMNS.city]} {row[MATRIX_COLUMNS.zip]}</strong>
-                    <p className="muted" style={{ marginTop: 5 }}>{decision.reason}</p>
-                    {decision.matched && <p className="meta">Possible current match: {decision.matched.address}{decision.matched.status ? ` · ${decision.matched.status}` : ""}{decision.matched.mls ? ` · MLS ${decision.matched.mls}` : ""}</p>}
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button className="secondary" onClick={() => setReviewOverrides((prev) => ({ ...prev, [decision.sourceIndex]: "clear" }))}>Mark CLEAR</button>
-                      <button className="secondary" onClick={() => setReviewOverrides((prev) => ({ ...prev, [decision.sourceIndex]: "relisted" }))}>Mark RELISTED</button>
-                    </div>
-                  </div>
-                );
-              })}
-              {unresolvedReviews.length === 0 && (
-                <p className="muted">✓ Status gate complete. {clearCount} properties are eligible to continue to research; {relistedCount} are excluded before paid lookup.</p>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {files.length > 0 && (
-        <div className="panel" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Intake status</h2>
-          {ready ? (
-            <>
-              <p><strong>✓ MLS intake complete.</strong></p>
-              <p className="muted">All uploaded files are recognized and valid{statusDecisions ? `; the expired status gate has ${clearCount} CLEAR properties ready for the existing research workflow` : ""}.</p>
-              {statusDecisions && clearCount > 0 && <a className="action-card" href="/import"><div className="action-title">Continue to Expired Research</div><div className="muted">Open the existing Tracerfy + compliance + Notion workflow.</div></a>}
-            </>
-          ) : (
-            <>
-              <p><strong>Action needed before this intake is complete.</strong></p>
-              {unknownFiles.length > 0 && <p className="muted">Classify {unknownFiles.length} ambiguous export(s).</p>}
-              {brokenFiles.length > 0 && <p className="muted">Fix {brokenFiles.length} export(s) with missing required Matrix columns.</p>}
-              {unresolvedReviews.length > 0 && <p className="muted">Resolve {unresolvedReviews.length} possible relist match(es).</p>}
-            </>
-          )}
-        </div>
-      )}
-
-      <details className="panel" style={{ marginTop: 16 }}>
-        <summary className="muted">Advanced: known Matrix schema</summary>
-        <p className="meta">The portal expects MIAMI Matrix fields such as Address, City Name, Zip Code, St, MLS # Link, List Price, Sale Price, Closing Date, Entry Date, DOM, and CDOM. Matrix `St` is treated only as listing status; Florida is handled separately by the paid-lookup backend.</p>
-      </details>
+      <details className="panel" style={{ marginTop: 16 }}><summary className="muted">Advanced</summary><p className="meta">MIAMI Matrix `St` is listing status, never property state. Paid lookup is normalized to Florida. Legacy direct processing remains at <a href="/import">/import</a>.</p></details>
     </div>
   );
 }
