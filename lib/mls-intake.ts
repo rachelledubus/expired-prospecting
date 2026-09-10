@@ -14,6 +14,24 @@ export type MatrixIntakeFile = {
   warnings: string[];
 };
 
+export type ExpiredPropertyPayload = {
+  address: string;
+  city: string;
+  zip: string;
+  listingStatus: "Expired";
+  dateOffMarket?: string;
+  originalPrice?: number;
+  finalPrice?: number;
+  dom?: number;
+  beds?: number;
+  baths?: number;
+  sqft?: number;
+  yearBuilt?: number;
+  propertyType?: string;
+  hoaAmount?: number;
+  hoaCadence?: string;
+};
+
 export const MATRIX_COLUMNS = {
   mls: "MLS # Link",
   status: "St",
@@ -22,6 +40,7 @@ export const MATRIX_COLUMNS = {
   city: "City Name",
   zip: "Zip Code",
   entryDate: "Entry Date",
+  expirationDate: "Expiration Date",
   originalListPrice: "Original List Price",
   listPrice: "List Price",
   salePrice: "Sale Price",
@@ -150,6 +169,69 @@ function toNumber(value: string | undefined) {
   const cleaned = value.replace(/[$,%\s,]/g, "");
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
+}
+
+function toIsoDate(value: string | undefined) {
+  const raw = value?.trim();
+  if (!raw) return undefined;
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const us = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (!us) return undefined;
+  const year = us[3].length === 2 ? `20${us[3]}` : us[3];
+  return `${year}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`;
+}
+
+function firstValue(row: CsvRow, keys: string[]) {
+  for (const key of keys) {
+    const value = String(row[key] ?? "").trim();
+    if (value) return value;
+  }
+  return undefined;
+}
+
+export function expiredPropertyPayload(row: CsvRow): ExpiredPropertyPayload {
+  const fullBaths = toNumber(String(row[MATRIX_COLUMNS.fullBaths] ?? ""));
+  const halfBaths = toNumber(String(row[MATRIX_COLUMNS.halfBaths] ?? ""));
+  const baths = fullBaths !== null || halfBaths !== null
+    ? (fullBaths ?? 0) + (halfBaths ?? 0) * 0.5
+    : undefined;
+
+  const dateOffMarket = toIsoDate(firstValue(row, [
+    MATRIX_COLUMNS.expirationDate,
+    "Expire Date",
+    "Expired Date",
+    "Date Off Market",
+    "Off Market Date",
+  ]));
+
+  const propertyType = firstValue(row, [MATRIX_COLUMNS.typeOfProperty, MATRIX_COLUMNS.propertyType]);
+  const originalPrice = toNumber(String(row[MATRIX_COLUMNS.originalListPrice] ?? ""));
+  const finalPrice = toNumber(String(row[MATRIX_COLUMNS.listPrice] ?? ""));
+  const dom = toNumber(String(row[MATRIX_COLUMNS.dom] ?? ""));
+  const beds = toNumber(String(row[MATRIX_COLUMNS.beds] ?? ""));
+  const sqft = toNumber(String(row[MATRIX_COLUMNS.sqft] ?? ""));
+  const yearBuilt = toNumber(String(row[MATRIX_COLUMNS.yearBuilt] ?? ""));
+  const hoaAmount = toNumber(String(row[MATRIX_COLUMNS.associationFee] ?? ""));
+  const hoaCadence = firstValue(row, [MATRIX_COLUMNS.associationCadence]);
+
+  return {
+    address: String(row[MATRIX_COLUMNS.address] ?? "").trim(),
+    city: String(row[MATRIX_COLUMNS.city] ?? "").trim(),
+    zip: String(row[MATRIX_COLUMNS.zip] ?? "").trim(),
+    listingStatus: "Expired",
+    ...(dateOffMarket ? { dateOffMarket } : {}),
+    ...(originalPrice !== null ? { originalPrice } : {}),
+    ...(finalPrice !== null ? { finalPrice } : {}),
+    ...(dom !== null ? { dom } : {}),
+    ...(beds !== null ? { beds } : {}),
+    ...(baths !== undefined ? { baths } : {}),
+    ...(sqft !== null ? { sqft } : {}),
+    ...(yearBuilt !== null ? { yearBuilt } : {}),
+    ...(propertyType ? { propertyType } : {}),
+    ...(hoaAmount !== null ? { hoaAmount } : {}),
+    ...(hoaCadence ? { hoaCadence } : {}),
+  };
 }
 
 function median(values: number[]) {

@@ -6,8 +6,10 @@ import {
   MATRIX_COLUMNS,
   buildMatrixIntakeFile,
   calculateMarketMetrics,
+  expiredPropertyPayload,
   statusSummary,
   validateMatrixExport,
+  type ExpiredPropertyPayload,
   type MatrixExportKind,
   type MatrixIntakeFile,
 } from "@/lib/mls-intake";
@@ -55,7 +57,12 @@ const CURRENT_MAP: CurrentMarketColumnMap = {
   mls: MATRIX_COLUMNS.mls,
 };
 
-type RowResult = LookupResult & { rowError?: string; alreadyInCrm?: ExistingLeadRecord[] };
+type RowResult = LookupResult & {
+  rowError?: string;
+  alreadyInCrm?: ExistingLeadRecord[];
+  propertySynced?: boolean;
+  propertySyncError?: string;
+};
 type PushState = { status: "loading" | "done" | "error"; message?: string };
 
 function money(v: number | null) {
@@ -138,6 +145,46 @@ export default function MlsIntakePage() {
   const relistedCount = effective.filter((d) => d.status === "relisted").length;
   const unresolved = decisions?.filter((d) => d.status === "review" && !reviews[d.sourceIndex]) ?? [];
 
+  function propertyForLookup(row: { address: string; city: string; zip: string }): ExpiredPropertyPayload {
+    const addressKey = normalizeAddress(row.address);
+    const cityKey = normalizeCity(row.city);
+    const zipKey = normalizeZip(row.zip);
+    const source = expiredRows.find((candidate) => {
+      const a = normalizeAddress(String(candidate[MATRIX_COLUMNS.address] ?? ""));
+      const c = normalizeCity(String(candidate[MATRIX_COLUMNS.city] ?? ""));
+      const z = normalizeZip(String(candidate[MATRIX_COLUMNS.zip] ?? ""));
+      return a === addressKey && z === zipKey && (!cityKey || c === cityKey);
+    }) ?? expiredRows.find((candidate) =>
+      normalizeAddress(String(candidate[MATRIX_COLUMNS.address] ?? "")) === addressKey &&
+      normalizeZip(String(candidate[MATRIX_COLUMNS.zip] ?? "")) === zipKey
+    );
+
+    return source
+      ? expiredPropertyPayload(source)
+      : { address: row.address, city: row.city, zip: row.zip, listingStatus: "Expired" };
+  }
+
+  async function syncExistingCrmProperties(rows: RowResult[]) {
+    for (const row of rows) {
+      if (!row.alreadyInCrm?.length) continue;
+      try {
+        const response = await fetch("/api/property-research-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            property: propertyForLookup(row),
+            crmPageIds: row.alreadyInCrm.map((record) => record.id).filter(Boolean),
+          }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error ?? `Failed (${response.status})`);
+        row.propertySynced = true;
+      } catch (e) {
+        row.propertySyncError = e instanceof Error ? e.message : "Property Research sync failed";
+      }
+    }
+  }
+
   async function researchClear() {
     if (!decisions || unresolved.length || !clearCount) return;
     const rows = expiredRows.map((row, i) => ({
@@ -158,7 +205,9 @@ export default function MlsIntakePage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Bulk lookup failed");
-      setResults(data.results);
+      const nextResults = data.results as RowResult[];
+      await syncExistingCrmProperties(nextResults);
+      setResults(nextResults);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bulk lookup failed");
     } finally { setProcessing(false); }
@@ -179,6 +228,7 @@ export default function MlsIntakePage() {
           requestId: row.meta?.request_id,
           timestamp: row.meta?.timestamp,
           sourceSearch: expiredFiles.map((f) => f.filename).join(" + "),
+          property: propertyForLookup(row),
         }),
       });
       const data = await response.json().catch(() => null);
@@ -208,6 +258,7 @@ export default function MlsIntakePage() {
   const missingCurrent = expiredFiles.length > 0 && !currentFile;
   const pushable = results?.reduce((n, r) => n + (r.hit && !r.rowError ? r.persons.length : 0), 0) ?? 0;
   const pushed = (Object.values(push) as PushState[]).filter((s) => s.status === "done").length;
+  const propertySyncFailures = results?.filter((r) => r.propertySyncError).length ?? 0;
 
   return (
     <div className="page">
@@ -276,12 +327,16 @@ export default function MlsIntakePage() {
         </div>
         {results.map((row, ri) => <div className="person-card" key={`${row.address}-${ri}`}>
           <strong>{row.address}, {row.city} FL {row.zip}</strong>
-          {row.rowError ? <p className="error">{row.rowError}</p> : row.alreadyInCrm ? <p className="muted">Already researched in CRM — no Tracerfy credits spent.</p> : !row.hit ? <p className="muted">No owner/contact records found.</p> : row.persons.map((person, pi) => {
+          {row.rowError ? <p className="error">{row.rowError}</p> : row.alreadyInCrm ? <>
+            <p className="muted">Already in CRM — no Tracerfy credits spent.{row.propertySynced ? " Property Research refreshed + linked ✓" : ""}</p>
+            {row.propertySyncError && <p className="error">Property Research sync: {row.propertySyncError}</p>}
+          </> : !row.hit ? <p className="muted">No owner/contact records found.</p> : row.persons.map((person, pi) => {
             const key = `${ri}-${pi}`; return <div key={key} style={{ marginTop: 10 }}>
               <strong>{person.full_name}</strong>{person.litigator && <span className="badge bad">LITIGATOR — DO NOT CONTACT</span>}{person.deceased && <span className="badge bad">DECEASED</span>}
               <p className="muted">DNC: {dncStatus(person)} · Eligible for: {outreachEligibility(person).join(", ")}</p>
               {person.phones?.map((phone, i) => <div className="phone-row" key={i}><span>{formatPhone(phone.number)}</span><span className="muted">{phone.type}</span>{phone.dnc ? <span className="badge bad">DNC</span> : <span className="badge ok">CLEAR</span>}{phone.tcpa && <span className="badge warn">TCPA</span>}</div>)}
               {push[key]?.status === "error" && <p className="error">{push[key].message}</p>}
+              {push[key]?.status === "done" && <p className="muted">✓ CRM + Property Research linked</p>}
             </div>;
           })}
         </div>)}
@@ -293,12 +348,13 @@ export default function MlsIntakePage() {
           : broken.length > 0 ? <p className="muted">Fix {broken.length} invalid export(s).</p>
           : missingCurrent ? <p className="muted">Upload Current Market Status.</p>
           : unresolved.length > 0 ? <p className="muted">Resolve {unresolved.length} possible relist match(es).</p>
-          : results && pushable > 0 && pushed === pushable ? <p className="muted">✓ Intake, research, and CRM push complete.</p>
+          : propertySyncFailures > 0 ? <p className="error">Fix {propertySyncFailures} Property Research sync failure(s) shown above.</p>
+          : results && pushable > 0 && pushed === pushable ? <p className="muted">✓ Intake, contact research, CRM push, and Property Research linking complete.</p>
           : decisions && !results && clearCount > 0 ? <p className="muted">✓ Intake complete. Research the CLEAR properties above; no re-upload is required.</p>
           : <p className="muted">✓ Uploaded files are recognized and valid.</p>}
       </div>}
 
-      <details className="panel" style={{ marginTop: 16 }}><summary className="muted">Advanced</summary><p className="meta">MIAMI Matrix `St` is listing status, never property state. Paid lookup is normalized to Florida. Legacy direct processing remains at <a href="/import">/import</a>.</p></details>
+      <details className="panel" style={{ marginTop: 16 }}><summary className="muted">Advanced</summary><p className="meta">MIAMI Matrix `St` is listing status, never property state. Paid lookup is normalized to Florida. CLEAR expired rows carry their Matrix property facts into Property Research; Property Research's Mailer Tier formula drives the CRM premium-mailer flag. Legacy direct processing remains at <a href="/import">/import</a>.</p></details>
     </div>
   );
 }

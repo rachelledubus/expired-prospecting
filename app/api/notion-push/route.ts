@@ -7,12 +7,23 @@ import {
   formatPhone,
   type Person,
 } from "@/lib/tracerfy";
-import { queryPropertyByAddress } from "@/lib/propertyResearch";
+import { queryPropertyByAddress, upsertExpiredProperty } from "@/lib/propertyResearch";
+import type { ExpiredPropertyPayload } from "@/lib/mls-intake";
 
 const NOTION_VERSION = "2022-06-28";
 
+function mailingAddress(person: Person) {
+  const mailing = person.mailing_address;
+  if (!mailing?.street) return null;
+  return [
+    mailing.street,
+    mailing.city,
+    [mailing.state, mailing.zip].filter(Boolean).join(" "),
+  ].filter(Boolean).join(", ");
+}
+
 export async function POST(request: Request) {
-  const { person, address, city, state, zip, requestId, timestamp, sourceSearch } =
+  const { person, address, city, state, zip, requestId, timestamp, sourceSearch, property } =
     (await request.json()) as {
       person: Person;
       address: string;
@@ -22,6 +33,7 @@ export async function POST(request: Request) {
       requestId?: string;
       timestamp?: string;
       sourceSearch?: string;
+      property?: ExpiredPropertyPayload;
     };
 
   const apiKey = process.env.NOTION_API_KEY;
@@ -45,12 +57,11 @@ export async function POST(request: Request) {
   const phone = bestPhone(person);
   const email = bestEmail(person);
   const scrubDate = new Date().toISOString().slice(0, 10);
+  const ownerMailingAddress = mailingAddress(person);
 
-  // If this property was previously logged as a price reduction or stale
-  // listing (via the Watchlist import), surface that history here -- it's
-  // useful call context ("this has been sitting/reducing for a while before
-  // it even expired") that would otherwise require checking a second
-  // database by hand.
+  // Preserve useful history if this property was previously tracked as a
+  // price reduction or stale listing. The same record will be refreshed to
+  // Expired and linked to this CRM owner later in this request.
   const priorResearch = await queryPropertyByAddress(address);
   const priorResearchNote =
     priorResearch &&
@@ -74,10 +85,6 @@ export async function POST(request: Request) {
     .filter(Boolean)
     .join(" ");
 
-  // Recommended first-touch channel, using the CRM's existing Prospecting
-  // Channel field. Only applied when CREATING a new record -- never on an
-  // update, since that field is also where manually-logged touch history
-  // lives, and overwriting it would erase that.
   const eligibility = outreachEligibility(person);
   const recommendedChannel = eligibility.includes("Call")
     ? "Call"
@@ -98,13 +105,6 @@ export async function POST(request: Request) {
     ? person.emails.map((e) => e.email).join("\n")
     : "None returned.";
 
-  // Look up everything already in Notion at this address -- both to find an
-  // exact Name match to update in place, and to flag any OTHER record at the
-  // same address under a different name (e.g. a pre-existing combined
-  // household record like "Ricardo & Sandra Castro" that a per-person
-  // Tracerfy match under "Ricardo Castro" wouldn't otherwise catch). We never
-  // auto-merge those -- just surface them in "Possible Other Names" so it's
-  // a one-glance manual decision, not a silent duplicate.
   const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
     method: "POST",
     headers: notionHeaders,
@@ -135,13 +135,10 @@ export async function POST(request: Request) {
     .map((p) => `${getTitle(p) || "(untitled)"} — ${p.url}${getSource(p) ? ` (${getSource(p)})` : ""}`)
     .join("\n");
 
-  // Fields that reflect a fresh compliance/contact check -- safe to overwrite
-  // on a re-push without disturbing anything the record's owner has since
-  // set (Pipeline Stage, Next Action, Call Notes, etc.).
   const refreshableProperties: Record<string, unknown> = {
     "DNC Status": { select: { name: dncStatus(person) } },
     "Outreach Eligibility": {
-      multi_select: outreachEligibility(person).map((n) => ({ name: n })),
+      multi_select: eligibility.map((n) => ({ name: n })),
     },
     "DNC Scrub Date": { date: { start: scrubDate } },
     "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
@@ -151,6 +148,51 @@ export async function POST(request: Request) {
   };
   if (phone) refreshableProperties.Phone = { phone_number: phone };
   if (email) refreshableProperties.Email = { email };
+  if (ownerMailingAddress) {
+    refreshableProperties["Mailing Address"] = {
+      rich_text: [{ text: { content: ownerMailingAddress.slice(0, 2000) } }],
+    };
+  }
+
+  async function syncPropertyAndPremium(crmPageId: string) {
+    const propertySync = await upsertExpiredProperty({
+      ...(property ?? {
+        address,
+        city,
+        zip,
+        listingStatus: "Expired" as const,
+      }),
+      address,
+      city,
+      zip,
+      listingStatus: "Expired",
+      ...(ownerMailingAddress ? { mailingAddress: ownerMailingAddress } : {}),
+      crmPageIds: [crmPageId],
+    });
+
+    if ("error" in propertySync) return propertySync;
+
+    // Work mode's native Notion automation intentionally uses this editable
+    // checkbox as a trigger. Make it deterministic: Property Research's
+    // Mailer Tier formula decides, and the portal mirrors that result here.
+    if (propertySync.premiumMailerEligible !== null) {
+      const premiumRes = await fetch(`https://api.notion.com/v1/pages/${crmPageId}`, {
+        method: "PATCH",
+        headers: notionHeaders,
+        body: JSON.stringify({
+          properties: {
+            "Premium Mailer Eligible": { checkbox: propertySync.premiumMailerEligible },
+          },
+        }),
+      });
+      const premiumData = await premiumRes.json();
+      if (!premiumRes.ok) {
+        return { error: premiumData?.message ?? "CRM premium-mailer sync failed." };
+      }
+    }
+
+    return propertySync;
+  }
 
   if (existingPage) {
     const updateRes = await fetch(`https://api.notion.com/v1/pages/${existingPage.id}`, {
@@ -167,10 +209,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const propertySync = await syncPropertyAndPremium(existingPage.id);
+    if ("error" in propertySync) {
+      return NextResponse.json(
+        { error: propertySync.error, partial: true, crmAction: "updated", crmUrl: updateData.url },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       url: updateData.url,
       action: "updated",
+      property: propertySync,
       otherRecordsAtAddress: otherRecords.length,
     });
   }
@@ -204,10 +255,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const propertySync = await syncPropertyAndPremium(createData.id);
+  if ("error" in propertySync) {
+    return NextResponse.json(
+      { error: propertySync.error, partial: true, crmAction: "created", crmUrl: createData.url },
+      { status: 502 }
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     url: createData.url,
     action: "created",
+    property: propertySync,
     otherRecordsAtAddress: otherRecords.length,
   });
 }
