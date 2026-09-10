@@ -46,7 +46,7 @@ Environment variables for deployment. Never commit `.env.local`.
 | Variable | Purpose |
 |---|---|
 | `PORTAL_PASSWORD` | The password used at `/login`. |
-| `PORTAL_SESSION_SECRET` | Long random string used as the session cookie value. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
+| `PORTAL_SESSION_SECRET` | Long random server-side secret used to sign and verify session cookies. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
 | `TRACERFY_API_BASE` | `https://mock.tracerfy.com/v1/api` for the free sandbox (fake data, no credits used), or `https://tracerfy.com/v1/api` for production. |
 | `TRACERFY_API_KEY` | Your Tracerfy bearer token. Any non-empty string works against the sandbox. |
 | `NOTION_API_KEY` | Secret for a Notion internal integration (see below). |
@@ -134,8 +134,7 @@ the system.
 ## Compliance note
 
 The DNC/TCPA/litigator flags shown here come straight from Tracerfy's data
-and are surfaced as-is, with the lookup's `request_id` and `timestamp` for
-an audit trail. This is **not** a substitute for a full compliance check —
+and are surfaced as-is, with the lookup's `request_id` and `timestamp` for an audit trail. This is **not** a substitute for a full compliance check —
 confirm Tracerfy's DNC data freshness and whether you also need state-level
 DNC or litigator-list scrubbing before using this for outbound calling at
 volume. Treat a "not on DNC" result as "not on Tracerfy's national DNC
