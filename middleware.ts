@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySessionToken } from "@/lib/session";
 
 const SESSION_COOKIE = "portal_session";
 const PUBLIC_PATHS = ["/login", "/api/login"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.includes(pathname)) {
@@ -12,9 +13,12 @@ export function middleware(request: NextRequest) {
   }
 
   const session = request.cookies.get(SESSION_COOKIE)?.value;
-  const expected = process.env.PORTAL_SESSION_SECRET;
+  const secret = process.env.PORTAL_SESSION_SECRET;
+  const validSession = Boolean(
+    session && secret && (await verifySessionToken(session, secret))
+  );
 
-  if (!expected || session !== expected) {
+  if (!validSession) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
