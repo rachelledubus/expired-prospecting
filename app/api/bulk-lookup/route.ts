@@ -6,10 +6,34 @@ type Row = { address: string; city: string; state: string; zip: string };
 type BulkResult = LookupResult & { rowError?: string; alreadyInCrm?: ExistingLeadRecord[] };
 
 export async function POST(request: Request) {
-  const { rows, forceAll } = (await request.json()) as { rows: Row[]; forceAll?: boolean };
+  const { rows, forceAll, spendConfirmed, existingRefreshConfirmed } = (await request.json()) as {
+    rows: Row[];
+    forceAll?: boolean;
+    spendConfirmed?: boolean;
+    existingRefreshConfirmed?: boolean;
+  };
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return NextResponse.json({ error: "No rows to look up." }, { status: 400 });
+  }
+
+  // Hard spending gate: no Tracerfy request may be made unless the caller has
+  // explicitly acknowledged that this step can deduct paid lookup credits.
+  if (spendConfirmed !== true) {
+    return NextResponse.json(
+      { error: "Paid lookup blocked. Confirm the Tracerfy spending gate before researching CLEAR properties." },
+      { status: 400 }
+    );
+  }
+
+  // Re-running an address that is already in CRM is a second, separate spend.
+  // Require a distinct confirmation so forceAll cannot be enabled accidentally
+  // or by a stale/buggy client state.
+  if (forceAll && existingRefreshConfirmed !== true) {
+    return NextResponse.json(
+      { error: "Paid CRM re-check blocked. Explicitly confirm that you want to pay to run Tracerfy again on addresses already in CRM." },
+      { status: 400 }
+    );
   }
 
   const base = process.env.TRACERFY_API_BASE;
