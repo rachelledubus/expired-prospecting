@@ -1,6 +1,7 @@
 const NOTION_VERSION = "2022-06-28";
 
 export type ExistingLeadRecord = {
+  id: string;
   url: string;
   name: string;
   pipelineStage: string | null;
@@ -39,6 +40,7 @@ export async function queryLeadsByAddress(fullAddress: string): Promise<Existing
     const pages: any[] = data.results ?? [];
 
     return pages.map((p) => ({
+      id: p.id,
       url: p.url,
       name: p.properties?.Name?.title?.map((t: any) => t.plain_text).join("") ?? "(untitled)",
       pipelineStage: p.properties?.["Pipeline Stage"]?.select?.name ?? null,
