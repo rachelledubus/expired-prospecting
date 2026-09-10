@@ -1,1 +1,0 @@
-Tracerfy paid lookup recovery is implemented on the MLS Intake page. See `tracerfy-recovery.md` for behavior and safeguards.
