@@ -14,19 +14,27 @@ export default function Dashboard() {
       </div>
 
       <div className="section-label">Today</div>
-      <a className="action-card" href="/import">
-        <div className="action-title">1. Process Expireds</div>
-        <div className="muted">Upload expireds + one fresh market-live export. Relisted properties are filtered out before skip tracing.</div>
+      <a className="action-card" href="/intake">
+        <div className="action-title">1. Process MLS Exports</div>
+        <div className="muted">Drop your Matrix CSV exports in one place. The portal recognizes, validates, decodes, and routes them automatically.</div>
         <div className="fed-by">
           Fed by Matrix saved searches: <span className="tag">🔥 New Expireds</span>
           <span className="tag">💰 High-Value Expireds</span>
           <span className="tag">✓ Current Market Status</span>
+          <span className="tag">Active</span>
+          <span className="tag">New</span>
+          <span className="tag">Closed</span>
         </div>
+      </a>
+
+      <a className="action-card" href="/import" style={{ marginTop: 12 }}>
+        <div className="action-title">2. Advanced Expired Processing</div>
+        <div className="muted">Direct access to the existing Tracerfy, compliance, and Notion workflow.</div>
       </a>
 
       <div className="section-label">Weekly</div>
       <a className="action-card" href="/watchlist">
-        <div className="action-title">2. Send Research Candidates</div>
+        <div className="action-title">3. Send Research Candidates</div>
         <div className="muted">Upload selected Price Reduction / Stale listings</div>
         <div className="fed-by">
           Fed by Matrix saved searches: <span className="tag">📉 Price Reductions</span>
@@ -36,7 +44,7 @@ export default function Dashboard() {
 
       <div className="section-label">Anytime</div>
       <a className="action-card" href="/lookup">
-        <div className="action-title">3. Look Up One Property</div>
+        <div className="action-title">4. Look Up One Property</div>
         <div className="muted">Manual single-address skip trace — no CSV needed</div>
       </a>
     </div>
