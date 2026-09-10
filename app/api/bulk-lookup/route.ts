@@ -22,25 +22,30 @@ export async function POST(request: Request) {
     );
   }
 
+  // This portal is intentionally scoped to the South Florida prospecting area.
+  // Matrix exports use a column named "St" for listing status (A, CS, etc.) and
+  // may omit a normal state column, so never trust the imported state value.
+  // Force FL here before CRM duplicate checks or paid Tracerfy requests.
+  const results: BulkResult[] = [];
+
   // Tracerfy's trace/lookup endpoint only accepts one address object per
   // request (its docs describe array/batch support, but the live API's own
   // OpenAPI schema shows a single flat object with no array variant — this
   // was confirmed directly against the endpoint, not assumed). So we call it
   // once per row, sequentially. Its rate limit is 500 items/minute, well
   // above what a manual CSV import needs.
-  const results: BulkResult[] = [];
-
   for (const row of rows) {
-    const fullAddress = `${row.address}, ${row.city}, ${row.state} ${row.zip}`;
+    const normalizedRow = { ...row, state: "FL" };
+    const fullAddress = `${normalizedRow.address}, ${normalizedRow.city}, ${normalizedRow.state} ${normalizedRow.zip}`;
 
     if (!forceAll) {
       const existing = await queryLeadsByAddress(fullAddress);
       if (existing.length > 0) {
         results.push({
-          address: row.address,
-          city: row.city,
-          state: row.state,
-          zip: row.zip,
+          address: normalizedRow.address,
+          city: normalizedRow.city,
+          state: normalizedRow.state,
+          zip: normalizedRow.zip,
           hit: false,
           persons_count: 0,
           credits_deducted: 0,
@@ -58,10 +63,10 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        address: row.address,
-        city: row.city,
-        state: row.state,
-        zip: row.zip,
+        address: normalizedRow.address,
+        city: normalizedRow.city,
+        state: normalizedRow.state,
+        zip: normalizedRow.zip,
         find_owner: true,
       }),
     });
@@ -69,10 +74,10 @@ export async function POST(request: Request) {
     if (!tracerfyRes.ok) {
       const rawText = await tracerfyRes.text();
       results.push({
-        address: row.address,
-        city: row.city,
-        state: row.state,
-        zip: row.zip,
+        address: normalizedRow.address,
+        city: normalizedRow.city,
+        state: normalizedRow.state,
+        zip: normalizedRow.zip,
         hit: false,
         persons_count: 0,
         credits_deducted: 0,
