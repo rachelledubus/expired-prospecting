@@ -65,6 +65,8 @@ type RowResult = LookupResult & {
 };
 type PushState = { status: "loading" | "done" | "error"; message?: string };
 
+type PushProgress = { current: number; total: number };
+
 function money(v: number | null) {
   return v === null
     ? "—"
@@ -79,6 +81,7 @@ export default function MlsIntakePage() {
   const [push, setPush] = useState<Record<string, PushState>>({});
   const [processing, setProcessing] = useState(false);
   const [pushing, setPushing] = useState(false);
+  const [pushProgress, setPushProgress] = useState<PushProgress>({ current: 0, total: 0 });
   const [spendConfirmed, setSpendConfirmed] = useState(false);
   const [forceAll, setForceAll] = useState(false);
   const [existingRefreshConfirmed, setExistingRefreshConfirmed] = useState(false);
@@ -86,7 +89,12 @@ export default function MlsIntakePage() {
 
   const kindOf = (f: MatrixIntakeFile) => kinds[f.id] ?? f.kind;
   const validation = (f: MatrixIntakeFile) => validateMatrixExport(kindOf(f), f.headers, f.rows);
-  const resetResearch = () => { setResults(null); setPush({}); setError(null); };
+  const resetResearch = () => {
+    setResults(null);
+    setPush({});
+    setPushProgress({ current: 0, total: 0 });
+    setError(null);
+  };
   const resetPaidGate = () => {
     setSpendConfirmed(false);
     setForceAll(false);
@@ -267,16 +275,32 @@ export default function MlsIntakePage() {
 
   async function pushAll() {
     if (!results) return;
-    setPushing(true);
+
+    const pending: Array<{ row: LookupResult; person: Person; key: string }> = [];
     for (let ri = 0; ri < results.length; ri += 1) {
       const row = results[ri];
       if (row.rowError || !row.hit) continue;
       for (let pi = 0; pi < row.persons.length; pi += 1) {
         const key = `${ri}-${pi}`;
-        if (push[key]?.status !== "done") await pushPerson(row, row.persons[pi], key);
+        if (push[key]?.status !== "done") {
+          pending.push({ row, person: row.persons[pi], key });
+        }
       }
     }
-    setPushing(false);
+
+    if (!pending.length) return;
+
+    setPushing(true);
+    setPushProgress({ current: 0, total: pending.length });
+    try {
+      for (let i = 0; i < pending.length; i += 1) {
+        setPushProgress({ current: i + 1, total: pending.length });
+        const item = pending[i];
+        await pushPerson(item.row, item.person, item.key);
+      }
+    } finally {
+      setPushing(false);
+    }
   }
 
   const unknown = files.filter((f) => kindOf(f) === "unknown");
@@ -381,7 +405,7 @@ export default function MlsIntakePage() {
 
       {results && <div className="panel" style={{ marginTop: 16 }}>
         <div className="top-bar"><div><h2 style={{ marginTop: 0 }}>5. Research results</h2><p className="meta">{results.length} addresses processed · {pushable} owner record(s) can be sent to Notion</p></div>
-          {pushable > 0 && <button disabled={pushing || pushed === pushable} onClick={pushAll}>{pushing ? "Pushing..." : pushed === pushable ? "All pushed ✓" : `Push all ${pushable - pushed} to Notion`}</button>}
+          {pushable > 0 && <button disabled={pushing || pushed === pushable} onClick={pushAll}>{pushing ? `Pushing ${pushProgress.current} of ${pushProgress.total}...` : pushed === pushable ? "All pushed ✓" : `Push all ${pushable - pushed} to Notion`}</button>}
         </div>
         {results.map((row, ri) => <div className="person-card" key={`${row.address}-${ri}`}>
           <strong>{row.address}, {row.city} FL {row.zip}</strong>
