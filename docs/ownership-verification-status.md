@@ -1,0 +1,1 @@
+Implementation status: Notion data layer and owner verification queue are configured. Portal folio passthrough is being added so future Matrix exports can create direct BCPA record links without scraping BCPA.
