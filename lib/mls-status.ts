@@ -35,12 +35,12 @@ export type StatusDecision = {
   };
 };
 
-// Official MIAMI REALTORS MLS status abbreviations.
-// Source: MIAMI REALTORS Help Center, "What do the MLS Status Codes mean and when do you use them"
-// (verified September 10, 2026 against the June 17, 2025 help-center article).
+// MIAMI Matrix listing-status abbreviations used by this portal.
+// `St` is listing status, never property state.
 export const MIAMI_MLS_STATUS_LABELS: Record<string, string> = {
   A: "Active / Available",
   AC: "Active with Contract",
+  CSL: "Coming Soon",
   C: "Cancelled",
   CS: "Closed Sale",
   PS: "Pending Sale / Rental",
