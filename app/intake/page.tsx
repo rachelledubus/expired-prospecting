@@ -79,12 +79,34 @@ export default function MlsIntakePage() {
   const [push, setPush] = useState<Record<string, PushState>>({});
   const [processing, setProcessing] = useState(false);
   const [pushing, setPushing] = useState(false);
+  const [spendConfirmed, setSpendConfirmed] = useState(false);
   const [forceAll, setForceAll] = useState(false);
+  const [existingRefreshConfirmed, setExistingRefreshConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const kindOf = (f: MatrixIntakeFile) => kinds[f.id] ?? f.kind;
   const validation = (f: MatrixIntakeFile) => validateMatrixExport(kindOf(f), f.headers, f.rows);
   const resetResearch = () => { setResults(null); setPush({}); setError(null); };
+  const resetPaidGate = () => {
+    setSpendConfirmed(false);
+    setForceAll(false);
+    setExistingRefreshConfirmed(false);
+  };
+
+  function changeExistingCrmPaidOverride(checked: boolean) {
+    if (!checked) {
+      setForceAll(false);
+      setExistingRefreshConfirmed(false);
+      return;
+    }
+
+    const phrase = window.prompt(
+      "PAID OVERRIDE\n\nThis will bypass duplicate protection and can spend Tracerfy credits AGAIN on addresses already in your CRM.\n\nNormally leave this OFF.\n\nType RE-SPEND to enable paid re-checks."
+    );
+    const confirmed = phrase?.trim().toUpperCase() === "RE-SPEND";
+    setForceAll(confirmed);
+    setExistingRefreshConfirmed(confirmed);
+  }
 
   async function addFiles(list: FileList | null) {
     if (!list?.length) return;
@@ -110,6 +132,7 @@ export default function MlsIntakePage() {
       });
       setReviews({});
       resetResearch();
+      resetPaidGate();
     } catch (e) {
       setError(`Could not read CSV: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -186,7 +209,7 @@ export default function MlsIntakePage() {
   }
 
   async function researchClear() {
-    if (!decisions || unresolved.length || !clearCount) return;
+    if (!decisions || unresolved.length || !clearCount || !spendConfirmed) return;
     const rows = expiredRows.map((row, i) => ({
       i,
       address: String(row[MATRIX_COLUMNS.address] ?? "").trim(),
@@ -201,7 +224,7 @@ export default function MlsIntakePage() {
       const response = await fetch("/api/bulk-lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows, forceAll }),
+        body: JSON.stringify({ rows, forceAll, spendConfirmed, existingRefreshConfirmed }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Bulk lookup failed");
@@ -210,7 +233,10 @@ export default function MlsIntakePage() {
       setResults(nextResults);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bulk lookup failed");
-    } finally { setProcessing(false); }
+    } finally {
+      setProcessing(false);
+      resetPaidGate();
+    }
   }
 
   async function pushPerson(row: LookupResult, person: Person, key: string) {
@@ -283,10 +309,10 @@ export default function MlsIntakePage() {
             {statuses.length > 0 && <p className="meta">{statuses.map((s) => `${s.label}: ${s.count}`).join(" · ")}</p>}
             {v.errors.map((m) => <p className="error" key={m}>{m}</p>)}
             {v.warnings.map((m) => <p className="muted" key={m}>⚠ {m}</p>)}
-            {k === "unknown" && <select value={k} onChange={(e) => { setKinds((old) => ({ ...old, [f.id]: e.target.value as MatrixExportKind })); setReviews({}); resetResearch(); }}>
+            {k === "unknown" && <select value={k} onChange={(e) => { setKinds((old) => ({ ...old, [f.id]: e.target.value as MatrixExportKind })); setReviews({}); resetResearch(); resetPaidGate(); }}>
               <option value="unknown">Choose export type...</option><option value="current">Current Market Status</option><option value="expired">Expired Listings</option><option value="active">Active Inventory</option><option value="new">New Listings</option><option value="closed">Closed Sales</option>
             </select>}
-            <button className="secondary" onClick={() => { setFiles((old) => old.filter((x) => x.id !== f.id)); setReviews({}); resetResearch(); }}>Remove</button>
+            <button className="secondary" onClick={() => { setFiles((old) => old.filter((x) => x.id !== f.id)); setReviews({}); resetResearch(); resetPaidGate(); }}>Remove</button>
           </div>;
         })}
       </div>}
@@ -310,13 +336,45 @@ export default function MlsIntakePage() {
             <strong>{row[MATRIX_COLUMNS.address]}, {row[MATRIX_COLUMNS.city]} {row[MATRIX_COLUMNS.zip]}</strong>
             <p className="muted">{d.reason}</p>
             {d.matched && <p className="meta">Possible match: {d.matched.address}{d.matched.status ? ` · ${d.matched.status}` : ""}{d.matched.mls ? ` · MLS ${d.matched.mls}` : ""}</p>}
-            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "clear" })); resetResearch(); }}>Mark CLEAR</button>{" "}
-            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "relisted" })); resetResearch(); }}>Mark RELISTED</button>
+            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "clear" })); resetResearch(); resetPaidGate(); }}>Mark CLEAR</button>{" "}
+            <button className="secondary" onClick={() => { setReviews((r) => ({ ...r, [d.sourceIndex]: "relisted" })); resetResearch(); resetPaidGate(); }}>Mark RELISTED</button>
           </div>; })}
           {!unresolved.length && <>
-            <p className="muted">✓ Gate complete. Only CLEAR properties can reach paid lookup.</p>
-            <label><input type="checkbox" checked={forceAll} onChange={(e) => setForceAll(e.target.checked)} /> Refresh addresses already in CRM</label>
-            <div style={{ marginTop: 10 }}><button disabled={processing || !clearCount} onClick={researchClear}>{processing ? "Researching..." : `5. Research ${clearCount} CLEAR properties`}</button></div>
+            <p className="muted">✓ Status gate complete. No Tracerfy request can run until you explicitly unlock the spending gate below.</p>
+
+            <div className="person-card" style={{ marginTop: 12 }}>
+              <strong>💳 PAID LOOKUP GATE</strong>
+              <p className="muted"><strong>This next step can spend money.</strong> Tracerfy credits may be deducted for CLEAR addresses that are not already in your CRM. Addresses already in CRM are skipped at $0 by default.</p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={spendConfirmed}
+                  onChange={(e) => setSpendConfirmed(e.target.checked)}
+                />{" "}
+                I understand that running research may spend Tracerfy credits.
+              </label>
+            </div>
+
+            <details className="person-card" style={{ marginTop: 12 }}>
+              <summary><strong>⚠ Danger zone: PAY to re-run addresses already in CRM</strong></summary>
+              <p className="error"><strong>Normally leave this OFF.</strong> Turning this on bypasses the money-saving duplicate check and can charge you again for addresses you have already researched.</p>
+              <p className="muted">To enable it, you must intentionally type <strong>RE-SPEND</strong> into a confirmation prompt.</p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={forceAll}
+                  onChange={(e) => changeExistingCrmPaidOverride(e.target.checked)}
+                />{" "}
+                {forceAll ? "PAID OVERRIDE ACTIVE — re-run Tracerfy on existing CRM addresses" : "Enable paid re-check of existing CRM addresses"}
+              </label>
+            </details>
+
+            <div style={{ marginTop: 10 }}>
+              <button disabled={processing || !clearCount || !spendConfirmed} onClick={researchClear}>
+                {processing ? "Researching..." : `5. Run research on ${clearCount} CLEAR properties — paid where needed`}
+              </button>
+              {!spendConfirmed && <p className="meta">Locked until you acknowledge the paid lookup gate.</p>}
+            </div>
           </>}
         </>}
       </div>}
@@ -350,11 +408,11 @@ export default function MlsIntakePage() {
           : unresolved.length > 0 ? <p className="muted">Resolve {unresolved.length} possible relist match(es).</p>
           : propertySyncFailures > 0 ? <p className="error">Fix {propertySyncFailures} Property Research sync failure(s) shown above.</p>
           : results && pushable > 0 && pushed === pushable ? <p className="muted">✓ Intake, contact research, CRM push, and Property Research linking complete.</p>
-          : decisions && !results && clearCount > 0 ? <p className="muted">✓ Intake complete. Research the CLEAR properties above; no re-upload is required.</p>
+          : decisions && !results && clearCount > 0 ? <p className="muted">✓ Intake complete. Unlock the paid lookup gate only when you are ready to run Tracerfy; no re-upload is required.</p>
           : <p className="muted">✓ Uploaded files are recognized and valid.</p>}
       </div>}
 
-      <details className="panel" style={{ marginTop: 16 }}><summary className="muted">Advanced</summary><p className="meta">MIAMI Matrix `St` is listing status, never property state. Paid lookup is normalized to Florida. CLEAR expired rows carry their Matrix property facts into Property Research; Property Research's Mailer Tier formula drives the CRM premium-mailer flag. Legacy direct processing remains at <a href="/import">/import</a>.</p></details>
+      <details className="panel" style={{ marginTop: 16 }}><summary className="muted">Advanced</summary><p className="meta">MIAMI Matrix `St` is listing status, never property state. Paid lookup is normalized to Florida. Every Tracerfy run requires an explicit spending acknowledgment; paid re-checks of existing CRM addresses require a separate RE-SPEND confirmation. CLEAR expired rows carry their Matrix property facts into Property Research; Property Research's Mailer Tier formula drives the CRM premium-mailer flag. Legacy direct processing remains at <a href="/import">/import</a>.</p></details>
     </div>
   );
 }
