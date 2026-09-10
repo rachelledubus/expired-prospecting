@@ -35,6 +35,28 @@ export type StatusDecision = {
   };
 };
 
+// Official MIAMI REALTORS MLS status abbreviations.
+// Source: MIAMI REALTORS Help Center, "What do the MLS Status Codes mean and when do you use them"
+// (verified September 10, 2026 against the June 17, 2025 help-center article).
+export const MIAMI_MLS_STATUS_LABELS: Record<string, string> = {
+  A: "Active / Available",
+  AC: "Active with Contract",
+  C: "Cancelled",
+  CS: "Closed Sale",
+  PS: "Pending Sale / Rental",
+  R: "Rented",
+  T: "Temporarily Off Market",
+  W: "Withdrawn",
+  X: "Expired",
+};
+
+export function expandMiamiMlsStatus(value: string): string {
+  const code = value.trim().toUpperCase();
+  if (!code) return "";
+  const label = MIAMI_MLS_STATUS_LABELS[code];
+  return label ? `${label} (${code})` : `Unknown MLS status (${code})`;
+}
+
 const SUFFIXES: [RegExp, string][] = [
   [/\bSTREET\b/g, "ST"],
   [/\bAVENUE\b/g, "AVE"],
@@ -106,13 +128,18 @@ export function normalizeAddress(value: string): string {
 }
 
 function currentDisplay(row: CsvRow, map: CurrentMarketColumnMap) {
+  // MIAMI Matrix exports the listing status under the header `St`.
+  // Use the manually mapped status column when present, otherwise fall back
+  // specifically to `St`. We do not treat `St` as a property-state field.
+  const statusCode = raw(row, map.status) || raw(row, "St");
+
   return {
     address: raw(row, map.address),
     city: raw(row, map.city),
     state: raw(row, map.state),
     zip: raw(row, map.zip),
     folio: raw(row, map.folio),
-    status: raw(row, map.status),
+    status: expandMiamiMlsStatus(statusCode),
     mls: raw(row, map.mls),
   };
 }
