@@ -16,10 +16,11 @@ export default function Dashboard() {
       <div className="section-label">Today</div>
       <a className="action-card" href="/import">
         <div className="action-title">1. Process Expireds</div>
-        <div className="muted">Upload New Expireds + High-Value Expireds</div>
+        <div className="muted">Upload expireds + one fresh market-live export. Relisted properties are filtered out before skip tracing.</div>
         <div className="fed-by">
           Fed by Matrix saved searches: <span className="tag">🔥 New Expireds</span>
           <span className="tag">💰 High-Value Expireds</span>
+          <span className="tag">✓ Current Market Status</span>
         </div>
       </a>
 
