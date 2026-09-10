@@ -1,1 +1,0 @@
-This change intentionally does not add a database or any new paid service. Recovery uses the Tracerfy history export plus browser-local checkpoints and keeps the existing no-persistence portal architecture.
