@@ -35,6 +35,8 @@ export type ExistingPropertyRecord = {
   priceChanges: number | null;
   dom: number | null;
   researchStatus: string | null;
+  mailingAddress: string | null;
+  ownerContactIds: string[];
 };
 
 const notionHeaders = () => ({
@@ -43,7 +45,7 @@ const notionHeaders = () => ({
   "Content-Type": "application/json",
 });
 
-/** Finds an existing Property Research page by exact street address (its title). */
+/** Finds an existing Property Research page by exact street/property address (its title). */
 export async function queryPropertyByAddress(address: string): Promise<ExistingPropertyRecord | null> {
   const databaseId = process.env.NOTION_PROPERTY_RESEARCH_DATABASE_ID;
   if (!process.env.NOTION_API_KEY || !databaseId) return null;
@@ -71,6 +73,12 @@ export async function queryPropertyByAddress(address: string): Promise<ExistingP
       priceChanges: page.properties?.["Number of Price Changes"]?.number ?? null,
       dom: page.properties?.DOM?.number ?? null,
       researchStatus: page.properties?.["Research Status"]?.status?.name ?? null,
+      mailingAddress:
+        page.properties?.["Mailing Address"]?.rich_text
+          ?.map((part: any) => part.plain_text ?? "")
+          .join("") || null,
+      ownerContactIds:
+        page.properties?.["Owner / CRM Contact"]?.relation?.map((item: any) => item.id) ?? [],
     };
   } catch {
     return null;
@@ -141,4 +149,84 @@ export async function upsertWatchlistProperty(
   const createData = await createRes.json();
   if (!createRes.ok) return { error: createData?.message ?? "Notion write failed." };
   return { action: "created", url: createData.url };
+}
+
+/**
+ * Ensures a confirmed website report request has a real Property Research
+ * record and a two-way CRM relation before any mailing automation can run.
+ *
+ * This intentionally creates only the minimum research shell. It does not
+ * invent MLS facts, listing status, prices, DOM, comps, or analysis. A new
+ * request starts at Research Status = Not started; the deliberate research
+ * workflow must verify that the listing is actually Expired before the report
+ * can pass its quality gate.
+ */
+export async function ensureRequestedProperty(
+  address: string,
+  mailingAddress: string,
+  crmPageId: string
+): Promise<
+  | { action: "created" | "linked" | "existing"; id: string; url: string }
+  | { error: string }
+> {
+  const databaseId = process.env.NOTION_PROPERTY_RESEARCH_DATABASE_ID;
+  if (!process.env.NOTION_API_KEY || !databaseId) {
+    return { error: "Notion Property Research is not configured on the server." };
+  }
+
+  const existing = await queryPropertyByAddress(address);
+  if (existing) {
+    const ownerIds = new Set(existing.ownerContactIds);
+    ownerIds.add(crmPageId);
+
+    const properties: Record<string, unknown> = {};
+    if (!existing.ownerContactIds.includes(crmPageId)) {
+      properties["Owner / CRM Contact"] = {
+        relation: Array.from(ownerIds).map((id) => ({ id })),
+      };
+    }
+    if (!existing.mailingAddress && mailingAddress) {
+      properties["Mailing Address"] = {
+        rich_text: [{ text: { content: mailingAddress.slice(0, 2000) } }],
+      };
+    }
+
+    if (Object.keys(properties).length === 0) {
+      return { action: "existing", id: existing.id, url: existing.url };
+    }
+
+    const patchRes = await fetch(`https://api.notion.com/v1/pages/${existing.id}`, {
+      method: "PATCH",
+      headers: notionHeaders(),
+      body: JSON.stringify({ properties }),
+    });
+    const patchData = await patchRes.json();
+    if (!patchRes.ok) return { error: patchData?.message ?? "Property Research link failed." };
+
+    return { action: "linked", id: existing.id, url: patchData.url ?? existing.url };
+  }
+
+  const createRes = await fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: notionHeaders(),
+    body: JSON.stringify({
+      parent: { type: "database_id", database_id: databaseId },
+      properties: {
+        "Property Address": { title: [{ text: { content: address.slice(0, 2000) } }] },
+        "Research Status": { status: { name: "Not started" } },
+        "Owner / CRM Contact": { relation: [{ id: crmPageId }] },
+        ...(mailingAddress
+          ? {
+              "Mailing Address": {
+                rich_text: [{ text: { content: mailingAddress.slice(0, 2000) } }],
+              },
+            }
+          : {}),
+      },
+    }),
+  });
+  const createData = await createRes.json();
+  if (!createRes.ok) return { error: createData?.message ?? "Property Research create failed." };
+
+  return { action: "created", id: createData.id, url: createData.url };
 }
