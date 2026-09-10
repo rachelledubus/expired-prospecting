@@ -84,37 +84,100 @@ async function readMailerTier(pageId: string, pageData?: any): Promise<string | 
   }
 }
 
-/** Finds an existing Property Research page by exact street address (its title). */
+function normalizeStreetAddress(value: string) {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[.,]/g, " ")
+    .replace(/\bSOUTHWEST\b/g, "SW")
+    .replace(/\bSOUTHEAST\b/g, "SE")
+    .replace(/\bNORTHWEST\b/g, "NW")
+    .replace(/\bNORTHEAST\b/g, "NE")
+    .replace(/\bAVENUE\b/g, "AVE")
+    .replace(/\bSTREET\b/g, "ST")
+    .replace(/\bTERRACE\b/g, "TER")
+    .replace(/\bCOURT\b/g, "CT")
+    .replace(/\bDRIVE\b/g, "DR")
+    .replace(/\bROAD\b/g, "RD")
+    .replace(/\bPLACE\b/g, "PL")
+    .replace(/\bBOULEVARD\b/g, "BLVD")
+    .replace(/\bLANE\b/g, "LN")
+    .replace(/\bCIRCLE\b/g, "CIR")
+    .replace(/\bTRAIL\b/g, "TRL")
+    .replace(/\bHIGHWAY\b/g, "HWY")
+    .replace(/\bPARKWAY\b/g, "PKWY")
+    .replace(/\bMANOR\b/g, "MNR")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pageTitle(page: any) {
+  return (
+    page?.properties?.["Property Address"]?.title
+      ?.map((part: any) => part?.plain_text ?? part?.text?.content ?? "")
+      .join("") ?? ""
+  );
+}
+
+function existingPropertyFromPage(page: any): ExistingPropertyRecord {
+  return {
+    id: page.id,
+    url: page.url,
+    listingStatus: page.properties?.["Listing Status"]?.select?.name ?? null,
+    originalPrice: page.properties?.["Original List Price"]?.number ?? null,
+    finalPrice: page.properties?.["Final List Price"]?.number ?? null,
+    priceChanges: page.properties?.["Number of Price Changes"]?.number ?? null,
+    dom: page.properties?.DOM?.number ?? null,
+    researchStatus: page.properties?.["Research Status"]?.status?.name ?? null,
+    ownerIds: page.properties?.["Owner / CRM Contact"]?.relation?.map((r: any) => r.id) ?? [],
+    mailerTier: formulaText(page.properties?.["Mailer Tier"]),
+  };
+}
+
+/**
+ * Finds an existing Property Research page by street address. It tries an
+ * exact title match first, then falls back to normalized address matching so
+ * harmless Matrix formatting differences such as "Ave" vs "Avenue" do not
+ * create duplicate property records.
+ */
 export async function queryPropertyByAddress(address: string): Promise<ExistingPropertyRecord | null> {
   const databaseId = process.env.NOTION_PROPERTY_RESEARCH_DATABASE_ID;
   if (!process.env.NOTION_API_KEY || !databaseId) return null;
 
   try {
-    const res = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+    const exactRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
       method: "POST",
       headers: notionHeaders(),
       body: JSON.stringify({
         filter: { property: "Property Address", title: { equals: address } },
-        page_size: 1,
+        page_size: 5,
       }),
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const page = data.results?.[0];
-    if (!page) return null;
+    if (!exactRes.ok) return null;
+    const exactData = await exactRes.json();
+    const exactPage = exactData.results?.[0];
+    if (exactPage) return existingPropertyFromPage(exactPage);
 
-    return {
-      id: page.id,
-      url: page.url,
-      listingStatus: page.properties?.["Listing Status"]?.select?.name ?? null,
-      originalPrice: page.properties?.["Original List Price"]?.number ?? null,
-      finalPrice: page.properties?.["Final List Price"]?.number ?? null,
-      priceChanges: page.properties?.["Number of Price Changes"]?.number ?? null,
-      dom: page.properties?.DOM?.number ?? null,
-      researchStatus: page.properties?.["Research Status"]?.status?.name ?? null,
-      ownerIds: page.properties?.["Owner / CRM Contact"]?.relation?.map((r: any) => r.id) ?? [],
-      mailerTier: formulaText(page.properties?.["Mailer Tier"]),
-    };
+    const houseNumber = address.trim().match(/^\d+[A-Z]?/i)?.[0];
+    if (!houseNumber) return null;
+
+    const candidatesRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: "POST",
+      headers: notionHeaders(),
+      body: JSON.stringify({
+        filter: { property: "Property Address", title: { starts_with: houseNumber } },
+        page_size: 100,
+      }),
+    });
+    if (!candidatesRes.ok) return null;
+    const candidatesData = await candidatesRes.json();
+    const target = normalizeStreetAddress(address);
+    const matchedPage = (candidatesData.results ?? []).find(
+      (candidate: any) => normalizeStreetAddress(pageTitle(candidate)) === target
+    );
+    if (!matchedPage) return null;
+
+    return existingPropertyFromPage(matchedPage);
   } catch {
     return null;
   }
