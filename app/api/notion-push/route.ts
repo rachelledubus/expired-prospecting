@@ -140,6 +140,7 @@ export async function POST(request: Request) {
     "Outreach Eligibility": {
       multi_select: eligibility.map((n) => ({ name: n })),
     },
+    "Tracerfy Property Owner": { checkbox: Boolean(person.property_owner) },
     "DNC Scrub Date": { date: { start: scrubDate } },
     "Compliance Notes": { rich_text: [{ text: { content: complianceNotes.slice(0, 2000) } }] },
     "All Phones": { rich_text: [{ text: { content: allPhones.slice(0, 2000) } }] },
