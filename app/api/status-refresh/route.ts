@@ -3,6 +3,7 @@ import { MATRIX_COLUMNS, matrixFolioValue } from "@/lib/mls-intake";
 import {
   normalizeAddress,
   normalizeCity,
+  normalizeFolio,
   normalizeZip,
   runMlsStatusCheck,
   type CsvRow,
@@ -57,6 +58,12 @@ type ReviewItem = {
   matchedStatus?: string;
 };
 
+type ScopeIndex = {
+  folios: Set<string>;
+  addressZip: Set<string>;
+  addressCity: Set<string>;
+};
+
 const notionHeaders = () => ({
   Authorization: `Bearer ${process.env.NOTION_API_KEY}`,
   "Notion-Version": NOTION_VERSION,
@@ -105,6 +112,38 @@ function notionStatusForMiamiCode(code: string): NotionListingStatus | null {
     default:
       return null;
   }
+}
+
+function buildScopeIndex(rows: CsvRow[]): ScopeIndex {
+  const index: ScopeIndex = {
+    folios: new Set<string>(),
+    addressZip: new Set<string>(),
+    addressCity: new Set<string>(),
+  };
+
+  for (const row of rows) {
+    const folio = normalizeFolio(matrixFolioValue(row) ?? String(row[MATRIX_COLUMNS.folio] ?? ""));
+    const address = normalizeAddress(String(row[MATRIX_COLUMNS.address] ?? ""));
+    const zip = normalizeZip(String(row[MATRIX_COLUMNS.zip] ?? ""));
+    const city = normalizeCity(String(row[MATRIX_COLUMNS.city] ?? ""));
+    if (folio) index.folios.add(folio);
+    if (address && zip) index.addressZip.add(`${address}|${zip}`);
+    if (address && city) index.addressCity.add(`${address}|${city}`);
+  }
+
+  return index;
+}
+
+function propertyIsInScope(property: BacklogProperty, index: ScopeIndex): boolean {
+  const folio = normalizeFolio(property.folio);
+  const address = normalizeAddress(property.address);
+  const zip = normalizeZip(property.zip);
+  const city = normalizeCity(property.city);
+
+  if (folio && index.folios.has(folio)) return true;
+  if (address && zip && index.addressZip.has(`${address}|${zip}`)) return true;
+  if (address && city && index.addressCity.has(`${address}|${city}`)) return true;
+  return false;
 }
 
 async function queryBacklogProperties(): Promise<BacklogProperty[]> {
@@ -216,22 +255,34 @@ export async function POST(request: Request) {
 
     if (mode === "plan") {
       const currentRows = Array.isArray(body?.rows) ? body.rows as CsvRow[] : [];
+      const scopeRows = Array.isArray(body?.scopeRows) ? body.scopeRows as CsvRow[] : [];
+      if (!scopeRows.length) {
+        return NextResponse.json({ error: "Upload the historical Expired CSV files that define the backlog scope first." }, { status: 400 });
+      }
       if (!currentRows.length) {
-        return NextResponse.json({ error: "The Current Market Status export has no rows." }, { status: 400 });
+        return NextResponse.json({ error: "Upload at least one fresh Current Market Status export." }, { status: 400 });
       }
 
       const backlog = await queryBacklogProperties();
+      const scopeIndex = buildScopeIndex(scopeRows);
+      const scopedBacklog = backlog.filter((property) => propertyIsInScope(property, scopeIndex));
+      if (!scopedBacklog.length) {
+        return NextResponse.json({
+          error: "None of the uploaded historical Expired properties matched the unresolved Property Research backlog. Nothing was changed.",
+        }, { status: 400 });
+      }
+
       const checkedAt = easternDate();
       const normalizedCurrentRows = currentRows.map((row) => ({
         ...row,
         [MATRIX_COLUMNS.folio]: matrixFolioValue(row) ?? "",
       }));
-      const decisions = runMlsStatusCheck(makeExpiredRows(backlog), EXPIRED_MAP, normalizedCurrentRows, CURRENT_MAP);
+      const decisions = runMlsStatusCheck(makeExpiredRows(scopedBacklog), EXPIRED_MAP, normalizedCurrentRows, CURRENT_MAP);
       const updates: PlannedUpdate[] = [];
       const reviews: ReviewItem[] = [];
 
       decisions.forEach((decision) => {
-        const property = backlog[decision.sourceIndex];
+        const property = scopedBacklog[decision.sourceIndex];
         if (!property?.id || !property.address) {
           reviews.push({
             id: property?.id ?? "",
@@ -252,12 +303,10 @@ export async function POST(request: Request) {
         }
 
         if (decision.status === "clear") {
-          updates.push({
+          reviews.push({
             id: property.id,
             address: property.address,
-            listingStatus: "Expired",
-            checkedAt,
-            reason: decision.reason,
+            reason: "No positive match was found in the uploaded Current Market Status files. This property was NOT assumed to still be Expired and its check date was left unchanged. Export a current-status row for this property, including Expired (X), and re-run.",
           });
           return;
         }
@@ -285,11 +334,14 @@ export async function POST(request: Request) {
       });
 
       const relisted = updates.filter((update) => update.listingStatus !== "Expired").length;
+      const clearExpired = updates.filter((update) => update.listingStatus === "Expired").length;
       return NextResponse.json({
         ok: true,
         checkedAt,
-        backlogCount: backlog.length,
-        clearExpired: updates.length - relisted,
+        notionBacklogTotal: backlog.length,
+        uploadedExpiredCount: scopeRows.length,
+        backlogCount: scopedBacklog.length,
+        clearExpired,
         relisted,
         reviews,
         updates,
