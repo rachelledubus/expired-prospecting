@@ -26,6 +26,13 @@ and the manual analysis fields are never touched). If that same address
 later comes through the Expired import, its price-reduction/stale history
 shows up automatically in the CRM record's Compliance Notes.
 
+**Ownership verification:** expired Matrix rows may include an optional folio,
+tax ID, or parcel ID column. When present, the portal normalizes it into
+Property Research's `Folio Number` and saves the official BCPA record link.
+Without a folio, it saves the official BCPA Property Search route for manual
+lookup. BCPA remains human-confirmed: the portal never scrapes BCPA or marks an
+owner verified automatically.
+
 ## Local development
 
 Requires Node.js (LTS) installed.

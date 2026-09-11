@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { MATRIX_COLUMNS } from "@/lib/mls-intake";
+import { MATRIX_COLUMNS, matrixFolioValue } from "@/lib/mls-intake";
 import {
   normalizeAddress,
   normalizeCity,
@@ -18,7 +18,7 @@ const EXPIRED_MAP: ExpiredColumnMap = {
   city: MATRIX_COLUMNS.city,
   state: "",
   zip: MATRIX_COLUMNS.zip,
-  folio: "",
+  folio: MATRIX_COLUMNS.folio,
 };
 
 const CURRENT_MAP: CurrentMarketColumnMap = {
@@ -26,7 +26,7 @@ const CURRENT_MAP: CurrentMarketColumnMap = {
   city: MATRIX_COLUMNS.city,
   state: "",
   zip: MATRIX_COLUMNS.zip,
-  folio: "",
+  folio: MATRIX_COLUMNS.folio,
   status: MATRIX_COLUMNS.status,
   mls: MATRIX_COLUMNS.mls,
 };
@@ -38,6 +38,7 @@ type BacklogProperty = {
   address: string;
   city: string;
   zip: string;
+  folio: string;
 };
 
 type PlannedUpdate = {
@@ -149,6 +150,7 @@ async function queryBacklogProperties(): Promise<BacklogProperty[]> {
         address: richText(page.properties?.["Property Address"]),
         city: page.properties?.City?.select?.name ?? "",
         zip: richText(page.properties?.ZIP),
+        folio: richText(page.properties?.["Folio Number"]),
       });
     }
 
@@ -163,6 +165,7 @@ function makeExpiredRows(properties: BacklogProperty[]): CsvRow[] {
     [MATRIX_COLUMNS.address]: property.address,
     [MATRIX_COLUMNS.city]: property.city,
     [MATRIX_COLUMNS.zip]: property.zip,
+    [MATRIX_COLUMNS.folio]: property.folio,
   }));
 }
 
@@ -219,7 +222,11 @@ export async function POST(request: Request) {
 
       const backlog = await queryBacklogProperties();
       const checkedAt = easternDate();
-      const decisions = runMlsStatusCheck(makeExpiredRows(backlog), EXPIRED_MAP, currentRows, CURRENT_MAP);
+      const normalizedCurrentRows = currentRows.map((row) => ({
+        ...row,
+        [MATRIX_COLUMNS.folio]: matrixFolioValue(row) ?? "",
+      }));
+      const decisions = runMlsStatusCheck(makeExpiredRows(backlog), EXPIRED_MAP, normalizedCurrentRows, CURRENT_MAP);
       const updates: PlannedUpdate[] = [];
       const reviews: ReviewItem[] = [];
 

@@ -7,6 +7,7 @@ import {
   buildMatrixIntakeFile,
   calculateMarketMetrics,
   expiredPropertyPayload,
+  matrixFolioValue,
   statusSummary,
   validateMatrixExport,
   type ExpiredPropertyPayload,
@@ -45,14 +46,14 @@ const EXPIRED_MAP: ExpiredColumnMap = {
   city: MATRIX_COLUMNS.city,
   state: "",
   zip: MATRIX_COLUMNS.zip,
-  folio: "",
+  folio: MATRIX_COLUMNS.folio,
 };
 const CURRENT_MAP: CurrentMarketColumnMap = {
   address: MATRIX_COLUMNS.address,
   city: MATRIX_COLUMNS.city,
   state: "",
   zip: MATRIX_COLUMNS.zip,
-  folio: "",
+  folio: MATRIX_COLUMNS.folio,
   status: MATRIX_COLUMNS.status,
   mls: MATRIX_COLUMNS.mls,
 };
@@ -242,7 +243,16 @@ export default function MlsIntakePage() {
 
   const decisions = useMemo<StatusDecision[] | null>(() => {
     if (!expiredRows.length || !currentFile) return null;
-    return runMlsStatusCheck(expiredRows, EXPIRED_MAP, currentFile.rows, CURRENT_MAP);
+    const withCanonicalFolio = (row: Record<string, string>) => ({
+      ...row,
+      [MATRIX_COLUMNS.folio]: matrixFolioValue(row) ?? "",
+    });
+    return runMlsStatusCheck(
+      expiredRows.map(withCanonicalFolio),
+      EXPIRED_MAP,
+      currentFile.rows.map(withCanonicalFolio),
+      CURRENT_MAP
+    );
   }, [expiredRows, currentFile]);
 
   const effective = decisions?.map((d) => ({ ...d, status: reviews[d.sourceIndex] ?? d.status })) ?? [];
