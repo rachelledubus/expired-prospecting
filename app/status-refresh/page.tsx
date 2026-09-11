@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Papa from "papaparse";
 import {
   buildMatrixIntakeFile,
+  matrixFolioValue,
   statusSummary,
   validateMatrixExport,
   type MatrixIntakeFile,
 } from "@/lib/mls-intake";
+import { normalizeAddress, normalizeCity, normalizeZip } from "@/lib/mls-status";
 
 const APPLY_BATCH_SIZE = 20;
 
@@ -32,6 +34,8 @@ type PlanResponse = {
   error?: string;
   checkedAt?: string;
   backlogCount?: number;
+  notionBacklogTotal?: number;
+  uploadedExpiredCount?: number;
   clearExpired?: number;
   relisted?: number;
   reviews?: ReviewItem[];
@@ -44,61 +48,96 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+function dedupeExpiredRows(files: MatrixIntakeFile[]) {
+  const unique = new Map<string, Record<string, string>>();
+  for (const file of files) {
+    for (const row of file.rows) {
+      const folio = matrixFolioValue(row) ?? "";
+      const address = normalizeAddress(String(row.Address ?? ""));
+      const city = normalizeCity(String(row["City Name"] ?? ""));
+      const zip = normalizeZip(String(row["Zip Code"] ?? ""));
+      const key = folio ? `folio:${folio}` : address && zip ? `address:${address}|${zip}` : `fallback:${address}|${city}|${zip}`;
+      if (key && !unique.has(key)) unique.set(key, row);
+    }
+  }
+  return [...unique.values()];
+}
+
+function dedupeCurrentRows(files: MatrixIntakeFile[]) {
+  const unique = new Map<string, Record<string, string>>();
+  for (const file of files) {
+    for (const row of file.rows) {
+      const folio = matrixFolioValue(row) ?? "";
+      const address = normalizeAddress(String(row.Address ?? ""));
+      const city = normalizeCity(String(row["City Name"] ?? ""));
+      const zip = normalizeZip(String(row["Zip Code"] ?? ""));
+      const status = String(row.St ?? "").trim().toUpperCase();
+      const mls = String(row["MLS # Link"] ?? "").trim();
+      const propertyKey = folio ? `folio:${folio}` : address && zip ? `address:${address}|${zip}` : `fallback:${address}|${city}|${zip}`;
+      const key = `${propertyKey}|${status}|${mls}`;
+      if (!unique.has(key)) unique.set(key, row);
+    }
+  }
+  return [...unique.values()];
+}
+
 export default function StatusRefreshPage() {
-  const [file, setFile] = useState<MatrixIntakeFile | null>(null);
+  const [files, setFiles] = useState<MatrixIntakeFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [result, setResult] = useState<PlanResponse | null>(null);
   const [applied, setApplied] = useState(0);
 
-  async function loadFile(selected?: File) {
+  const expiredFiles = files.filter((file) => file.kind === "expired" && !validateMatrixExport(file.kind, file.headers, file.rows).errors.length);
+  const currentFiles = files.filter((file) => file.kind === "current" && !validateMatrixExport(file.kind, file.headers, file.rows).errors.length);
+  const unsupportedFiles = files.filter((file) => !["expired", "current"].includes(file.kind));
+
+  const expiredRows = useMemo(() => dedupeExpiredRows(expiredFiles), [expiredFiles]);
+  const currentRows = useMemo(() => dedupeCurrentRows(currentFiles), [currentFiles]);
+
+  async function addFiles(list: FileList | null) {
     setError(null);
     setResult(null);
     setApplied(0);
     setProgress(null);
-    if (!selected) {
-      setFile(null);
-      return;
-    }
+    if (!list?.length) return;
 
-    Papa.parse<Record<string, string>>(selected, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (parsed) => {
-        const intake = buildMatrixIntakeFile(
-          selected.name,
-          parsed.meta.fields ?? [],
-          parsed.data,
-          `${selected.name}-${selected.size}-${selected.lastModified}`
-        );
-        const validation = validateMatrixExport(intake.kind, intake.headers, intake.rows);
-        if (intake.kind !== "current") {
-          setFile(null);
-          setError("This is not recognized as the PROSPECTING — CURRENT MARKET STATUS export. Use that saved Matrix search and export a fresh CSV.");
-          return;
-        }
-        if (validation.errors.length) {
-          setFile(null);
-          setError(validation.errors.join(" "));
-          return;
-        }
-        if (!intake.rows.length) {
-          setFile(null);
-          setError("The Current Market Status export is empty. Nothing was changed in Notion.");
-          return;
-        }
-        setFile(intake);
-      },
-      error: (parseError) => {
-        setFile(null);
-        setError(`Could not read CSV: ${parseError.message}`);
-      },
-    });
+    try {
+      const parsed = await Promise.all(Array.from(list).map((selected) => new Promise<MatrixIntakeFile>((resolve, reject) => {
+        Papa.parse<Record<string, string>>(selected, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (result) => resolve(buildMatrixIntakeFile(
+            selected.name,
+            result.meta.fields ?? [],
+            result.data,
+            `${selected.name}-${selected.size}-${selected.lastModified}`
+          )),
+          error: reject,
+        });
+      })));
+
+      setFiles((existing) => {
+        const next = new Map(existing.map((file) => [file.id, file]));
+        for (const file of parsed) next.set(file.id, file);
+        return [...next.values()];
+      });
+    } catch (parseError) {
+      setError(`Could not read CSV: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+  }
+
+  function clearFiles() {
+    setFiles([]);
+    setError(null);
+    setResult(null);
+    setApplied(0);
+    setProgress(null);
   }
 
   async function runRefresh() {
-    if (!file || working) return;
+    if (!expiredRows.length || !currentRows.length || working) return;
     setWorking(true);
     setError(null);
     setResult(null);
@@ -109,7 +148,7 @@ export default function StatusRefreshPage() {
       const planResponse = await fetch("/api/status-refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "plan", rows: file.rows }),
+        body: JSON.stringify({ mode: "plan", scopeRows: expiredRows, rows: currentRows }),
       });
       const plan = await planResponse.json() as PlanResponse;
       if (!planResponse.ok) throw new Error(plan.error ?? `Status plan failed (${planResponse.status}).`);
@@ -149,7 +188,7 @@ export default function StatusRefreshPage() {
     }
   }
 
-  const statuses = file ? statusSummary(file.rows) : [];
+  const statuses = currentRows.length ? statusSummary(currentRows) : [];
   const reviews = result?.reviews ?? [];
   const updates = result?.updates ?? [];
   const relisted = result?.relisted ?? 0;
@@ -159,61 +198,69 @@ export default function StatusRefreshPage() {
     <div className="page">
       <div className="top-bar">
         <div>
-          <h1>Refresh Backlog Market Status</h1>
-          <p className="muted">Daily $0 safety gate before expired-listing backlog work.</p>
+          <h1>Refresh Existing Backlog Market Status</h1>
+          <p className="muted">$0 Tracerfy maintenance only. This page never creates new expired leads.</p>
         </div>
         <a href="/">Home</a>
       </div>
 
       <div className="panel">
-        <h2 style={{ marginTop: 0 }}>1. Export the saved Matrix search</h2>
+        <h2 style={{ marginTop: 0 }}>1. Upload the historical files you already have</h2>
         <p className="muted">
-          Run <strong>PROSPECTING — CURRENT MARKET STATUS</strong> in Matrix and export a fresh CSV. Do not change the saved search scope; absence from this export is what lets the portal safely confirm a backlog property is still off market.
+          Select <strong>all existing Expired CSVs</strong> that make up the backlog you want to refresh, plus <strong>one or more fresh Current Market Status CSVs</strong> covering those same properties. Multiple files are expected. Do not run a new expired intake just to use this page.
+        </p>
+        <p className="muted">
+          For the Current Market Status export, include <strong>Expired (X)</strong> along with the other relevant statuses. The portal now requires a positive current-status match; a property missing from the current-status files is left unresolved instead of being assumed Expired.
         </p>
 
         <div className="field">
-          <label htmlFor="status-file">Current Market Status CSV</label>
+          <label htmlFor="status-files">Expired + Current Status CSV files</label>
           <input
-            id="status-file"
+            id="status-files"
             type="file"
+            multiple
             accept=".csv,text/csv"
-            onChange={(event) => loadFile(event.target.files?.[0])}
+            onChange={(event) => addFiles(event.target.files)}
           />
         </div>
 
-        {file && <div className="person-card">
-          <strong>{file.filename}</strong>
-          <p className="muted">{file.rows.length} current-market row{file.rows.length === 1 ? "" : "s"} · {file.confidence} confidence</p>
+        {files.length > 0 && <div className="person-card">
+          <strong>{files.length} file{files.length === 1 ? "" : "s"} loaded</strong>
+          <p className="muted">
+            {expiredFiles.length} expired file{expiredFiles.length === 1 ? "" : "s"} → {expiredRows.length} unique expired properties · {currentFiles.length} current-status file{currentFiles.length === 1 ? "" : "s"} → {currentRows.length} current rows
+          </p>
           {statuses.length > 0 && <p className="meta">{statuses.map((status) => `${status.label}: ${status.count}`).join(" · ")}</p>}
+          {unsupportedFiles.length > 0 && <p className="error">{unsupportedFiles.length} file(s) were not recognized as Expired or Current Market Status and will be ignored.</p>}
+          <button type="button" onClick={clearFiles} disabled={working}>Clear files</button>
         </div>}
 
         {error && <p className="error">{error}</p>}
       </div>
 
       <div className="panel" style={{ marginTop: 16 }}>
-        <h2 style={{ marginTop: 0 }}>2. Refresh Notion backlog</h2>
+        <h2 style={{ marginTop: 0 }}>2. Refresh only the existing Notion backlog</h2>
         <p className="muted">
-          This checks the existing unresolved expired-property backlog only. It does not call Tracerfy, spend credits, create CRM leads, or import new expired records.
+          This intersects the uploaded historical Expired files with unresolved MLS-pull records already in Property Research. It does <strong>not</strong> call Tracerfy, spend credits, create CRM leads, or import new expired records.
         </p>
-        <button disabled={!file || working} onClick={runRefresh}>
-          {working ? "Refreshing Notion…" : "Refresh existing backlog status"}
+        <button disabled={!expiredRows.length || !currentRows.length || working} onClick={runRefresh}>
+          {working ? "Refreshing Notion…" : "Refresh existing backlog — $0 Tracerfy"}
         </button>
 
-        {progress && <p className="meta">{progress.current} of {progress.total} Notion record{progress.total === 1 ? "" : "s"} updated</p>}
+        {progress && <p className="meta">{progress.current} of {progress.total} confirmed Notion record{progress.total === 1 ? "" : "s"} updated</p>}
 
         {result && <div className="person-card">
-          <strong>{complete ? "✓ Status refresh complete" : "Status refresh planned"}</strong>
+          <strong>{complete ? "✓ Safe refresh pass complete" : "Status refresh planned"}</strong>
           <p className="muted">
-            {result.backlogCount ?? 0} backlog properties checked · {result.clearExpired ?? 0} still Expired · {relisted} moved out of Expired · {reviews.length} need manual status review
+            {result.uploadedExpiredCount ?? expiredRows.length} uploaded unique expired properties · {result.backlogCount ?? 0} matched the unresolved Notion backlog · {result.clearExpired ?? 0} positively confirmed Expired · {relisted} moved out of Expired · {reviews.length} remain blocked for review
           </p>
           {result.checkedAt && <p className="meta">Market Status Checked At: {result.checkedAt}</p>}
-          {relisted > 0 && <p className="muted">Non-expired matches now flow into the Notion Status Exceptions queue and are blocked from ownership cleanup.</p>}
-          {complete && reviews.length === 0 && <p className="muted">You can return to the Notion backlog workflow. Today’s still-expired records are now eligible for ownership cleanup.</p>}
+          {complete && reviews.length === 0 && <p className="muted">You can return to the Notion backlog workflow. Every in-scope record had a positive current-status match.</p>}
+          {complete && reviews.length > 0 && <p className="muted">Do not move the review rows into ownership cleanup yet. They were intentionally left unstamped because the uploaded current-status files did not positively account for them.</p>}
         </div>}
 
         {reviews.length > 0 && <div className="person-card">
-          <strong>Manual review required</strong>
-          <p className="muted">These rows were intentionally not stamped current, so they remain blocked in Notion until resolved.</p>
+          <strong>Still needs current-status confirmation</strong>
+          <p className="muted">No-match is no longer treated as “still Expired.” These stay blocked until a Matrix current-status export positively identifies them.</p>
           {reviews.slice(0, 20).map((review) => (
             <div key={`${review.id}-${review.address}`} style={{ marginTop: 10 }}>
               <strong>{review.address}</strong>
