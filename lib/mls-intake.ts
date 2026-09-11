@@ -19,6 +19,7 @@ export type ExpiredPropertyPayload = {
   city: string;
   zip: string;
   listingStatus: "Expired";
+  folioNumber?: string;
   dateOffMarket?: string;
   originalPrice?: number;
   finalPrice?: number;
@@ -60,7 +61,18 @@ export const MATRIX_COLUMNS = {
   lotSqft: "Lot SqFt",
   associationFee: "Association Fee",
   associationCadence: "Assoc Fee Paid Per",
+  folio: "Folio Number",
 } as const;
+
+export const MATRIX_FOLIO_COLUMNS = [
+  "Folio Number",
+  "Folio",
+  "Tax ID",
+  "Tax ID #",
+  "Parcel ID",
+  "Property ID",
+  "Tax Folio Number",
+] as const;
 
 const CORE_COLUMNS = [MATRIX_COLUMNS.address, MATRIX_COLUMNS.city, MATRIX_COLUMNS.zip, MATRIX_COLUMNS.status];
 
@@ -190,6 +202,20 @@ function firstValue(row: CsvRow, keys: string[]) {
   return undefined;
 }
 
+/** Reads an optional Matrix ownership identifier without making it required. */
+export function matrixFolioValue(row: CsvRow): string | undefined {
+  const normalizedHeaders = new Map(
+    Object.keys(row).map((header) => [header.trim().toLowerCase(), header])
+  );
+  for (const alias of MATRIX_FOLIO_COLUMNS) {
+    const header = normalizedHeaders.get(alias.toLowerCase());
+    if (!header) continue;
+    const normalized = String(row[header] ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (normalized) return normalized;
+  }
+  return undefined;
+}
+
 export function expiredPropertyPayload(row: CsvRow): ExpiredPropertyPayload {
   const fullBaths = toNumber(String(row[MATRIX_COLUMNS.fullBaths] ?? ""));
   const halfBaths = toNumber(String(row[MATRIX_COLUMNS.halfBaths] ?? ""));
@@ -214,12 +240,14 @@ export function expiredPropertyPayload(row: CsvRow): ExpiredPropertyPayload {
   const yearBuilt = toNumber(String(row[MATRIX_COLUMNS.yearBuilt] ?? ""));
   const hoaAmount = toNumber(String(row[MATRIX_COLUMNS.associationFee] ?? ""));
   const hoaCadence = firstValue(row, [MATRIX_COLUMNS.associationCadence]);
+  const folioNumber = matrixFolioValue(row);
 
   return {
     address: String(row[MATRIX_COLUMNS.address] ?? "").trim(),
     city: String(row[MATRIX_COLUMNS.city] ?? "").trim(),
     zip: String(row[MATRIX_COLUMNS.zip] ?? "").trim(),
     listingStatus: "Expired",
+    ...(folioNumber ? { folioNumber } : {}),
     ...(dateOffMarket ? { dateOffMarket } : {}),
     ...(originalPrice !== null ? { originalPrice } : {}),
     ...(finalPrice !== null ? { finalPrice } : {}),
