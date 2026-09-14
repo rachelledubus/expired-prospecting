@@ -1,7 +1,6 @@
 import type { ExpiredPropertyPayload } from "./mls-intake";
 
 const NOTION_VERSION = "2022-06-28";
-const BCPA_RECORD_SEARCH_URL = "https://web.bcpa.net/bcpaclient/#/Record-Search";
 
 export const KNOWN_CITIES = [
   "SW Ranches",
@@ -41,7 +40,6 @@ export type ExistingPropertyRecord = {
   ownerIds: string[];
   mailerTier: string | null;
   folioNumber: string | null;
-  bcpaRecordUrl: string | null;
 };
 
 export type ExpiredPropertySyncInput = ExpiredPropertyPayload & {
@@ -55,7 +53,6 @@ export type ExpiredPropertySyncResult = {
   url: string;
   mailerTier: string | null;
   premiumMailerEligible: boolean | null;
-  bcpaRecordUrl: string;
 };
 
 const notionHeaders = () => ({
@@ -138,7 +135,6 @@ function existingPropertyFromPage(page: any): ExistingPropertyRecord {
     folioNumber: page.properties?.["Folio Number"]?.rich_text
       ?.map((part: any) => part?.plain_text ?? part?.text?.content ?? "")
       .join("") || null,
-    bcpaRecordUrl: page.properties?.["BCPA Record URL"]?.url ?? null,
   };
 }
 
@@ -230,12 +226,6 @@ function normalizeHoaCadence(value?: string) {
   return null;
 }
 
-function bcpaRecordUrl(folioNumber?: string) {
-  return folioNumber
-    ? `${BCPA_RECORD_SEARCH_URL}?fnumber=${encodeURIComponent(folioNumber)}`
-    : BCPA_RECORD_SEARCH_URL;
-}
-
 function buildExpiredProperties(row: ExpiredPropertySyncInput, existing?: ExistingPropertyRecord | null) {
   const properties: Record<string, unknown> = {
     "Property Address": { title: [{ text: { content: row.address } }] },
@@ -265,11 +255,6 @@ function buildExpiredProperties(row: ExpiredPropertySyncInput, existing?: Existi
 
   if (row.folioNumber) {
     properties["Folio Number"] = { rich_text: [{ text: { content: row.folioNumber } }] };
-    properties["BCPA Record URL"] = { url: bcpaRecordUrl(row.folioNumber) };
-  } else if (!existing?.folioNumber && !existing?.bcpaRecordUrl) {
-    // A no-folio row still gets the official manual search route. Never replace
-    // an existing manually verified folio or record link with the generic URL.
-    properties["BCPA Record URL"] = { url: bcpaRecordUrl() };
   }
 
   const ownerIds = Array.from(new Set([...(existing?.ownerIds ?? []), ...(row.crmPageIds ?? [])].filter(Boolean)));
@@ -330,9 +315,6 @@ export async function upsertExpiredProperty(
     url: pageData.url ?? existing?.url ?? "",
     mailerTier,
     premiumMailerEligible: mailerTier ? /premium/i.test(mailerTier) : null,
-    bcpaRecordUrl: row.folioNumber
-      ? bcpaRecordUrl(row.folioNumber)
-      : existing?.bcpaRecordUrl ?? bcpaRecordUrl(),
   };
 }
 
