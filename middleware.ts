@@ -8,7 +8,10 @@ const PUBLIC_PATHS = ["/login", "/api/login"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.includes(pathname)) {
+  if (
+    PUBLIC_PATHS.includes(pathname) ||
+    (pathname === "/api/market-snapshot" && request.method === "GET")
+  ) {
     return NextResponse.next();
   }
 
