@@ -154,6 +154,7 @@ export default function MlsIntakePage() {
   const [error, setError] = useState<string | null>(null);
   const [publishingMarket, setPublishingMarket] = useState(false);
   const [marketPublishMessage, setMarketPublishMessage] = useState<string | null>(null);
+  const [marketPublishError, setMarketPublishError] = useState<string | null>(null);
 
   const kindOf = (f: MatrixIntakeFile) => kinds[f.id] ?? f.kind;
   const validation = (f: MatrixIntakeFile) => validateMatrixExport(kindOf(f), f.headers, f.rows);
@@ -240,7 +241,7 @@ export default function MlsIntakePage() {
     if (!hasActiveMarketFile || !hasClosedMarketFile || publishingMarket) return;
     setPublishingMarket(true);
     setMarketPublishMessage(null);
-    setError(null);
+    setMarketPublishError(null);
     try {
       const response = await fetch("/api/market-snapshot", {
         method: "POST",
@@ -251,7 +252,7 @@ export default function MlsIntakePage() {
       if (!response.ok) throw new Error(data.error ?? "Market publish failed.");
       setMarketPublishMessage("✓ Market snapshot published to the public website.");
     } catch (publishError) {
-      setError(publishError instanceof Error ? publishError.message : "Market publish failed.");
+      setMarketPublishError(publishError instanceof Error ? publishError.message : "Market publish failed.");
     } finally {
       setPublishingMarket(false);
     }
@@ -706,6 +707,7 @@ export default function MlsIntakePage() {
             {publishingMarket ? "Publishing..." : "Publish Market Snapshot"}
           </button>
           {marketPublishMessage && <p className="meta">{marketPublishMessage}</p>}
+          {marketPublishError && <p className="error">{marketPublishError}</p>}
         </div>
       </div>}
 
