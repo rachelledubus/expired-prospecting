@@ -276,6 +276,7 @@ export type MarketMetrics = {
   medianDom: number | null;
   medianCdom: number | null;
   medianSaleToList: number | null;
+  medianSaleToOriginalList: number | null;
 };
 
 export function calculateMarketMetrics(rows: CsvRow[]): MarketMetrics {
@@ -288,6 +289,11 @@ export function calculateMarketMetrics(rows: CsvRow[]): MarketMetrics {
     const list = toNumber(r[MATRIX_COLUMNS.listPrice]);
     return sale && list ? sale / list : null;
   }).filter((v): v is number => v !== null && v > 0);
+  const originalRatios = rows.map((r) => {
+    const sale = toNumber(r[MATRIX_COLUMNS.salePrice]);
+    const original = toNumber(r[MATRIX_COLUMNS.originalListPrice]);
+    return sale && original ? sale / original : null;
+  }).filter((v): v is number => v !== null && v > 0);
   return {
     listings: rows.length,
     medianListPrice: median(listPrices),
@@ -295,6 +301,7 @@ export function calculateMarketMetrics(rows: CsvRow[]): MarketMetrics {
     medianDom: median(dom),
     medianCdom: median(cdom),
     medianSaleToList: median(ratios),
+    medianSaleToOriginalList: median(originalRatios),
   };
 }
 
@@ -302,4 +309,116 @@ export function statusSummary(rows: CsvRow[]) {
   return Object.entries(statusCounts(rows))
     .sort((a, b) => b[1] - a[1])
     .map(([code, count]) => ({ code, label: expandMiamiMlsStatus(code), count }));
+}
+
+
+export const MARKET_AREAS = [
+  { name: "Cooper City", slug: "cooper-city" },
+  { name: "Pembroke Pines", slug: "pembroke-pines" },
+  { name: "Plantation", slug: "plantation" },
+  { name: "Davie", slug: "davie" },
+  { name: "Weston", slug: "weston" },
+  { name: "Southwest Ranches", slug: "southwest-ranches" },
+  { name: "Miramar", slug: "miramar" },
+] as const;
+
+export type MarketAreaSnapshot = {
+  name: string;
+  slug: string;
+  activeListings: number;
+  newListings: number;
+  closedSales: number;
+  medianActiveListPrice: number | null;
+  medianSalePrice: number | null;
+  medianDom: number | null;
+  medianCdom: number | null;
+  medianSaleToList: number | null;
+  medianSaleToOriginalList: number | null;
+};
+
+export type MarketSnapshot = {
+  version: 1;
+  generatedAt: string;
+  scope: string;
+  areas: MarketAreaSnapshot[];
+  source: {
+    activeRows: number;
+    newRows: number;
+    closedRows: number;
+    newListingsRange: { start: string; end: string } | null;
+    closedSalesRange: { start: string; end: string } | null;
+  };
+};
+
+function normalizedMarketCity(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function marketRowsForArea(rows: CsvRow[], areaName: string) {
+  const city = normalizedMarketCity(areaName);
+  return rows.filter((row) => normalizedMarketCity(row[MATRIX_COLUMNS.city]) === city && isDetachedSingleFamilyForMarket(row));
+}
+
+function isDetachedSingleFamilyForMarket(row: CsvRow) {
+  const label = [
+    String(row[MATRIX_COLUMNS.typeOfProperty] ?? ""),
+    String(row[MATRIX_COLUMNS.propertyType] ?? ""),
+  ].join(" ").toLowerCase();
+
+  if (/condo|townhouse|townhome|villa|co-?op|duplex|triplex|fourplex|multifamily|multi-family|mobile home/.test(label)) {
+    return false;
+  }
+
+  // The Matrix saved searches are the source of truth for the detached-SFH scope.
+  // This only removes rows that are explicitly labeled as an attached/non-SFH type.
+  return true;
+}
+
+function rowDateRange(rows: CsvRow[], column: string) {
+  const dates = rows
+    .map((row) => toIsoDate(String(row[column] ?? "")))
+    .filter((value): value is string => Boolean(value))
+    .sort();
+
+  return dates.length ? { start: dates[0], end: dates[dates.length - 1] } : null;
+}
+
+export function buildMarketSnapshot(files: Array<Pick<MatrixIntakeFile, "kind" | "rows">>): MarketSnapshot {
+  const activeRows = files.filter((file) => file.kind === "active").flatMap((file) => file.rows);
+  const newRows = files.filter((file) => file.kind === "new").flatMap((file) => file.rows);
+  const closedRows = files.filter((file) => file.kind === "closed").flatMap((file) => file.rows);
+
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    scope: "Detached single-family homes",
+    areas: MARKET_AREAS.map((area) => {
+      const active = marketRowsForArea(activeRows, area.name);
+      const fresh = marketRowsForArea(newRows, area.name);
+      const closed = marketRowsForArea(closedRows, area.name);
+      const activeMetrics = calculateMarketMetrics(active);
+      const closedMetrics = calculateMarketMetrics(closed);
+
+      return {
+        name: area.name,
+        slug: area.slug,
+        activeListings: active.length,
+        newListings: fresh.length,
+        closedSales: closed.length,
+        medianActiveListPrice: activeMetrics.medianListPrice,
+        medianSalePrice: closedMetrics.medianSalePrice,
+        medianDom: closedMetrics.medianDom,
+        medianCdom: closedMetrics.medianCdom,
+        medianSaleToList: closedMetrics.medianSaleToList,
+        medianSaleToOriginalList: closedMetrics.medianSaleToOriginalList,
+      };
+    }),
+    source: {
+      activeRows: activeRows.length,
+      newRows: newRows.length,
+      closedRows: closedRows.length,
+      newListingsRange: rowDateRange(newRows, MATRIX_COLUMNS.entryDate),
+      closedSalesRange: rowDateRange(closedRows, MATRIX_COLUMNS.closingDate),
+    },
+  };
 }
