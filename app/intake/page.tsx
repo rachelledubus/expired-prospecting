@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import {
   MATRIX_COLUMNS,
   buildMatrixIntakeFile,
+  buildMarketSnapshot,
   calculateMarketMetrics,
   expiredPropertyPayload,
   matrixFolioValue,
@@ -151,6 +152,8 @@ export default function MlsIntakePage() {
   const [existingRefreshConfirmed, setExistingRefreshConfirmed] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [publishingMarket, setPublishingMarket] = useState(false);
+  const [marketPublishMessage, setMarketPublishMessage] = useState<string | null>(null);
 
   const kindOf = (f: MatrixIntakeFile) => kinds[f.id] ?? f.kind;
   const validation = (f: MatrixIntakeFile) => validateMatrixExport(kindOf(f), f.headers, f.rows);
@@ -226,6 +229,33 @@ export default function MlsIntakePage() {
   const currentFiles = files.filter((f) => kindOf(f) === "current" && !validation(f).errors.length);
   const currentFile = currentFiles[currentFiles.length - 1];
   const marketFiles = files.filter((f) => ["active", "new", "closed"].includes(kindOf(f)) && !validation(f).errors.length);
+  const marketSnapshot = useMemo(
+    () => buildMarketSnapshot(marketFiles.map((f) => ({ kind: kindOf(f), rows: f.rows }))),
+    [marketFiles, kinds]
+  );
+  const hasActiveMarketFile = marketFiles.some((f) => kindOf(f) === "active");
+  const hasClosedMarketFile = marketFiles.some((f) => kindOf(f) === "closed");
+
+  async function publishMarketSnapshot() {
+    if (!hasActiveMarketFile || !hasClosedMarketFile || publishingMarket) return;
+    setPublishingMarket(true);
+    setMarketPublishMessage(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/publish-market", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ snapshot: marketSnapshot }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Market publish failed.");
+      setMarketPublishMessage("✓ Market snapshot published to the public website.");
+    } catch (publishError) {
+      setError(publishError instanceof Error ? publishError.message : "Market publish failed.");
+    } finally {
+      setPublishingMarket(false);
+    }
+  }
 
   const expiredRows = useMemo(() => {
     const unique = new Map<string, Record<string, string>>();
@@ -634,8 +664,49 @@ export default function MlsIntakePage() {
         <h2 style={{ marginTop: 0 }}>3. Market data</h2>
         {marketFiles.map((f) => { const m = calculateMarketMetrics(f.rows); return <div className="person-card" key={f.id}>
           <strong>{LABEL[kindOf(f)]} · {m.listings} listings</strong>
-          <p className="muted">Median list {money(m.medianListPrice)} · Median sale {money(m.medianSalePrice)} · Median DOM {m.medianDom ?? "—"} · Median CDOM {m.medianCdom ?? "—"}{m.medianSaleToList ? ` · Sale-to-list ${(m.medianSaleToList * 100).toFixed(1)}%` : ""}</p>
+          <p className="muted">Median list {money(m.medianListPrice)} · Median sale {money(m.medianSalePrice)} · Median DOM {m.medianDom ?? "—"} · Median CDOM {m.medianCdom ?? "—"}{m.medianSaleToOriginalList ? ` · Sale-to-original ${(m.medianSaleToOriginalList * 100).toFixed(1)}%` : m.medianSaleToList ? ` · Sale-to-list ${(m.medianSaleToList * 100).toFixed(1)}%` : ""}</p>
         </div>; })}
+
+        <div className="person-card" style={{ marginTop: 12 }}>
+          <strong>Public market snapshot</strong>
+          <p className="muted">
+            Uses the same Active / New / Closed files already loaded above. Nothing needs to be uploaded a second time.
+            Only aggregate city statistics are published — not listing rows.
+          </p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", padding: "6px 8px" }}>Area</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px" }}>Active</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px" }}>New</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px" }}>Closed</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px" }}>Median sale</th>
+                  <th style={{ textAlign: "right", padding: "6px 8px" }}>DOM</th>
+                </tr>
+              </thead>
+              <tbody>
+                {marketSnapshot.areas.map((area) => (
+                  <tr key={area.slug}>
+                    <td style={{ padding: "6px 8px" }}>{area.name}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px" }}>{area.activeListings}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px" }}>{area.newListings}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px" }}>{area.closedSales}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px" }}>{money(area.medianSalePrice)}</td>
+                    <td style={{ textAlign: "right", padding: "6px 8px" }}>{area.medianDom ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!hasActiveMarketFile || !hasClosedMarketFile ? (
+            <p className="muted">Upload both an Active Inventory export and a Closed Sales export before publishing. New Listings is optional.</p>
+          ) : null}
+          <button disabled={!hasActiveMarketFile || !hasClosedMarketFile || publishingMarket} onClick={publishMarketSnapshot}>
+            {publishingMarket ? "Publishing..." : "Publish Market Snapshot"}
+          </button>
+          {marketPublishMessage && <p className="meta">{marketPublishMessage}</p>}
+        </div>
       </div>}
 
       {(expiredFiles.length > 0 || currentFile) && <div className="panel" style={{ marginTop: 16 }}>
