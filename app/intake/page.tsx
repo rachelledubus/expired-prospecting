@@ -242,7 +242,7 @@ export default function MlsIntakePage() {
     setMarketPublishMessage(null);
     setError(null);
     try {
-      const response = await fetch("/api/publish-market", {
+      const response = await fetch("/api/market-snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ snapshot: marketSnapshot }),
