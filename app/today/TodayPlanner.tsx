@@ -42,6 +42,14 @@ function durText(m: number) {
   return r ? `${h} h ${r} min` : `${h} h`;
 }
 const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
+const endIso = (t: { start: string | null; end: string | null }, s: number, e: number) =>
+  t.end && hasTime(t.end) ? t.end : new Date(new Date(t.start!).getTime() + (e - s) * 60000).toISOString();
+
+function taskMeta(t: Item) {
+  const when = t.minutes ? `${durText(t.minutes)}, no set time` : "No set time";
+  const kind = t.calendarRole === "Deadline" || t.calendarRole === "Appointment" ? t.calendarRole : null;
+  return [when, kind, tagsOf(t).join(", ") || t.timeBlock].filter(Boolean).join("  ·  ");
+}
 
 function dueText(t: Item) {
   if (!t.start) return null;
@@ -176,6 +184,25 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const todayDate = etParts(new Date(data.fetchedAt)).date;
   const live = nowParts !== null && nowParts.date === todayDate;
 
+  // Current focus comes from the schedule: the block(s) happening right now, and what is next.
+  // Before the browser clock is read, use the time the data was fetched so the first paint matches the server.
+  const clockMs = nowMs ?? Date.parse(data.fetchedAt);
+  const cp = etParts(new Date(clockMs));
+  const sameDay = cp.date === todayDate;
+  const openBlocks = placed.filter((p) => p.task.status !== "Done");
+  const currentBlocks = sameDay ? openBlocks.filter((p) => cp.min >= p.s && cp.min < p.e) : [];
+  const nextBlock = sameDay
+    ? openBlocks.filter((p) => p.s > cp.min && !currentBlocks.includes(p)).sort((a, b) => a.s - b.s)[0] ?? null
+    : null;
+
+  // Important Tasks are the to-do items: NOW-list tasks that are not time blocks on the schedule,
+  // plus anything on today's schedule list that has no time. None of them appear on the agenda.
+  const scheduleIds = new Set(data.schedule.map((t) => t.id));
+  const importantTasks: Item[] = [];
+  [...data.now.filter((t) => !scheduleIds.has(t.id)), ...unscheduled.filter((t) => t.status !== "Done")].forEach((t) => {
+    if (!importantTasks.some((x) => x.id === t.id)) importantTasks.push(t);
+  });
+
   const hours: number[] = [];
   for (let m = gridStart; m <= gridEnd && gridEnd > 0; m += 30) hours.push(m);
 
@@ -243,20 +270,59 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
           <p className="state-line" key={w}>{w}</p>
         ))}
 
-        <div className="label">Focus now</div>
+        <div className="label">Current focus</div>
+        {!sameDay ? (
+          <div className="cf idle">
+            <div className="cf-kicker">Out of date</div>
+            <h2>This page was loaded on a different day.</h2>
+            <div className="cf-actions">
+              <button className="pill" type="button" onClick={refresh}>Refresh</button>
+            </div>
+          </div>
+        ) : currentBlocks.length > 0 ? (
+          currentBlocks.map(({ task: t, s, e }) => {
+            const pct = Math.min(100, Math.max(0, ((cp.min - s) / (e - s)) * 100));
+            return (
+              <div className="cf" key={t.id}>
+                <div className="cf-kicker">Right now</div>
+                <h2>{t.title}</h2>
+                <div className="cf-meta">{rangeText(t.start!, endIso(t, s, e))}  {"·"}  {durText(e - cp.min)} left</div>
+                <div className="cf-bar" aria-hidden="true"><div style={{ width: `${pct}%` }} /></div>
+                {t.nextInstruction && <p className="cf-instr">{t.nextInstruction}</p>}
+                <div className="cf-actions">
+                  {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
+                  <button className={"pill" + (t.link ? " ghost" : "")} type="button" onClick={() => openDetail(t.id)}>Details</button>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="cf idle">
+            <div className="cf-kicker">{nextBlock ? "Free right now" : "Schedule clear"}</div>
+            <h2>
+              {nextBlock
+                ? "Nothing is scheduled at this moment."
+                : placed.length === 0
+                  ? "Nothing is scheduled for today in Notion."
+                  : "Nothing left on today's schedule."}
+            </h2>
+          </div>
+        )}
+        {sameDay && nextBlock && (
+          <button className="cf-next" type="button" onClick={() => openDetail(nextBlock.task.id)}>
+            Up next: <strong>{nextBlock.task.title}</strong> at {fmtTime(nextBlock.task.start!, true)}, in {durText(nextBlock.s - cp.min)}
+          </button>
+        )}
+
+        <div className="label">Important Tasks</div>
         <div className="focus">
-          {data.now.length === 0 && <div className="empty">Nothing in your NOW view right now.</div>}
-          {data.now.map((t) => (
+          {importantTasks.length === 0 && <div className="empty">No tasks in your NOW list right now.</div>}
+          {importantTasks.map((t) => (
             <button className="focus-item" type="button" key={t.id} onClick={() => openDetail(t.id)}>
               <span className={"bullet" + (t.weeklyRole === "Must Happen" ? " hot" : "")} />
               <span>
                 <div className="f-title">{t.title}</div>
-                <div className="f-meta">
-                  {[
-                    t.start && hasTime(t.start) && t.end ? rangeText(t.start, t.end) : t.minutes ? `${durText(t.minutes)}, no set time` : "No set time",
-                    tagsOf(t).join(", ") || t.timeBlock,
-                  ].filter(Boolean).join("  ·  ")}
-                </div>
+                <div className="f-meta">{taskMeta(t)}</div>
               </span>
             </button>
           ))}
@@ -320,7 +386,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
         <p className="snap" style={{ marginTop: 8 }}>Saved on this device only. Changes here do not update Notion yet.</p>
 
         <div className="label">Schedule</div>
-        {data.schedule.length === 0 ? (
+        {placed.length === 0 ? (
           <div className="nothing">Nothing is scheduled for today in Notion.</div>
         ) : (
           <div className="sheet-card">
@@ -358,17 +424,6 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                 {live && nowParts!.min >= gridStart && nowParts!.min <= gridEnd && (
                   <div className="nowline" style={{ top: (nowParts!.min - gridStart) * SC }} />
                 )}
-              </div>
-            )}
-            {unscheduled.length > 0 && (
-              <div className="unsched">
-                <div className="d-label" style={{ margin: "0 0 4px" }}>No set time</div>
-                {unscheduled.map((t) => (
-                  <button className="prio-main" type="button" key={t.id} onClick={() => openDetail(t.id)} style={{ padding: "8px 0" }}>
-                    <span className="bullet" />
-                    <span><div className="f-title">{t.title}</div></span>
-                  </button>
-                ))}
               </div>
             )}
             <div className="legend"><span><i className="w" />Work blocks</span><span><i />Routines and meals</span></div>

@@ -1,16 +1,17 @@
 # Today page (`/today`)
 
-A simplified, read-only daily planner. It shows three things and nothing else:
+A simplified, read-only daily planner. It shows four things and nothing else:
 
-1. **Focus now**: the rows in the NOW view on the Notion Today page.
-2. **Other important priorities**: open tasks (Do Next or In progress) that are not already on the schedule or in Focus now. The default list is the top four "Must Happen" tasks in Notion's own priority order. Add, remove and reorder are available through Edit.
-3. **Schedule**: the rows in the "TODAY, Full Schedule" view, drawn as an hour-by-hour planner. Tasks marked Done show as done.
+1. **Current focus**: what the schedule says you should be doing right now (block, time left, progress bar, next instruction, link). Between blocks it says you are free and shows what is up next. Done blocks are skipped. If two blocks overlap, both show.
+2. **Important Tasks**: the rows in the NOW view on the Notion Today page, plus any scheduled item with no set time. These never appear on the agenda.
+3. **Other important priorities**: open tasks (Do Next or In progress) that are not already on the schedule or in Important Tasks. The default list is the top four "Must Happen" tasks in Notion's own priority order. Add, remove and reorder are available through Edit.
+4. **Schedule**: the time-blocked rows in the "TODAY, Full Schedule" view, drawn as an hour-by-hour planner. Tasks marked Done show as done.
 
 Notion stays the only database. This page does not write to Notion and adds no storage of its own.
 
 ## How it reads Notion
 
-- Schedule and Focus now are read by asking Notion for the rows of two saved views. Those views already hold the rules for what counts as "today" (they filter on formulas such as Execution Day), so the rules are not copied into this code. If the views change in Notion, the page follows.
+- Schedule and Important Tasks are read by asking Notion for the rows of two saved views. Those views already hold the rules for what counts as "today" (they filter on formulas such as Execution Day), so the rules are not copied into this code. If the views change in Notion, the page follows.
 - Notion returns only row ids for a view, so each row is then fetched once for its details. That is about ten small requests per page load.
 - Open tasks come from one query on the Tasks data source.
 - Code: `lib/today.ts` (Notion reads), `app/today/page.tsx` (server page), `app/today/TodayPlanner.tsx` (the screen), `app/today/today.css` (scoped styles, no effect on other pages).
