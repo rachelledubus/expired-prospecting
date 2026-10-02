@@ -4,7 +4,7 @@ A simplified daily planner styled like a paper planner page (cream background, b
 
 1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
 2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
-3. **Habits**: real habits from your Habits + Routines database in Notion. It shows habits that have a Routine Priority and a daily time of day (Early morning through Evening), grouped by time of day. A habit is left out when its task for today is already on the schedule or in the NOW list, so nothing appears twice. Weekly, monthly and yearly habits are not shown. Tapping a habit ticks it for today on this device only; ticks reset each day and Notion is not updated.
+3. **Habits**: real habits from your Habits + Routines database in Notion. It shows habits that have a Routine Priority and a daily time of day (Early morning through Evening), grouped by time of day. A habit is left out when its task for today is already on the schedule or in the NOW list, so nothing appears twice. Weekly, monthly and yearly habits are not shown. Tapping a habit checks or unchecks the habit's **Checkbox** property in Notion, and the page reads that same Checkbox back, so Notion stays the source of truth. The Checkbox does not reset by itself; if you want it cleared each morning, that needs a Notion automation.
 4. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
 
 The side tabs jump to each section. 
@@ -19,12 +19,13 @@ On the Current focus card, **Restart time** starts the current task at the curre
 - Nothing is allowed to move into a different day, and a shift of more than 8 hours is refused.
 - It writes only the **Due Date** of tasks that Notion's own Schedule view returned, one at a time. If any write fails, the ones already changed are put back.
 - The server route is `app/api/today/restart/route.ts` (behind the portal login, same-origin only). The planning rules are in `lib/today-shift.ts`, shared by the page preview and the server so they always agree.
-- It uses its own key, `NOTION_TODAY_EDIT_API_KEY`. The read-only key can never write. Without this key the button explains it is not set up and changes nothing.
+- It uses its own key, `NOTION_TODAY_EDIT_API_KEY` (also used to tick habits via `app/api/today/habit/route.ts`, which can only change the Checkbox of pages inside the Habits + Routines database). The read-only key can never write. Without this key the button explains it is not set up and changes nothing.
 
 Setup for Restart time (once):
 
 1. In Notion go to notion.so/my-integrations and create an internal integration named "Today (edit times)". Capabilities: **Read content** and **Update content**. Leave Insert content, comments and user information off.
-2. Open the **Tasks** database, choose ••• → **Connections**, and add that integration. Do not add it anywhere else.
+2. Open the **Tasks** database, choose ••• → **Connections**, and add that integration. Only add it to the Tasks and Habits + Routines databases.
+2b. Also open the **Habits + Routines** database, choose ••• → **Connections**, and add the same integration (so habits can be ticked).
 3. In Netlify (project `rachellesportal`), Site configuration → Environment variables, add `NOTION_TODAY_EDIT_API_KEY` with that integration's secret, Production scope. Redeploy.
 
 Note: if a Notion automation sets Due Dates on its own, it may move tasks back. Restart time changes only the dates, not the rules behind them.
@@ -42,7 +43,7 @@ Note: if a Notion automation sets Due Dates on its own, it may move tasks back. 
 1. In Notion go to notion.so/my-integrations and create a new internal integration named "Today (read only)". Give it **Read content** only. Do not give it insert or update.
 2. Open the **Tasks** database in Notion, choose ••• → **Connections**, and add that integration.
 3. Open the **Today** page, choose ••• → **Connections**, and add the same integration. The Schedule and NOW views live on that page, so the integration needs it.
-3b. Open the **Habits + Routines** database, choose ••• → **Connections**, and add the same integration. Without this, the Habits section shows a message instead of habits.
+3b. Habits use the **Today (edit times)** connection (see Restart time setup below), because ticking a habit writes to Notion. Open the **Habits + Routines** database, choose ••• → **Connections**, and add "Today (edit times)" there too. If only the read-only connection is on that database, habits still show but cannot be ticked. If the page cannot find the database it lists the databases the connections can see.
 4. In Netlify, Site settings → Environment variables, add `NOTION_TODAY_API_KEY` with the integration secret. Redeploy.
 
 Optional environment variables (the defaults are Rachelle's current Notion ids):

@@ -56,6 +56,8 @@ export type TodayHabit = {
   essential: boolean;
   capacity: string | null;
   scaledVersion: string;
+  /** The habit's Checkbox in Notion. */
+  done: boolean;
 };
 
 export type TodayData = {
@@ -98,6 +100,7 @@ function config() {
     scheduleViewId: process.env.NOTION_TODAY_SCHEDULE_VIEW_ID || DEFAULT_SCHEDULE_VIEW_ID,
     nowViewId: process.env.NOTION_TODAY_NOW_VIEW_ID || DEFAULT_NOW_VIEW_ID,
     habitsDataSourceId: process.env.NOTION_HABITS_DATA_SOURCE_ID || DEFAULT_HABITS_DATA_SOURCE_ID,
+    editKey: process.env.NOTION_TODAY_EDIT_API_KEY || null,
   };
 }
 
@@ -266,13 +269,15 @@ async function openTasks(dataSourceId: string): Promise<TodayTask[]> {
  */
 async function dailyHabits(
   dataSourceId: string,
-  shownTaskIds: Set<string>
+  shownTaskIds: Set<string>,
+  key: string
 ): Promise<{ habits: TodayHabit[]; withPriority: number; notDaily: number; alreadyScheduled: number }> {
   const rows: any[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < 2; i += 1) {
     const res = await notion(`/v1/data_sources/${dataSourceId}/query`, {
       method: "POST",
+      key,
       body: {
         filter: { property: "Routine Priority", select: { is_not_empty: true } },
         page_size: 100,
@@ -301,6 +306,7 @@ async function dailyHabits(
       essential: readBool(p["Essential?"]),
       capacity: readText(p["Minimum Capacity"]) || null,
       scaledVersion: readText(p["Scaled Version"]),
+      done: readBool(p["Checkbox"]),
     };
     return { habit, occurrences };
   });
@@ -311,6 +317,54 @@ async function dailyHabits(
     withPriority: mapped.length,
     notDaily: mapped.length - daily.length,
     alreadyScheduled: daily.length - fresh.length,
+  };
+}
+
+/** Titles of databases the connection can see, and the id of the one that looks like the habits database. */
+async function findHabitsDataSource(key: string): Promise<{ id: string | null; seen: string[] }> {
+  const res = await notion("/v1/search", {
+    method: "POST",
+    key,
+    body: { filter: { property: "object", value: "data_source" }, page_size: 100 },
+  });
+  const list: { id: string; title: string }[] = (res.results ?? []).map((r: any) => ({
+    id: r.id,
+    title: richText(r.title) || (typeof r.name === "string" ? r.name : ""),
+  }));
+  const match = list.find((x) => /habit/i.test(x.title) && /routine/i.test(x.title)) ?? list.find((x) => /habit/i.test(x.title));
+  return { id: match?.id ?? null, seen: list.map((x) => x.title).filter(Boolean) };
+}
+
+/**
+ * Reads habits with the edit connection first (it is the one that can tick habits), then the
+ * read-only one. If the configured database cannot be found, looks for it among what the
+ * connection can see.
+ */
+async function loadHabits(cfg: ReturnType<typeof config>, shownTaskIds: Set<string>) {
+  const keys = Array.from(new Set([cfg.editKey, cfg.apiKey].filter((k): k is string => Boolean(k))));
+  let lastError: NotionHttpError | null = null;
+  let seen: string[] = [];
+  for (const key of keys) {
+    try {
+      return { ...(await dailyHabits(cfg.habitsDataSourceId, shownTaskIds, key)), error: null as string | null };
+    } catch (err) {
+      if (!(err instanceof NotionHttpError) || (err.status !== 403 && err.status !== 404)) throw err;
+      lastError = err;
+    }
+    try {
+      const found = await findHabitsDataSource(key);
+      if (found.id && found.id !== cfg.habitsDataSourceId) {
+        return { ...(await dailyHabits(found.id, shownTaskIds, key)), error: null as string | null };
+      }
+      if (found.seen.length > seen.length) seen = found.seen;
+    } catch { /* search not available for this connection */ }
+  }
+  const visible = seen.length
+    ? ` The Today connection can currently see these databases: ${seen.slice(0, 12).join(", ")}.`
+    : " The Today connections cannot see any databases right now.";
+  return {
+    habits: [] as TodayHabit[], withPriority: 0, notDaily: 0, alreadyScheduled: 0,
+    error: `Notion said "${lastError?.code ?? "not found"}" for the Habits + Routines database.${visible} In Notion, open Habits + Routines, choose ••• → Connections, and add the "Today (edit times)" connection.`,
   };
 }
 
@@ -347,20 +401,19 @@ export async function getToday(): Promise<TodayData> {
   ]);
 
   // Habits are read alongside the task pages. A problem here only costs the Habits section.
-  const habitsPromise = dailyHabits(cfg.habitsDataSourceId, new Set([...scheduleIds, ...nowIds])).then(
+  const habitsPromise = loadHabits(cfg, new Set([...scheduleIds, ...nowIds])).then(
     (r) => ({
       habits: r.habits,
       warning: null as string | null,
-      note: r.habits.length > 0 ? null
+      note: r.error
+        ? r.error
+        : r.habits.length > 0 ? null
         : r.withPriority === 0
           ? "Notion returned no habits that have a Routine Priority. The connection can see the Habits + Routines database, but none of its habits have that field filled in."
           : `Notion returned ${r.withPriority} habits with a Routine Priority. ${r.alreadyScheduled} already on today's schedule or NOW list, and ${r.notDaily} weekly, monthly or without a daily time of day, so none are left to show.`,
     }),
     (e) => {
-      const msg =
-        e instanceof NotionHttpError && (e.status === 403 || e.status === 404)
-          ? "Notion could not find your Habits + Routines database. Open it in Notion, choose ••• → Connections, and add the Today (read only) connection."
-          : explain(e, "your habits").message;
+      const msg = explain(e, "your habits").message;
       return { habits: [] as TodayHabit[], warning: msg, note: msg };
     }
   );
@@ -405,4 +458,23 @@ export async function setDueDate(key: string, pageId: string, date: { start: str
     key,
     body: { properties: { "Due Date": { date: { start: date.start, end: date.end, time_zone: null } } } },
   });
+}
+
+/**
+ * Check or uncheck a habit in Notion by setting its Checkbox. Uses the edit key. Refuses anything
+ * that is not a page in the Habits + Routines database.
+ */
+export async function setHabitDone(key: string, pageId: string, done: boolean): Promise<void> {
+  const cfg = config();
+  const page = await notion(`/v1/pages/${pageId}`, { key });
+  const parent: string | null = page.parent?.data_source_id ?? page.parent?.database_id ?? null;
+  let inHabits = parent !== null && parent === cfg.habitsDataSourceId;
+  if (!inHabits) {
+    const found = await findHabitsDataSource(key).catch(() => ({ id: null as string | null, seen: [] as string[] }));
+    inHabits = parent !== null && parent === found.id;
+  }
+  if (!inHabits || page.properties?.["Checkbox"]?.type !== "checkbox") {
+    throw new TodaySetupError("That page is not one of your habits, so nothing was changed.");
+  }
+  await notion(`/v1/pages/${pageId}`, { method: "PATCH", key, body: { properties: { Checkbox: { checkbox: done } } } });
 }

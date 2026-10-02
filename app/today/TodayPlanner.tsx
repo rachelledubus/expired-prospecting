@@ -6,7 +6,6 @@ import type { TodayData, TodayTask } from "@/lib/today";
 import { planShift } from "@/lib/today-shift";
 
 const TZ = "America/New_York";
-const HABITS_KEY = "planner.habits.v1";
 const SC = 1.7; // pixels per minute on the timeline
 
 type Item = TodayTask;
@@ -139,7 +138,8 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [restart, setRestart] = useState<{ id: string; phase: "confirm" | "saving" } | null>(null);
   const [restartError, setRestartError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [habitDone, setHabitDone] = useState<string[]>([]);
+  const [habitOverride, setHabitOverride] = useState<Record<string, boolean>>({});
+  const [habitError, setHabitError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -160,21 +160,26 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onVisible); };
   }, [data.fetchedAt, refresh]);
 
-  // Habit ticks live on this device and start fresh each day (Notion is not updated).
-  useEffect(() => {
+  // A tick shows at once, then Notion's own value takes over whenever fresh data arrives.
+  useEffect(() => { setHabitOverride({}); }, [data.fetchedAt]);
+  const habitIsDone = (h: { id: string; done: boolean }) => habitOverride[h.id] ?? h.done;
+  const toggleHabit = async (h: { id: string; done: boolean }) => {
+    const next = !habitIsDone(h);
+    setHabitError(null);
+    setHabitOverride((o) => ({ ...o, [h.id]: next }));
     try {
-      const o = JSON.parse(window.localStorage.getItem(HABITS_KEY) || "null");
-      if (o && o.date === etParts(new Date()).date && Array.isArray(o.done)) {
-        setHabitDone(o.done.filter((x: unknown) => typeof x === "string"));
-      }
-    } catch { /* storage unavailable: nothing ticked */ }
-  }, []);
-  const toggleHabit = (id: string) =>
-    setHabitDone((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      try { window.localStorage.setItem(HABITS_KEY, JSON.stringify({ date: etParts(new Date()).date, done: next })); } catch { /* ignore */ }
-      return next;
-    });
+      const res = await fetch("/api/today/habit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habitId: h.id, done: next }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.ok) throw new Error(out.message || "Something went wrong. Nothing was changed.");
+    } catch (err) {
+      setHabitOverride((o) => ({ ...o, [h.id]: !next }));
+      setHabitError(err instanceof Error ? err.message : "Could not reach the portal. Nothing was changed.");
+    }
+  };
 
   const items = useMemo(() => {
     const m = new Map<string, Item>();
@@ -440,19 +445,19 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                 <div className="label-row">
                   <div className="label">Habits</div>
                   {data.habits.length > 0 && (
-                    <span className="count">{data.habits.filter((h) => habitDone.includes(h.id)).length} of {data.habits.length} done</span>
+                    <span className="count">{data.habits.filter((h) => habitIsDone(h)).length} of {data.habits.length} done</span>
                   )}
                 </div>
                 <div className="focus">
                   {data.habits.length === 0 && <div className="empty">{data.habitsNote || "No habits to show right now."}</div>}
                   {data.habits.map((h, i) => {
-                    const done = habitDone.includes(h.id);
+                    const done = habitIsDone(h);
                     const group = ROUTINE_LABEL(h.routine);
                     const showGroup = i === 0 || ROUTINE_LABEL(data.habits[i - 1].routine) !== group;
                     return (
                       <div key={h.id}>
                         {showGroup && <div className="h-group">{group}</div>}
-                        <button className={"habit" + (done ? " done" : "")} type="button" aria-pressed={done} onClick={() => toggleHabit(h.id)}>
+                        <button className={"habit" + (done ? " done" : "")} type="button" aria-pressed={done} onClick={() => toggleHabit(h)}>
                           <span className="tick" aria-hidden="true">{done && <Icon kind="check" />}</span>
                           <span>
                             <span className="h-title">{h.title}</span>
@@ -464,7 +469,8 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                     );
                   })}
                 </div>
-                <p className="snap">Ticks are saved on this device and reset each day. Notion is not updated.</p>
+                {habitError && <p className="snap warn" role="alert">{habitError}</p>}
+                <p className="snap">Tapping a habit checks it in Notion.</p>
               </section>
 
               <section id="sec-tasks" className="sec">
