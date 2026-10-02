@@ -280,3 +280,12 @@
 }
 
 .tp .cf-also { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+.tp .notice { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: #E3EDDD; color: var(--navy); font-size: 14px; }
+.tp .notice .refresh { padding: 0 0 0 6px; }
+.tp .cf-confirm { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #FBF6E8; border: 1px dashed #D9C98F; }
+.tp .cf-confirm p { margin: 0; font-size: 15px; }
+.tp .cf-confirm .sub { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.tp .cf-confirm .warn { color: #8a3f22; }
+.tp .cf-confirm .cf-actions { margin-top: 12px; }
+.tp .pill:disabled { opacity: .6; cursor: default; }

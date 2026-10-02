@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TodayData, TodayTask } from "@/lib/today";
+import { planShift } from "@/lib/today-shift";
 
 const TZ = "America/New_York";
 const SC = 1.7; // pixels per minute on the timeline
@@ -129,6 +130,9 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [refreshing, startTransition] = useTransition();
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [restart, setRestart] = useState<{ id: string; phase: "confirm" | "saving" } | null>(null);
+  const [restartError, setRestartError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -214,6 +218,34 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const clock = nowMs === null ? "" : new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(new Date(nowMs));
   const updated = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(headerDate);
 
+  const confirmRestart = async (taskId: string) => {
+    setRestart({ id: taskId, phase: "saving" });
+    setRestartError(null);
+    try {
+      const res = await fetch("/api/today/restart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.ok) {
+        setRestartError(out.message || "Something went wrong. Nothing was changed.");
+        setRestart({ id: taskId, phase: "confirm" });
+        return;
+      }
+      const mins = Math.abs(out.deltaMin);
+      setNotice(
+        `Updated in Notion: ${out.moved} ${out.moved === 1 ? "task" : "tasks"} moved ${out.deltaMin > 0 ? "later" : "earlier"} by ${durText(mins)}.` +
+          (out.conflicts?.length ? ` Now overlaps: ${out.conflicts.join(", ")}.` : "")
+      );
+      setRestart(null);
+      refresh();
+    } catch {
+      setRestartError("Could not reach the portal. Nothing was changed.");
+      setRestart({ id: taskId, phase: "confirm" });
+    }
+  };
+
   const jump = (id: string) => {
     if (id === "sec-tasks") setTasksOpen(true);
     window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), id === "sec-tasks" ? 60 : 0);
@@ -238,6 +270,11 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
             </div>
           </header>
           <p className="state-line">Updated from Notion at {updated}.</p>
+          {notice && (
+            <p className="notice" role="status">
+              {notice} <button className="refresh" type="button" onClick={() => setNotice(null)}>Dismiss</button>
+            </p>
+          )}
           {data.warnings.map((w) => (
             <p className="state-line" key={w}>{w}</p>
           ))}
@@ -268,8 +305,42 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                         {alsoNow.length > 0 && <p className="cf-also">Also on the schedule at this time: {alsoNow.map((o) => o.task.title).join(", ")}</p>}
                         <div className="cf-actions">
                           {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
-                          <button className={"pill" + (t.link ? " ghost" : "")} type="button" onClick={() => openDetail(t.id)}>Details</button>
+                          <button className="pill ghost" type="button" onClick={() => openDetail(t.id)}>Details</button>
+                          {restart?.id !== t.id && (
+                            <button className="pill ghost" type="button" onClick={() => { setRestartError(null); setRestart({ id: t.id, phase: "confirm" }); }}>Restart time</button>
+                          )}
                         </div>
+                        {restart?.id === t.id && (() => {
+                          const plan = planShift(data.schedule, t.id, clockMs);
+                          return (
+                            <div className="cf-confirm" role="group" aria-label="Restart time">
+                              {plan.ok ? (
+                                <>
+                                  <p>
+                                    Start <strong>{t.title}</strong> at {fmtTime(new Date(Math.floor(clockMs / 60000) * 60000).toISOString(), true)} and move{" "}
+                                    {plan.moves.length > 1 ? `it and the ${plan.moves.length - 1} ${plan.moves.length === 2 ? "task" : "tasks"} after it` : "it"}{" "}
+                                    {durText(Math.abs(plan.deltaMin))} {plan.deltaMin > 0 ? "later" : "earlier"}. This changes the times in Notion.
+                                  </p>
+                                  {plan.leftFixed.length > 0 && <p className="sub">Staying put: {plan.leftFixed.join(", ")}.</p>}
+                                  {plan.conflicts.length > 0 && <p className="sub warn">This will overlap: {plan.conflicts.join(", ")}.</p>}
+                                </>
+                              ) : (
+                                <p>{plan.message}</p>
+                              )}
+                              {restartError && <p className="sub warn">{restartError}</p>}
+                              <div className="cf-actions">
+                                {plan.ok && (
+                                  <button className="pill" type="button" disabled={restart.phase === "saving"} onClick={() => confirmRestart(t.id)}>
+                                    {restart.phase === "saving" ? "Updating Notion..." : "Restart and update Notion"}
+                                  </button>
+                                )}
+                                <button className="pill ghost" type="button" disabled={restart.phase === "saving"} onClick={() => { setRestart(null); setRestartError(null); }}>
+                                  {plan.ok ? "Cancel" : "Close"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })

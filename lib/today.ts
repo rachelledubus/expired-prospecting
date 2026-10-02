@@ -30,6 +30,8 @@ export type TodayTask = {
   /** ISO datetime (with offset) when the Due Date has a time, else a plain date. */
   start: string | null;
   end: string | null;
+  /** Named time zone on the Due Date, when Notion has one (normally null; values carry an offset). */
+  dueTimeZone: string | null;
   minutes: number | null;
   timeBlock: string | null;
   calendarRole: string | null;
@@ -80,12 +82,12 @@ function config() {
   };
 }
 
-async function notion(path: string, init: { method?: string; body?: unknown } = {}, attempt = 0): Promise<any> {
+async function notion(path: string, init: { method?: string; body?: unknown; key?: string } = {}, attempt = 0): Promise<any> {
   const { apiKey, base } = config();
   const res = await fetch(`${base}${path}`, {
     method: init.method ?? "GET",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${init.key ?? apiKey}`,
       "Notion-Version": NOTION_VERSION,
       "Content-Type": "application/json",
     },
@@ -148,9 +150,9 @@ function readBool(prop: any): boolean {
   return false;
 }
 
-function readDate(prop: any): { start: string | null; end: string | null } {
+function readDate(prop: any): { start: string | null; end: string | null; timeZone: string | null } {
   const d = prop?.type === "date" ? prop.date : null;
-  return { start: d?.start ?? null, end: d?.end ?? null };
+  return { start: d?.start ?? null, end: d?.end ?? null, timeZone: d?.time_zone ?? null };
 }
 
 function toTask(page: any): TodayTask {
@@ -163,6 +165,7 @@ function toTask(page: any): TodayTask {
     status: readText(p["Status"]) || null,
     start: due.start,
     end: due.end,
+    dueTimeZone: due.timeZone,
     minutes: readNumber(p["Duration (min)"]),
     timeBlock: readText(p["Time Block"]) || null,
     calendarRole: readText(p["Calendar Role"]) || null,
@@ -294,4 +297,16 @@ export async function getToday(): Promise<TodayData> {
     defaultPriorityIds,
     warnings: poolResult.warning ? [poolResult.warning] : [],
   };
+}
+
+/**
+ * The only write this site makes to Notion: set a task's Due Date. It uses the separate
+ * edit key (NOTION_TODAY_EDIT_API_KEY), never the read-only key, and touches nothing else.
+ */
+export async function setDueDate(key: string, pageId: string, date: { start: string; end: string | null }): Promise<void> {
+  await notion(`/v1/pages/${pageId}`, {
+    method: "PATCH",
+    key,
+    body: { properties: { "Due Date": { date: { start: date.start, end: date.end, time_zone: null } } } },
+  });
 }

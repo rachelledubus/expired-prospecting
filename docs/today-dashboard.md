@@ -1,13 +1,32 @@
 # Today page (`/today`)
 
-A simplified, read-only daily planner styled like a paper planner page (cream background, binder holes, side tabs, pastel color coding). It shows:
+A simplified daily planner styled like a paper planner page (cream background, binder holes, side tabs, pastel color coding). It shows:
 
 1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
 2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
 3. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
 
 The side tabs jump to each section. 
-Notion stays the only database. This page does not write to Notion and adds no storage of its own.
+Notion stays the only database and this page adds no storage of its own. It reads Notion, and has exactly one write: the Restart time button (below).
+
+## Restart time
+
+On the Current focus card, **Restart time** starts the current task at the current time and moves the rest of today by the same amount. It asks for confirmation first and says exactly what will move.
+
+- The current task and every later timed task that is not Done move by the same number of minutes, so gaps stay the same.
+- Appointments and Deadlines stay where they are. If a moved block now overlaps one, the confirmation and the result say so.
+- Nothing is allowed to move into a different day, and a shift of more than 8 hours is refused.
+- It writes only the **Due Date** of tasks that Notion's own Schedule view returned, one at a time. If any write fails, the ones already changed are put back.
+- The server route is `app/api/today/restart/route.ts` (behind the portal login, same-origin only). The planning rules are in `lib/today-shift.ts`, shared by the page preview and the server so they always agree.
+- It uses its own key, `NOTION_TODAY_EDIT_API_KEY`. The read-only key can never write. Without this key the button explains it is not set up and changes nothing.
+
+Setup for Restart time (once):
+
+1. In Notion go to notion.so/my-integrations and create an internal integration named "Today (edit times)". Capabilities: **Read content** and **Update content**. Leave Insert content, comments and user information off.
+2. Open the **Tasks** database, choose ••• → **Connections**, and add that integration. Do not add it anywhere else.
+3. In Netlify (project `rachellesportal`), Site configuration → Environment variables, add `NOTION_TODAY_EDIT_API_KEY` with that integration's secret, Production scope. Redeploy.
+
+Note: if a Notion automation sets Due Dates on its own, it may move tasks back. Restart time changes only the dates, not the rules behind them.
 
 ## How it reads Notion
 
@@ -32,6 +51,7 @@ Optional environment variables (the defaults are Rachelle's current Notion ids):
 | `NOTION_TASKS_DATA_SOURCE_ID` | Tasks data source. Default `8a5f408a-fdce-83e0-a000-87da31fdc6cf`. |
 | `NOTION_TODAY_SCHEDULE_VIEW_ID` | Schedule view. Default `3d5f408a-fdce-815c-8533-000c40cb6885`. |
 | `NOTION_TODAY_NOW_VIEW_ID` | NOW view. Default `3d5f408a-fdce-81a1-90b1-000c18b2ce11`. |
+| `NOTION_TODAY_EDIT_API_KEY` | Secret for the "Today (edit times)" integration. Only used by Restart time. |
 | `NOTION_API_BASE` | Testing only. Points the page at a fake Notion server. |
 
 ## What shows if something is wrong
@@ -51,4 +71,4 @@ The page shows a plain message instead of failing silently:
 
 ## Remove it
 
-Delete `app/today/` and `lib/today.ts`, and remove the "Your day" card in `app/page.tsx`. Nothing else depends on them.
+Delete `app/today/`, `app/api/today/`, `lib/today.ts` and `lib/today-shift.ts`, and remove the "Your day" card in `app/page.tsx`. Nothing else depends on them.
