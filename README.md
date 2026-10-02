@@ -59,6 +59,8 @@ Environment variables for deployment. Never commit `.env.local`.
 | `NOTION_API_KEY` | Secret for a Notion internal integration (see below). |
 | `NOTION_LEADS_DATABASE_ID` | The "Clients / Leads" database ID — already filled in in `.env.example`. |
 
+The `/today` page uses its own read-only Notion key, `NOTION_TODAY_API_KEY`. See [docs/today-dashboard.md](docs/today-dashboard.md).
+
 Start with the sandbox Tracerfy base URL until you're ready to spend real credits.
 
 ### Setting up the Notion connection

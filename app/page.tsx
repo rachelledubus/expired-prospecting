@@ -13,6 +13,12 @@ export default function Dashboard() {
         </form>
       </div>
 
+      <div className="section-label">Your day</div>
+      <a className="action-card" href="/today">
+        <div className="action-title">Today</div>
+        <div className="muted">Your schedule, what to focus on now, and your other priorities. Read from Notion, nothing else on the page.</div>
+      </a>
+
       <div className="section-label">Daily safety gate</div>
       <a className="action-card" href="/status-refresh">
         <div className="action-title">1. Refresh Backlog Market Status</div>
