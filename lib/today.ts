@@ -66,6 +66,8 @@ export type TodayData = {
   pool: TodayTask[];
   /** Daily habits with a Routine Priority that are not already scheduled as a task today. */
   habits: TodayHabit[];
+  /** Plain-language reason the Habits section is empty, or null when habits are shown. */
+  habitsNote: string | null;
   /** Default contents of "Other important priorities". */
   defaultPriorityIds: string[];
   warnings: string[];
@@ -262,7 +264,10 @@ async function openTasks(dataSourceId: string): Promise<TodayTask[]> {
  * Daily habits that have a Routine Priority. Habits whose task for today is already on the
  * schedule or in the NOW list are left out, so nothing is shown twice.
  */
-async function dailyHabits(dataSourceId: string, shownTaskIds: Set<string>): Promise<TodayHabit[]> {
+async function dailyHabits(
+  dataSourceId: string,
+  shownTaskIds: Set<string>
+): Promise<{ habits: TodayHabit[]; withPriority: number; notDaily: number; alreadyScheduled: number }> {
   const rows: any[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < 2; i += 1) {
@@ -282,29 +287,31 @@ async function dailyHabits(dataSourceId: string, shownTaskIds: Set<string>): Pro
     const m = (v ?? "").match(/^(\d)/);
     return m ? parseInt(m[1], 10) : 9;
   };
-  return rows
-    .map((page) => {
-      const p = page.properties ?? {};
-      const occurrences: string[] = Array.isArray(p["Task Occurrences"]?.relation)
-        ? p["Task Occurrences"].relation.map((r: any) => r.id)
-        : [];
-      return {
-        occurrences,
-        habit: {
-          id: page.id,
-          url: page.url,
-          title: readText(p["Habit"]) || "(untitled)",
-          routine: readText(p["Routine"]),
-          priority: readText(p["Routine Priority"]) || null,
-          essential: readBool(p["Essential?"]),
-          capacity: readText(p["Minimum Capacity"]) || null,
-          scaledVersion: readText(p["Scaled Version"]),
-        } as TodayHabit,
-      };
-    })
-    .filter(({ habit, occurrences }) => /^[1-7] /.test(habit.routine) && !occurrences.some((id) => shownTaskIds.has(id)))
-    .map(({ habit }) => habit)
-    .sort((a, b) => num(a.routine) - num(b.routine) || num(a.priority) - num(b.priority) || a.title.localeCompare(b.title));
+  const mapped = rows.map((page) => {
+    const p = page.properties ?? {};
+    const occurrences: string[] = Array.isArray(p["Task Occurrences"]?.relation)
+      ? p["Task Occurrences"].relation.map((r: any) => r.id)
+      : [];
+    const habit: TodayHabit = {
+      id: page.id,
+      url: page.url,
+      title: readText(p["Habit"]) || "(untitled)",
+      routine: readText(p["Routine"]),
+      priority: readText(p["Routine Priority"]) || null,
+      essential: readBool(p["Essential?"]),
+      capacity: readText(p["Minimum Capacity"]) || null,
+      scaledVersion: readText(p["Scaled Version"]),
+    };
+    return { habit, occurrences };
+  });
+  const daily = mapped.filter(({ habit }) => /^[1-7] /.test(habit.routine));
+  const fresh = daily.filter(({ occurrences }) => !occurrences.some((id) => shownTaskIds.has(id)));
+  return {
+    habits: fresh.map(({ habit }) => habit).sort((a, b) => num(a.routine) - num(b.routine) || num(a.priority) - num(b.priority) || a.title.localeCompare(b.title)),
+    withPriority: mapped.length,
+    notDaily: mapped.length - daily.length,
+    alreadyScheduled: daily.length - fresh.length,
+  };
 }
 
 function explain(err: unknown, what: string): Error {
@@ -341,14 +348,21 @@ export async function getToday(): Promise<TodayData> {
 
   // Habits are read alongside the task pages. A problem here only costs the Habits section.
   const habitsPromise = dailyHabits(cfg.habitsDataSourceId, new Set([...scheduleIds, ...nowIds])).then(
-    (habits) => ({ habits, warning: null as string | null }),
-    (e) => ({
-      habits: [] as TodayHabit[],
-      warning:
+    (r) => ({
+      habits: r.habits,
+      warning: null as string | null,
+      note: r.habits.length > 0 ? null
+        : r.withPriority === 0
+          ? "Notion returned no habits that have a Routine Priority. The connection can see the Habits + Routines database, but none of its habits have that field filled in."
+          : `Notion returned ${r.withPriority} habits with a Routine Priority. ${r.alreadyScheduled} already on today's schedule or NOW list, and ${r.notDaily} weekly, monthly or without a daily time of day, so none are left to show.`,
+    }),
+    (e) => {
+      const msg =
         e instanceof NotionHttpError && (e.status === 403 || e.status === 404)
           ? "Notion could not find your Habits + Routines database. Open it in Notion, choose ••• → Connections, and add the Today (read only) connection."
-          : explain(e, "your habits").message,
-    })
+          : explain(e, "your habits").message;
+      return { habits: [] as TodayHabit[], warning: msg, note: msg };
+    }
   );
 
   const uniqueIds = Array.from(new Set([...scheduleIds, ...nowIds]));
@@ -375,6 +389,7 @@ export async function getToday(): Promise<TodayData> {
     now,
     pool,
     habits: habitsResult.habits,
+    habitsNote: habitsResult.note,
     defaultPriorityIds,
     warnings: [poolResult.warning, habitsResult.warning].filter((w): w is string => Boolean(w)),
   };

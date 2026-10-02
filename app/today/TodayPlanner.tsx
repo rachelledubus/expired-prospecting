@@ -444,7 +444,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                   )}
                 </div>
                 <div className="focus">
-                  {data.habits.length === 0 && <div className="empty">No habits to show right now.</div>}
+                  {data.habits.length === 0 && <div className="empty">{data.habitsNote || "No habits to show right now."}</div>}
                   {data.habits.map((h, i) => {
                     const done = habitDone.includes(h.id);
                     const group = ROUTINE_LABEL(h.routine);
