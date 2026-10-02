@@ -343,9 +343,12 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
         setRestart({ id: taskId, phase: "confirm" });
         return;
       }
-      const mins = Math.abs(out.deltaMin);
+      const others: number = out.others ?? 0;
       setNotice(
-        `Updated in Notion: ${out.moved} ${out.moved === 1 ? "task" : "tasks"} moved ${out.deltaMin > 0 ? "later" : "earlier"} by ${durText(mins)}.` +
+        `Updated in Notion: started at the current time` +
+          (out.deltaMin > 0
+            ? others > 0 ? `, and ${others} later ${others === 1 ? "task was" : "tasks were"} pushed only as far as needed.` : `. Free time covered the rest, so nothing else moved.`
+            : others > 0 ? `, and ${others} later ${others === 1 ? "task" : "tasks"} moved earlier by ${durText(Math.abs(out.deltaMin))}.` : `.`) +
           (out.conflicts?.length ? ` Now overlaps: ${out.conflicts.join(", ")}.` : "")
       );
       setRestart(null);
@@ -427,10 +430,22 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                               {plan.ok ? (
                                 <>
                                   <p>
-                                    Start <strong>{t.title}</strong> at {fmtTime(new Date(Math.floor(clockMs / 60000) * 60000).toISOString(), true)} and move{" "}
-                                    {plan.moves.length > 1 ? `it and the ${plan.moves.length - 1} ${plan.moves.length === 2 ? "task" : "tasks"} after it` : "it"}{" "}
-                                    {durText(Math.abs(plan.deltaMin))} {plan.deltaMin > 0 ? "later" : "earlier"}. This changes the times in Notion.
+                                    Start <strong>{t.title}</strong> at {fmtTime(new Date(Math.floor(clockMs / 60000) * 60000).toISOString(), true)}, which is{" "}
+                                    {durText(Math.abs(plan.deltaMin))} {plan.deltaMin > 0 ? "later" : "earlier"} than planned.{" "}
+                                    {plan.moves.length > 1
+                                      ? plan.deltaMin > 0
+                                        ? "Free time between tasks soaks up the delay, so only these move:"
+                                        : "These later tasks move earlier by the same amount:"
+                                      : plan.deltaMin > 0 ? "Free time covers the rest, so nothing else moves." : ""}{" "}
+                                    This changes the times in Notion.
                                   </p>
+                                  {plan.moves.length > 1 && (
+                                    <ul className="sub">
+                                      {plan.moves.filter((m) => m.id !== plan.anchorId).map((m) => (
+                                        <li key={m.id}>{m.title}: {durText(Math.abs(m.shiftMin))} {m.shiftMin > 0 ? "later" : "earlier"}</li>
+                                      ))}
+                                    </ul>
+                                  )}
                                   {plan.leftFixed.length > 0 && <p className="sub">Staying put: {plan.leftFixed.join(", ")}.</p>}
                                   {plan.conflicts.length > 0 && <p className="sub warn">This will overlap: {plan.conflicts.join(", ")}.</p>}
                                 </>

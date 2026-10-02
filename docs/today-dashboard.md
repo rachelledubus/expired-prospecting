@@ -12,9 +12,10 @@ Notion stays the only database and this page adds no storage of its own. It read
 
 ## Restart time
 
-On the Current focus card, **Restart time** starts the current task at the current time and moves the rest of today by the same amount. It asks for confirmation first and says exactly what will move.
+On the Current focus card, **Restart time** starts the current task at the current time and moves the rest of today only as far as needed. It asks for confirmation first and lists exactly what will move.
 
-- The current task and every later timed task that is not Done move by the same number of minutes, so gaps stay the same.
+- Starting late: free time absorbs the delay. A later timed task (not Done) keeps its own start time unless the task before it now runs past that time, and then it moves just far enough to start when that task ends. Once a gap has used up the delay, nothing after it moves. Tasks that already overlapped each other keep their overlap.
+- Starting early: the current task and every later timed task (not Done) move earlier by the same number of minutes.
 - Appointments and Deadlines stay where they are. If a moved block now overlaps one, the confirmation and the result say so.
 - Nothing is allowed to move into a different day, and a shift of more than 8 hours is refused.
 - It writes only the **Due Date** of tasks that Notion's own Schedule view returned, one at a time. If any write fails, the ones already changed are put back.

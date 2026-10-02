@@ -56,5 +56,7 @@ export async function POST(request: Request) {
       return json(502, `${reason} ${failed.length ? `These could not be put back and need a look in Notion: ${failed.join(", ")}.` : "Nothing was changed."}`);
     }
   }
-  return NextResponse.json({ ok: true, deltaMin: plan.deltaMin, moved: plan.moves.length, leftFixed: plan.leftFixed, conflicts: plan.conflicts });
+  const others = plan.moves.filter((m) => m.id !== plan.anchorId);
+  return NextResponse.json({ ok: true, deltaMin: plan.deltaMin, moved: plan.moves.length, others: others.length,
+    pushed: others.map((m) => ({ title: m.title, shiftMin: m.shiftMin })), leftFixed: plan.leftFixed, conflicts: plan.conflicts });
 }
