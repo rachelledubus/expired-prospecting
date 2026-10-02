@@ -128,6 +128,70 @@ function layout(tasks: Item[]): { placed: Placed[]; unscheduled: Item[]; gridSta
   return { placed, unscheduled, gridStart, gridEnd };
 }
 
+// ---------- condensed time axis ----------
+// Free stretches of GAP_MIN minutes or more are folded into one short row, so the day reads
+// as a list of what is actually planned instead of a long empty ruler.
+
+const GAP_MIN = 45;
+const GAP_H = 46;
+type Axis = {
+  height: number;
+  y: (m: number) => number;
+  ticks: { m: number; y: number }[];
+  gaps: { from: number; to: number; y: number }[];
+};
+
+function buildAxis(blocks: Placed[]): Axis | null {
+  if (blocks.length === 0) return null;
+  const lo = Math.floor(Math.min(...blocks.map((b) => b.s)) / 60) * 60;
+  const hi = Math.ceil(Math.max(...blocks.map((b) => b.e)) / 60) * 60;
+  const spans = blocks.map((b) => [b.s, b.e] as [number, number]).sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  spans.forEach(([s, e]) => {
+    const last = merged[merged.length - 1];
+    if (last && s <= last[1]) last[1] = Math.max(last[1], e);
+    else merged.push([s, e]);
+  });
+  const free: { from: number; to: number }[] = [];
+  for (let i = 1; i < merged.length; i += 1) {
+    const from = merged[i - 1][1], to = merged[i][0];
+    if (to - from >= GAP_MIN) free.push({ from, to });
+  }
+
+  const segs: { from: number; to: number; gap: boolean; y: number }[] = [];
+  let cur = lo;
+  let y = 0;
+  free.forEach((g) => {
+    segs.push({ from: cur, to: g.from, gap: false, y });
+    y += (g.from - cur) * SC;
+    segs.push({ from: g.from, to: g.to, gap: true, y });
+    y += GAP_H;
+    cur = g.to;
+  });
+  segs.push({ from: cur, to: hi, gap: false, y });
+  y += (hi - cur) * SC;
+
+  const yOf = (m: number) => {
+    const seg = segs.find((sg) => !sg.gap && m >= sg.from && m <= sg.to);
+    return seg ? seg.y + (m - seg.from) * SC : 0;
+  };
+  const ticks: { m: number; y: number }[] = [];
+  segs.forEach((sg, i) => {
+    if (sg.gap) return;
+    for (let m = Math.ceil(sg.from / 30) * 30; m <= sg.to; m += 30) {
+      if (m === sg.from && i > 0) continue; // sits right under a folded gap
+      if (m === sg.to && i < segs.length - 1) continue; // sits right above a folded gap
+      ticks.push({ m, y: sg.y + (m - sg.from) * SC });
+    }
+  });
+  return { height: y, y: yOf, ticks, gaps: segs.filter((sg) => sg.gap).map((sg) => ({ from: sg.from, to: sg.to, y: sg.y })) };
+}
+
+const clockText = (m: number) => {
+  const h = Math.floor(m / 60) % 24, mm = m % 60;
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+
 // ---------- component ----------
 
 export default function TodayPlanner({ data }: { data: TodayData }) {
@@ -135,6 +199,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [refreshing, startTransition] = useTransition();
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [view, setView] = useState<"now" | "all">("now");
   const [restart, setRestart] = useState<{ id: string; phase: "confirm" | "saving" } | null>(null);
   const [restartError, setRestartError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -159,6 +224,18 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     document.addEventListener("visibilitychange", onVisible);
     return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onVisible); };
   }, [data.fetchedAt, refresh]);
+
+  // The chosen schedule view is remembered on this device. Reading it after mount keeps the first paint identical to the server's.
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("planner.scheduleView.v1");
+      if (v === "all" || v === "now") setView(v);
+    } catch { /* storage unavailable: keep the default */ }
+  }, []);
+  const chooseView = (v: "now" | "all") => {
+    setView(v);
+    try { window.localStorage.setItem("planner.scheduleView.v1", v); } catch { /* ignore */ }
+  };
 
   // A tick shows at once, then Notion's own value takes over whenever fresh data arrives.
   useEffect(() => { setHabitOverride({}); }, [data.fetchedAt]);
@@ -187,7 +264,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     return m;
   }, [data]);
 
-  const { placed, unscheduled, gridStart, gridEnd } = useMemo(() => layout(data.schedule), [data.schedule]);
+  const { placed, unscheduled } = useMemo(() => layout(data.schedule), [data.schedule]);
 
   const nowParts = nowMs === null ? null : etParts(new Date(nowMs));
   const todayDate = etParts(new Date(data.fetchedAt)).date;
@@ -224,8 +301,13 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     if (t && !importantTasks.some((x) => x.id === id)) importantTasks.push(t);
   });
 
-  const hours: number[] = [];
-  for (let m = gridStart; m <= gridEnd && gridEnd > 0; m += 30) hours.push(m);
+  // "From now" leaves out what is finished or already over; "All day" keeps everything.
+  const isOver = (p: Placed) => p.task.status === "Done" || (sameDay && cp.min >= p.e);
+  const shownBlocks = view === "all" ? placed : placed.filter((p) => !isOver(p));
+  const earlierCount = placed.length - shownBlocks.length;
+  const axis = buildAxis(shownBlocks);
+  const firstStart = shownBlocks.length ? Math.min(...shownBlocks.map((p) => p.s)) : null;
+  const freeNow = view === "now" && sameDay && firstStart !== null && firstStart > cp.min ? firstStart - cp.min : 0;
 
   // ---------- detail sheet ----------
   const open = openId ? items.get(openId) ?? null : null;
@@ -394,48 +476,82 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
               </section>
 
               <section id="sec-schedule" className="sec">
-                <div className="label">Schedule</div>
+                <div className="label-row">
+                  <div className="label">Schedule</div>
+                  {placed.length > 0 && (
+                    <div className="seg" role="group" aria-label="Schedule view">
+                      <button type="button" aria-pressed={view === "now"} onClick={() => chooseView("now")}>From now</button>
+                      <button type="button" aria-pressed={view === "all"} onClick={() => chooseView("all")}>All day</button>
+                    </div>
+                  )}
+                </div>
                 {placed.length === 0 ? (
                   <div className="nothing">Nothing is scheduled for today in Notion.</div>
                 ) : (
-                  <div className="sheet">
-                    <div className="grid" style={{ height: (gridEnd - gridStart) * SC }}>
-                      {hours.map((m) =>
-                        m % 60 === 0 ? (
-                          <div className="hour" key={m} style={{ top: (m - gridStart) * SC }}><span>{hourLabel(m / 60)}</span></div>
-                        ) : (
-                          <div className="half" key={m} style={{ top: (m - gridStart) * SC }} />
-                        )
-                      )}
-                      {placed.map(({ task: t, s, e, lane, lanes }) => {
-                        const isDone = t.status === "Done";
-                        const cur = focusBlock?.task.id === t.id;
-                        const past = (live && nowParts!.min >= e) || isDone;
-                        const cat = catOf(t);
-                        const cls = ["block", cat, past ? "past" : "", cur ? "current" : "", isDone ? "done" : "", lanes > 1 ? "lane" : "", e - s < 30 ? "short" : ""].filter(Boolean).join(" ");
-                        const style: React.CSSProperties = { top: (s - gridStart) * SC + 2, height: Math.max((e - s) * SC - 4, 24) };
-                        if (lanes > 1) {
-                          style.left = `calc(var(--tc) + (100% - var(--tc)) * ${lane} / ${lanes})`;
-                          style.width = `calc((100% - var(--tc)) / ${lanes} - 4px)`;
-                        }
-                        return (
-                          <button className={cls} type="button" key={t.id} style={style} onClick={() => openDetail(t.id)}>
-                            <div className="b-time">
-                              <span className="ic"><Icon kind={isDone ? "check" : cat} /></span>
-                              <span>{rangeText(t.start!, endIso(t, s, e))}</span>
-                              {cur && <span className="tag-now">Now</span>}
-                              {isDone && <span className="done-tag">Done</span>}
-                            </div>
-                            <div className="b-title">{t.title}</div>
-                            {e - s >= 90 && !isDone && <div className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</div>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="legend">
-                      {cats.map((c) => (<span key={c}><i className={c} />{CAT_LABEL[c]}</span>))}
-                    </div>
-                  </div>
+                  <>
+                    {view === "now" && earlierCount > 0 && (
+                      <button type="button" className="earlier" onClick={() => chooseView("all")}>
+                        {earlierCount} earlier {earlierCount === 1 ? "item is" : "items are"} finished or over. Show all day
+                      </button>
+                    )}
+                    {!axis ? (
+                      <div className="nothing">Nothing left on today&rsquo;s schedule.</div>
+                    ) : (
+                      <div className="sheet">
+                        {freeNow > 0 && (
+                          <div className="free-now">Now {clockText(cp.min)}. Free for {durText(freeNow)}, until {clockText(firstStart!)}.</div>
+                        )}
+                        <div className="grid" style={{ height: axis.height }}>
+                          {axis.ticks.map(({ m, y }) =>
+                            m % 60 === 0 ? (
+                              <div className="hour" key={m} style={{ top: y }}><span>{hourLabel(Math.floor(m / 60))}</span></div>
+                            ) : (
+                              <div className="half" key={m} style={{ top: y }} />
+                            )
+                          )}
+                          {axis.gaps.map((g) => {
+                            const here = sameDay && cp.min > g.from && cp.min < g.to;
+                            return (
+                              <div className="gap" key={`gap-${g.from}`} style={{ top: g.y, height: GAP_H }}>
+                                <span>
+                                  {here
+                                    ? `Now ${clockText(cp.min)}. Free until ${clockText(g.to)}`
+                                    : `${durText(g.to - g.from)} free, ${clockText(g.from)} to ${clockText(g.to)}`}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {shownBlocks.map(({ task: t, s, e, lane, lanes }) => {
+                            const isDone = t.status === "Done";
+                            const cur = focusBlock?.task.id === t.id;
+                            const past = (live && nowParts!.min >= e) || isDone;
+                            const cat = catOf(t);
+                            const cls = ["block", cat, past ? "past" : "", cur ? "current" : "", isDone ? "done" : "", lanes > 1 ? "lane" : "", e - s < 30 ? "short" : ""].filter(Boolean).join(" ");
+                            const style: React.CSSProperties = { top: axis.y(s) + 2, height: Math.max((e - s) * SC - 4, 24) };
+                            if (lanes > 1) {
+                              style.left = `calc(var(--tc) + (100% - var(--tc)) * ${lane} / ${lanes})`;
+                              style.width = `calc((100% - var(--tc)) / ${lanes} - 4px)`;
+                            }
+                            return (
+                              <button className={cls} type="button" key={t.id} style={style} onClick={() => openDetail(t.id)}>
+                                <div className="b-time">
+                                  <span className="ic"><Icon kind={isDone ? "check" : cat} /></span>
+                                  <span>{rangeText(t.start!, endIso(t, s, e))}</span>
+                                  {cur && <span className="tag-now">Now</span>}
+                                  {isDone && <span className="done-tag">Done</span>}
+                                </div>
+                                <div className="b-title">{t.title}</div>
+                                {e - s >= 90 && !isDone && <div className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</div>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="legend">
+                          {cats.map((c) => (<span key={c}><i className={c} />{CAT_LABEL[c]}</span>))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </section>
             </div>

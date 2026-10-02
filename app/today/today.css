@@ -296,3 +296,16 @@
 .tp .habit .h-time { font-size: 12px; }
 
 .tp .snap.warn { color: #8a3f22; }
+
+/* Schedule view toggle, folded free time, and the "earlier" shortcut */
+.tp .seg { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.tp .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; min-height: 32px; cursor: pointer;
+  font: 600 13px "DM Sans", system-ui, sans-serif; color: var(--muted); }
+.tp .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.tp .earlier { display: block; width: 100%; text-align: left; background: none; border: 1px dashed var(--line); border-radius: 12px;
+  padding: 10px 12px; margin: 0 0 10px; min-height: 44px; cursor: pointer; font: 500 14px "Source Sans 3", system-ui, sans-serif; color: var(--muted); }
+.tp .free-now { margin: 0 0 12px var(--tc); padding: 8px 12px; border-radius: 10px; background: var(--sand); color: var(--navy);
+  font: 600 14px "DM Sans", system-ui, sans-serif; }
+.tp .gap { position: absolute; left: var(--tc); right: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.tp .gap::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed #d9d0bf; }
+.tp .gap span { position: relative; background: #fff; padding: 2px 10px; font: 500 13px "Source Sans 3", system-ui, sans-serif; color: var(--muted); text-align: center; max-width: 92%; line-height: 1.25; }
