@@ -2,7 +2,7 @@
 
 A simplified, read-only daily planner styled like a paper planner page (cream background, binder holes, side tabs, pastel color coding). It shows:
 
-1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Overlapping blocks each get a card. Done blocks are skipped.
+1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
 2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
 3. **Other important priorities**: open tasks (Do Next or In progress) not already on the schedule or in Important Tasks. Default is the top four "Must Happen" tasks in Notion's priority order. Add, remove and reorder through Edit (saved on this device only).
 4. **Habits and self-care**: today's Maintenance items from the schedule (the daily occurrences of the habits in Notion), with a done count.

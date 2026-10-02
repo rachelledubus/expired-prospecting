@@ -213,6 +213,12 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const sameDay = cp.date === todayDate;
   const openBlocks = placed.filter((p) => p.task.status !== "Done");
   const currentBlocks = sameDay ? openBlocks.filter((p) => cp.min >= p.s && cp.min < p.e) : [];
+  // Only one block can be "right now". If blocks overlap, an Appointment wins, then a Deadline,
+  // then whichever started most recently. The others are noted on the card, not shown as current.
+  const rank = (p: Placed) => (p.task.calendarRole === "Appointment" ? 0 : p.task.calendarRole === "Deadline" ? 1 : 2);
+  const ranked = [...currentBlocks].sort((a, b) => rank(a) - rank(b) || b.s - a.s || a.e - b.e);
+  const focusBlock = ranked[0] ?? null;
+  const alsoNow = ranked.slice(1);
   const nextBlock = sameDay
     ? openBlocks.filter((p) => p.s > cp.min && !currentBlocks.includes(p)).sort((a, b) => a.s - b.s)[0] ?? null
     : null;
@@ -312,8 +318,8 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                     <h2>This page was loaded on a different day.</h2>
                     <div className="cf-actions"><button className="pill" type="button" onClick={refresh}>Refresh</button></div>
                   </div>
-                ) : currentBlocks.length > 0 ? (
-                  currentBlocks.map(({ task: t, s, e }) => {
+                ) : focusBlock ? (
+                  [focusBlock].map(({ task: t, s, e }) => {
                     const pct = Math.min(100, Math.max(0, ((cp.min - s) / (e - s)) * 100));
                     const endI = endIso(t, s, e);
                     return (
@@ -326,6 +332,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                         <div className="cf-bar" aria-hidden="true"><div style={{ width: `${pct}%` }} /></div>
                         <div className="cf-ends"><span>{fmtTime(t.start!, true)}</span><span>{fmtTime(endI, true)}</span></div>
                         {t.nextInstruction && <p className="cf-instr">{t.nextInstruction}</p>}
+                        {alsoNow.length > 0 && <p className="cf-also">Also on the schedule at this time: {alsoNow.map((o) => o.task.title).join(", ")}</p>}
                         <div className="cf-actions">
                           {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
                           <button className={"pill" + (t.link ? " ghost" : "")} type="button" onClick={() => openDetail(t.id)}>Details</button>
@@ -370,7 +377,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                       )}
                       {placed.map(({ task: t, s, e, lane, lanes }) => {
                         const isDone = t.status === "Done";
-                        const cur = live && !isDone && nowParts!.min >= s && nowParts!.min < e;
+                        const cur = focusBlock?.task.id === t.id;
                         const past = (live && nowParts!.min >= e) || isDone;
                         const cat = catOf(t);
                         const cls = ["block", cat, past ? "past" : "", cur ? "current" : "", isDone ? "done" : "", lanes > 1 ? "lane" : "", e - s < 30 ? "short" : ""].filter(Boolean).join(" ");
