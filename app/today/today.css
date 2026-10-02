@@ -262,6 +262,7 @@
   box-shadow: 2px 2px 6px rgba(22,50,79,.10); }
 .tp .tabs .t1 { background: #F4E6B8; }
 .tp .tabs .t2 { background: var(--work-bg); }
+.tp .tabs .t4 { background: var(--routine-bg); }
 .tp .tabs .t3 { background: var(--other-bg); }
 .tp .tabs button:active { filter: brightness(.95); }
 
@@ -289,3 +290,7 @@
 .tp .cf-confirm .warn { color: #8a3f22; }
 .tp .cf-confirm .cf-actions { margin-top: 12px; }
 .tp .pill:disabled { opacity: .6; cursor: default; }
+
+.tp .h-group { padding: 10px 16px 2px; font-family: "DM Sans", system-ui, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sage); }
+.tp .h-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; font-weight: 400; font-family: "Source Sans 3", system-ui, sans-serif; }
+.tp .habit .h-time { font-size: 12px; }

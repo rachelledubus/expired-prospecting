@@ -4,7 +4,8 @@ A simplified daily planner styled like a paper planner page (cream background, b
 
 1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
 2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
-3. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
+3. **Habits**: real habits from your Habits + Routines database in Notion. It shows habits that have a Routine Priority and a daily time of day (Early morning through Evening), grouped by time of day. A habit is left out when its task for today is already on the schedule or in the NOW list, so nothing appears twice. Weekly, monthly and yearly habits are not shown. Tapping a habit ticks it for today on this device only; ticks reset each day and Notion is not updated.
+4. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
 
 The side tabs jump to each section. 
 Notion stays the only database and this page adds no storage of its own. It reads Notion, and has exactly one write: the Restart time button (below).
@@ -41,6 +42,7 @@ Note: if a Notion automation sets Due Dates on its own, it may move tasks back. 
 1. In Notion go to notion.so/my-integrations and create a new internal integration named "Today (read only)". Give it **Read content** only. Do not give it insert or update.
 2. Open the **Tasks** database in Notion, choose ••• → **Connections**, and add that integration.
 3. Open the **Today** page, choose ••• → **Connections**, and add the same integration. The Schedule and NOW views live on that page, so the integration needs it.
+3b. Open the **Habits + Routines** database, choose ••• → **Connections**, and add the same integration. Without this, the Habits section shows a message instead of habits.
 4. In Netlify, Site settings → Environment variables, add `NOTION_TODAY_API_KEY` with the integration secret. Redeploy.
 
 Optional environment variables (the defaults are Rachelle's current Notion ids):
@@ -49,6 +51,7 @@ Optional environment variables (the defaults are Rachelle's current Notion ids):
 |---|---|
 | `NOTION_TODAY_API_KEY` | Secret for the read-only integration above. Falls back to `NOTION_API_KEY` if unset, which is not recommended because that key can edit records. |
 | `NOTION_TASKS_DATA_SOURCE_ID` | Tasks data source. Default `8a5f408a-fdce-83e0-a000-87da31fdc6cf`. |
+| `NOTION_HABITS_DATA_SOURCE_ID` | Habits + Routines data source. Default `85ff408a-fdce-83fd-8dae-0715a2654ee8`. |
 | `NOTION_TODAY_SCHEDULE_VIEW_ID` | Schedule view. Default `3d5f408a-fdce-815c-8533-000c40cb6885`. |
 | `NOTION_TODAY_NOW_VIEW_ID` | NOW view. Default `3d5f408a-fdce-81a1-90b1-000c18b2ce11`. |
 | `NOTION_TODAY_EDIT_API_KEY` | Secret for the "Today (edit times)" integration. Only used by Restart time. |

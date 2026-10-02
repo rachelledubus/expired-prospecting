@@ -6,6 +6,7 @@ import type { TodayData, TodayTask } from "@/lib/today";
 import { planShift } from "@/lib/today-shift";
 
 const TZ = "America/New_York";
+const HABITS_KEY = "planner.habits.v1";
 const SC = 1.7; // pixels per minute on the timeline
 
 type Item = TodayTask;
@@ -70,6 +71,11 @@ function Icon({ kind }: { kind: Cat | "check" }) {
   }
 }
 
+const ROUTINE_LABELS: Record<string, string> = {
+  "1": "Early morning", "2": "Morning", "3": "Work (AM)", "4": "Lunch", "5": "Work (PM)", "6": "Wind down", "7": "Evening",
+};
+const ROUTINE_LABEL = (r: string) => ROUTINE_LABELS[r.charAt(0)] ?? "Anytime";
+
 function dueText(t: Item) {
   if (!t.start) return null;
   const d = hasTime(t.start)
@@ -133,6 +139,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [restart, setRestart] = useState<{ id: string; phase: "confirm" | "saving" } | null>(null);
   const [restartError, setRestartError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [habitDone, setHabitDone] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -152,6 +159,22 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     document.addEventListener("visibilitychange", onVisible);
     return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onVisible); };
   }, [data.fetchedAt, refresh]);
+
+  // Habit ticks live on this device and start fresh each day (Notion is not updated).
+  useEffect(() => {
+    try {
+      const o = JSON.parse(window.localStorage.getItem(HABITS_KEY) || "null");
+      if (o && o.date === etParts(new Date()).date && Array.isArray(o.done)) {
+        setHabitDone(o.done.filter((x: unknown) => typeof x === "string"));
+      }
+    } catch { /* storage unavailable: nothing ticked */ }
+  }, []);
+  const toggleHabit = (id: string) =>
+    setHabitDone((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { window.localStorage.setItem(HABITS_KEY, JSON.stringify({ date: etParts(new Date()).date, done: next })); } catch { /* ignore */ }
+      return next;
+    });
 
   const items = useMemo(() => {
     const m = new Map<string, Item>();
@@ -413,6 +436,37 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
             </div>
 
             <div className="col-side">
+              <section id="sec-habits" className="sec">
+                <div className="label-row">
+                  <div className="label">Habits</div>
+                  {data.habits.length > 0 && (
+                    <span className="count">{data.habits.filter((h) => habitDone.includes(h.id)).length} of {data.habits.length} done</span>
+                  )}
+                </div>
+                <div className="focus">
+                  {data.habits.length === 0 && <div className="empty">No habits to show right now.</div>}
+                  {data.habits.map((h, i) => {
+                    const done = habitDone.includes(h.id);
+                    const group = ROUTINE_LABEL(h.routine);
+                    const showGroup = i === 0 || ROUTINE_LABEL(data.habits[i - 1].routine) !== group;
+                    return (
+                      <div key={h.id}>
+                        {showGroup && <div className="h-group">{group}</div>}
+                        <button className={"habit" + (done ? " done" : "")} type="button" aria-pressed={done} onClick={() => toggleHabit(h.id)}>
+                          <span className="tick" aria-hidden="true">{done && <Icon kind="check" />}</span>
+                          <span>
+                            <span className="h-title">{h.title}</span>
+                            {h.scaledVersion && <span className="h-sub">{h.scaledVersion}</span>}
+                          </span>
+                          <span className="h-time">{h.priority ? h.priority.replace(/^\d\s*/, "") : ""}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="snap">Ticks are saved on this device and reset each day. Notion is not updated.</p>
+              </section>
+
               <section id="sec-tasks" className="sec">
                 <button className="fold" type="button" aria-expanded={tasksOpen} aria-controls="important-tasks" onClick={() => setTasksOpen((v) => !v)}>
                   <span className="label">Important Tasks</span>
@@ -446,6 +500,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
         <nav className="tabs" aria-label="Jump to a section">
           <button type="button" className="t1" onClick={() => jump("sec-now")}>Now</button>
           <button type="button" className="t2" onClick={() => jump("sec-schedule")}>Schedule</button>
+          <button type="button" className="t4" onClick={() => jump("sec-habits")}>Habits</button>
           <button type="button" className="t3" onClick={() => jump("sec-tasks")}>Tasks</button>
         </nav>
       </div>

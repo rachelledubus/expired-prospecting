@@ -21,6 +21,7 @@ const REQUEST_TIMEOUT_MS = 8000;
 const DEFAULT_TASKS_DATA_SOURCE_ID = "8a5f408a-fdce-83e0-a000-87da31fdc6cf";
 const DEFAULT_SCHEDULE_VIEW_ID = "3d5f408a-fdce-815c-8533-000c40cb6885";
 const DEFAULT_NOW_VIEW_ID = "3d5f408a-fdce-81a1-90b1-000c18b2ce11";
+const DEFAULT_HABITS_DATA_SOURCE_ID = "85ff408a-fdce-83fd-8dae-0715a2654ee8";
 
 export type TodayTask = {
   id: string;
@@ -44,12 +45,27 @@ export type TodayTask = {
   workClass: string | null;
 };
 
+/** A habit from the Habits + Routines database (the definition, not a scheduled task). */
+export type TodayHabit = {
+  id: string;
+  url: string;
+  title: string;
+  /** Time of day, e.g. "2 morning". Only daily time-of-day routines are kept. */
+  routine: string;
+  priority: string | null;
+  essential: boolean;
+  capacity: string | null;
+  scaledVersion: string;
+};
+
 export type TodayData = {
   fetchedAt: string;
   schedule: TodayTask[];
   now: TodayTask[];
   /** Open tasks (Do Next / In progress) that are not already in schedule or now. */
   pool: TodayTask[];
+  /** Daily habits with a Routine Priority that are not already scheduled as a task today. */
+  habits: TodayHabit[];
   /** Default contents of "Other important priorities". */
   defaultPriorityIds: string[];
   warnings: string[];
@@ -79,6 +95,7 @@ function config() {
     tasksDataSourceId: process.env.NOTION_TASKS_DATA_SOURCE_ID || DEFAULT_TASKS_DATA_SOURCE_ID,
     scheduleViewId: process.env.NOTION_TODAY_SCHEDULE_VIEW_ID || DEFAULT_SCHEDULE_VIEW_ID,
     nowViewId: process.env.NOTION_TODAY_NOW_VIEW_ID || DEFAULT_NOW_VIEW_ID,
+    habitsDataSourceId: process.env.NOTION_HABITS_DATA_SOURCE_ID || DEFAULT_HABITS_DATA_SOURCE_ID,
   };
 }
 
@@ -241,6 +258,55 @@ async function openTasks(dataSourceId: string): Promise<TodayTask[]> {
   return tasks;
 }
 
+/**
+ * Daily habits that have a Routine Priority. Habits whose task for today is already on the
+ * schedule or in the NOW list are left out, so nothing is shown twice.
+ */
+async function dailyHabits(dataSourceId: string, shownTaskIds: Set<string>): Promise<TodayHabit[]> {
+  const rows: any[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < 2; i += 1) {
+    const res = await notion(`/v1/data_sources/${dataSourceId}/query`, {
+      method: "POST",
+      body: {
+        filter: { property: "Routine Priority", select: { is_not_empty: true } },
+        page_size: 100,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      },
+    });
+    rows.push(...(res.results ?? []));
+    if (!res.has_more) break;
+    cursor = res.next_cursor;
+  }
+  const num = (v: string | null) => {
+    const m = (v ?? "").match(/^(\d)/);
+    return m ? parseInt(m[1], 10) : 9;
+  };
+  return rows
+    .map((page) => {
+      const p = page.properties ?? {};
+      const occurrences: string[] = Array.isArray(p["Task Occurrences"]?.relation)
+        ? p["Task Occurrences"].relation.map((r: any) => r.id)
+        : [];
+      return {
+        occurrences,
+        habit: {
+          id: page.id,
+          url: page.url,
+          title: readText(p["Habit"]) || "(untitled)",
+          routine: readText(p["Routine"]),
+          priority: readText(p["Routine Priority"]) || null,
+          essential: readBool(p["Essential?"]),
+          capacity: readText(p["Minimum Capacity"]) || null,
+          scaledVersion: readText(p["Scaled Version"]),
+        } as TodayHabit,
+      };
+    })
+    .filter(({ habit, occurrences }) => /^[1-7] /.test(habit.routine) && !occurrences.some((id) => shownTaskIds.has(id)))
+    .map(({ habit }) => habit)
+    .sort((a, b) => num(a.routine) - num(b.routine) || num(a.priority) - num(b.priority) || a.title.localeCompare(b.title));
+}
+
 function explain(err: unknown, what: string): Error {
   if (err instanceof TodaySetupError) return err;
   if (err instanceof NotionHttpError) {
@@ -273,6 +339,18 @@ export async function getToday(): Promise<TodayData> {
     ),
   ]);
 
+  // Habits are read alongside the task pages. A problem here only costs the Habits section.
+  const habitsPromise = dailyHabits(cfg.habitsDataSourceId, new Set([...scheduleIds, ...nowIds])).then(
+    (habits) => ({ habits, warning: null as string | null }),
+    (e) => ({
+      habits: [] as TodayHabit[],
+      warning:
+        e instanceof NotionHttpError && (e.status === 403 || e.status === 404)
+          ? "Notion could not find your Habits + Routines database. Open it in Notion, choose ••• → Connections, and add the Today (read only) connection."
+          : explain(e, "your habits").message,
+    })
+  );
+
   const uniqueIds = Array.from(new Set([...scheduleIds, ...nowIds]));
   const pages = await mapLimit(uniqueIds, 5, (id) =>
     notion(`/v1/pages/${id}`).catch((e) => { throw explain(e, "a task from today"); })
@@ -289,13 +367,16 @@ export async function getToday(): Promise<TodayData> {
   // Default list: open "Must Happen" tasks in Notion's own priority order, top four.
   const defaultPriorityIds = pool.filter((t) => t.weeklyRole === "Must Happen").slice(0, 4).map((t) => t.id);
 
+  const habitsResult = await habitsPromise;
+
   return {
     fetchedAt: new Date().toISOString(),
     schedule,
     now,
     pool,
+    habits: habitsResult.habits,
     defaultPriorityIds,
-    warnings: poolResult.warning ? [poolResult.warning] : [],
+    warnings: [poolResult.warning, habitsResult.warning].filter((w): w is string => Boolean(w)),
   };
 }
 
