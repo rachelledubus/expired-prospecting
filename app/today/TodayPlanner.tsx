@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { TodayData, TodayTask } from "@/lib/today";
 
 const TZ = "America/New_York";
-const SC = 2; // pixels per minute on the timeline
+const SC = 1.7; // pixels per minute on the timeline
 const STORAGE_KEY = "planner.priorities.v2";
 
 type CustomItem = { id: string; title: string };
@@ -49,6 +49,27 @@ function taskMeta(t: Item) {
   const when = t.minutes ? `${durText(t.minutes)}, no set time` : "No set time";
   const kind = t.calendarRole === "Deadline" || t.calendarRole === "Appointment" ? t.calendarRole : null;
   return [when, kind, tagsOf(t).join(", ") || t.timeBlock].filter(Boolean).join("  ·  ");
+}
+
+type Cat = "work" | "routine" | "appt" | "deadline" | "other";
+const catOf = (t: TodayTask): Cat =>
+  t.calendarRole === "Appointment" ? "appt"
+  : t.calendarRole === "Deadline" ? "deadline"
+  : t.calendarRole === "Time Block" ? "work"
+  : t.calendarRole === "Maintenance" ? "routine"
+  : "other";
+const CAT_LABEL: Record<Cat, string> = { work: "Work blocks", routine: "Routines and meals", appt: "Appointments", deadline: "Deadlines", other: "Other" };
+
+function Icon({ kind }: { kind: Cat | "check" }) {
+  const p = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  switch (kind) {
+    case "work": return <svg {...p}><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /></svg>;
+    case "routine": return <svg {...p}><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z" /></svg>;
+    case "appt": return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+    case "deadline": return <svg {...p}><path d="M5 21V4h11l-2 4 2 4H5" /></svg>;
+    case "check": return <svg {...p} strokeWidth={3}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+    default: return <svg {...p}><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg>;
+  }
 }
 
 function dueText(t: Item) {
@@ -113,6 +134,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [refreshing, startTransition] = useTransition();
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const [store, setStore] = useState<Store>({ edited: false, order: [], custom: [] });
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -199,7 +221,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   // plus anything on today's schedule list that has no time. None of them appear on the agenda.
   const scheduleIds = new Set(data.schedule.map((t) => t.id));
   const importantTasks: Item[] = [];
-  [...data.now.filter((t) => !scheduleIds.has(t.id)), ...unscheduled.filter((t) => t.status !== "Done")].forEach((t) => {
+  [...data.now.filter((t) => !scheduleIds.has(t.id)), ...unscheduled.filter((t) => t.status !== "Done" && t.calendarRole !== "Maintenance")].forEach((t) => {
     if (!importantTasks.some((x) => x.id === t.id)) importantTasks.push(t);
   });
 
@@ -249,191 +271,254 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const clock = nowMs === null ? "" : new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(new Date(nowMs));
   const updated = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(headerDate);
 
+  // Habits and self-care are today's routine items from the schedule (the daily occurrences of the habits in Notion).
+  const habits: Item[] = [...placed.map((p) => p.task), ...unscheduled].filter((t) => t.calendarRole === "Maintenance");
+  const habitsDone = habits.filter((t) => t.status === "Done").length;
+
+  const jump = (id: string) => {
+    if (id === "sec-tasks") setTasksOpen(true);
+    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), id === "sec-tasks" ? 60 : 0);
+  };
+  const cats = Array.from(new Set(placed.map((p) => catOf(p.task))));
+
   return (
     <div className="tp">
-      <div className="wrap">
-        <header>
-          <div>
-            <div className="dow">{new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: TZ }).format(headerDate)}</div>
-            <div className="dmy">{new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: TZ }).format(headerDate)}</div>
-          </div>
-          <div className="clock">{clock}</div>
-        </header>
-        <div className="rule" />
-        <p className="state-line">
-          Updated from Notion at {updated}.{" "}
-          <button className="refresh" type="button" onClick={refresh} disabled={refreshing}>
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
-        </p>
-        {data.warnings.map((w) => (
-          <p className="state-line" key={w}>{w}</p>
-        ))}
-
-        <div className="label">Current focus</div>
-        {!sameDay ? (
-          <div className="cf idle">
-            <div className="cf-kicker">Out of date</div>
-            <h2>This page was loaded on a different day.</h2>
-            <div className="cf-actions">
-              <button className="pill" type="button" onClick={refresh}>Refresh</button>
+      <div className="shell">
+        <div className="paper">
+          <div className="holes" aria-hidden="true" />
+          <header className="hd">
+            <div>
+              <div className="dow"><span>{new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: TZ }).format(headerDate)}</span></div>
+              <div className="dmy">{new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: TZ }).format(headerDate)}</div>
             </div>
-          </div>
-        ) : currentBlocks.length > 0 ? (
-          currentBlocks.map(({ task: t, s, e }) => {
-            const pct = Math.min(100, Math.max(0, ((cp.min - s) / (e - s)) * 100));
-            return (
-              <div className="cf" key={t.id}>
-                <div className="cf-kicker">Right now</div>
-                <h2>{t.title}</h2>
-                <div className="cf-meta">{rangeText(t.start!, endIso(t, s, e))}  {"·"}  {durText(e - cp.min)} left</div>
-                <div className="cf-bar" aria-hidden="true"><div style={{ width: `${pct}%` }} /></div>
-                {t.nextInstruction && <p className="cf-instr">{t.nextInstruction}</p>}
-                <div className="cf-actions">
-                  {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
-                  <button className={"pill" + (t.link ? " ghost" : "")} type="button" onClick={() => openDetail(t.id)}>Details</button>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="cf idle">
-            <div className="cf-kicker">{nextBlock ? "Free right now" : "Schedule clear"}</div>
-            <h2>
-              {nextBlock
-                ? "Nothing is scheduled at this moment."
-                : placed.length === 0
-                  ? "Nothing is scheduled for today in Notion."
-                  : "Nothing left on today's schedule."}
-            </h2>
-          </div>
-        )}
-        {sameDay && nextBlock && (
-          <button className="cf-next" type="button" onClick={() => openDetail(nextBlock.task.id)}>
-            Up next: <strong>{nextBlock.task.title}</strong> at {fmtTime(nextBlock.task.start!, true)}, in {durText(nextBlock.s - cp.min)}
-          </button>
-        )}
-
-        <div className="label">Important Tasks</div>
-        <div className="focus">
-          {importantTasks.length === 0 && <div className="empty">No tasks in your NOW list right now.</div>}
-          {importantTasks.map((t) => (
-            <button className="focus-item" type="button" key={t.id} onClick={() => openDetail(t.id)}>
-              <span className={"bullet" + (t.weeklyRole === "Must Happen" ? " hot" : "")} />
-              <span>
-                <div className="f-title">{t.title}</div>
-                <div className="f-meta">{taskMeta(t)}</div>
-              </span>
-            </button>
+            <div className="hd-right">
+              <div className="clock">{clock}</div>
+              <button className="refresh" type="button" onClick={refresh} disabled={refreshing}>
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+          </header>
+          <p className="state-line">Updated from Notion at {updated}.</p>
+          {data.warnings.map((w) => (
+            <p className="state-line" key={w}>{w}</p>
           ))}
-        </div>
 
-        <div className="label-row">
-          <div className="label">Other important priorities</div>
-          <button className={"edit-btn" + (editing ? " on" : "")} type="button" aria-expanded={editing} onClick={() => setEditing((v) => !v)}>
-            {editing ? "Done" : "Edit"}
-          </button>
-        </div>
-        <div className="focus">
-          {order.length === 0 && <div className="empty">Nothing on this list. Tap Edit to choose what to focus on.</div>}
-          {order.map((id, i) => {
-            const t = items.get(id)!;
-            return (
-              <div className="prio-row" key={id}>
-                <button className="prio-main" type="button" onClick={() => openDetail(id)}>
-                  <span className="bullet" />
-                  <span>
-                    <div className="f-title">{t.title}</div>
-                    <div className="f-meta">{metaLine(t)}</div>
-                  </span>
-                </button>
-                {editing && (
-                  <div className="tools">
-                    <button className="tbtn" type="button" disabled={i === 0} onClick={() => move(id, -1)} aria-label={`Move up: ${t.title}`}>Move up</button>
-                    <button className="tbtn" type="button" disabled={i === order.length - 1} onClick={() => move(id, 1)} aria-label={`Move down: ${t.title}`}>Move down</button>
-                    <button className="tbtn rm" type="button" onClick={() => remove(id)} aria-label={`Remove: ${t.title}`}>Remove</button>
+          <div className="cols">
+            <div className="col-main">
+              <section id="sec-now" className="sec">
+                {!sameDay ? (
+                  <div className="cf idle">
+                    <div className="cf-top"><span className="cf-kicker">Out of date</span></div>
+                    <h2>This page was loaded on a different day.</h2>
+                    <div className="cf-actions"><button className="pill" type="button" onClick={refresh}>Refresh</button></div>
+                  </div>
+                ) : currentBlocks.length > 0 ? (
+                  currentBlocks.map(({ task: t, s, e }) => {
+                    const pct = Math.min(100, Math.max(0, ((cp.min - s) / (e - s)) * 100));
+                    const endI = endIso(t, s, e);
+                    return (
+                      <div className="cf" key={t.id}>
+                        <div className="cf-top">
+                          <span className="cf-kicker">Right now</span>
+                          <span className="cf-left">{durText(e - cp.min)} left</span>
+                        </div>
+                        <h2>{t.title}</h2>
+                        <div className="cf-bar" aria-hidden="true"><div style={{ width: `${pct}%` }} /></div>
+                        <div className="cf-ends"><span>{fmtTime(t.start!, true)}</span><span>{fmtTime(endI, true)}</span></div>
+                        {t.nextInstruction && <p className="cf-instr">{t.nextInstruction}</p>}
+                        <div className="cf-actions">
+                          {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
+                          <button className={"pill" + (t.link ? " ghost" : "")} type="button" onClick={() => openDetail(t.id)}>Details</button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="cf idle">
+                    <div className="cf-top"><span className="cf-kicker">{nextBlock ? "Free right now" : "Schedule clear"}</span></div>
+                    <h2>
+                      {nextBlock
+                        ? "Nothing is scheduled at this moment."
+                        : placed.length === 0
+                          ? "Nothing is scheduled for today in Notion."
+                          : "Nothing left on today's schedule."}
+                    </h2>
                   </div>
                 )}
-              </div>
-            );
-          })}
-        </div>
-        {editing && (
-          <div className="add-panel">
-            <div className="d-label">Add from your Notion tasks</div>
-            {available.length === 0 && <div className="empty">All of your open tasks are already on the list.</div>}
-            {available.map((t) => (
-              <div className="pick" key={t.id}>
-                <div className="txt">
-                  <div className="f-title">{t.title}</div>
-                  <div className="f-meta">{metaLine(t)}</div>
-                </div>
-                <button className="tbtn add" type="button" onClick={() => add(t.id)} aria-label={`Add: ${t.title}`}>Add</button>
-              </div>
-            ))}
-            <div className="d-label">Or type your own</div>
-            <div className="typebox">
-              <input
-                type="text" value={draft} maxLength={120} placeholder="What else matters today?" aria-label="New priority"
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-              />
-              <button className="tbtn add" type="button" onClick={addCustom} aria-label="Add typed priority">Add</button>
+                {sameDay && nextBlock && (
+                  <button className="cf-next" type="button" onClick={() => openDetail(nextBlock.task.id)}>
+                    <span className="nx">Up next</span>
+                    <strong>{nextBlock.task.title}</strong>
+                    <span>{fmtTime(nextBlock.task.start!, true)}, in {durText(nextBlock.s - cp.min)}</span>
+                  </button>
+                )}
+              </section>
+
+              <section id="sec-schedule" className="sec">
+                <div className="label">Schedule</div>
+                {placed.length === 0 ? (
+                  <div className="nothing">Nothing is scheduled for today in Notion.</div>
+                ) : (
+                  <div className="sheet">
+                    <div className="grid" style={{ height: (gridEnd - gridStart) * SC }}>
+                      {hours.map((m) =>
+                        m % 60 === 0 ? (
+                          <div className="hour" key={m} style={{ top: (m - gridStart) * SC }}><span>{hourLabel(m / 60)}</span></div>
+                        ) : (
+                          <div className="half" key={m} style={{ top: (m - gridStart) * SC }} />
+                        )
+                      )}
+                      {placed.map(({ task: t, s, e, lane, lanes }) => {
+                        const isDone = t.status === "Done";
+                        const cur = live && !isDone && nowParts!.min >= s && nowParts!.min < e;
+                        const past = (live && nowParts!.min >= e) || isDone;
+                        const cat = catOf(t);
+                        const cls = ["block", cat, past ? "past" : "", cur ? "current" : "", isDone ? "done" : "", lanes > 1 ? "lane" : "", e - s < 30 ? "short" : ""].filter(Boolean).join(" ");
+                        const style: React.CSSProperties = { top: (s - gridStart) * SC + 2, height: Math.max((e - s) * SC - 4, 24) };
+                        if (lanes > 1) {
+                          style.left = `calc(var(--tc) + (100% - var(--tc)) * ${lane} / ${lanes})`;
+                          style.width = `calc((100% - var(--tc)) / ${lanes} - 4px)`;
+                        }
+                        return (
+                          <button className={cls} type="button" key={t.id} style={style} onClick={() => openDetail(t.id)}>
+                            <div className="b-time">
+                              <span className="ic"><Icon kind={isDone ? "check" : cat} /></span>
+                              <span>{rangeText(t.start!, endIso(t, s, e))}</span>
+                              {cur && <span className="tag-now">Now</span>}
+                              {isDone && <span className="done-tag">Done</span>}
+                            </div>
+                            <div className="b-title">{t.title}</div>
+                            {e - s >= 90 && !isDone && <div className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</div>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="legend">
+                      {cats.map((c) => (<span key={c}><i className={c} />{CAT_LABEL[c]}</span>))}
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
-            <button className="reset" type="button" onClick={reset}>Reset to the default list</button>
-          </div>
-        )}
-        <p className="snap" style={{ marginTop: 8 }}>Saved on this device only. Changes here do not update Notion yet.</p>
 
-        <div className="label">Schedule</div>
-        {placed.length === 0 ? (
-          <div className="nothing">Nothing is scheduled for today in Notion.</div>
-        ) : (
-          <div className="sheet-card">
-            {placed.length > 0 && (
-              <div className="grid" style={{ height: (gridEnd - gridStart) * SC }}>
-                {hours.map((m) =>
-                  m % 60 === 0 ? (
-                    <div className="hour" key={m} style={{ top: (m - gridStart) * SC }}><span>{hourLabel(m / 60)}</span></div>
-                  ) : (
-                    <div className="half" key={m} style={{ top: (m - gridStart) * SC }} />
-                  )
-                )}
-                {placed.map(({ task: t, s, e, lane, lanes }) => {
-                  const isDone = t.status === "Done";
-                  const cur = live && !isDone && nowParts!.min >= s && nowParts!.min < e;
-                  const past = (live && nowParts!.min >= e) || isDone;
-                  const cls = ["block", t.calendarRole === "Time Block" ? "work" : "", t.nextInstruction || t.executionInstructions ? "has-note" : "", past ? "past" : "", cur ? "current" : "", isDone ? "done" : "", lanes > 1 ? "lane" : ""].filter(Boolean).join(" ");
-                  const style: React.CSSProperties = { top: (s - gridStart) * SC + 2, height: (e - s) * SC - 4 };
-                  if (lanes > 1) {
-                    style.left = `calc(58px + (100% - 58px) * ${lane} / ${lanes})`;
-                    style.width = `calc((100% - 58px) / ${lanes} - 4px)`;
-                  }
-                  return (
-                    <button className={cls} type="button" key={t.id} style={style} onClick={() => openDetail(t.id)}>
-                      <div className="b-time">
-                        <span>{rangeText(t.start!, t.end && hasTime(t.end) ? t.end : new Date(new Date(t.start!).getTime() + (e - s) * 60000).toISOString())}</span>
-                        {cur && <span className="tag-now">Now</span>}
-                        {isDone && <span className="done-tag">Done</span>}
+            <div className="col-side">
+              <section id="sec-priorities" className="sec">
+                <div className="label-row">
+                  <div className="label">Other important priorities</div>
+                  <button className={"edit-btn" + (editing ? " on" : "")} type="button" aria-expanded={editing} onClick={() => setEditing((v) => !v)}>
+                    {editing ? "Done" : "Edit"}
+                  </button>
+                </div>
+                <div className="focus">
+                  {order.length === 0 && <div className="empty">Nothing on this list. Tap Edit to choose what to focus on.</div>}
+                  {order.map((id, i) => {
+                    const t = items.get(id)!;
+                    return (
+                      <div className="prio-row" key={id}>
+                        <button className="prio-main" type="button" onClick={() => openDetail(id)}>
+                          <span className="bullet" />
+                          <span>
+                            <div className="f-title">{t.title}</div>
+                            <div className="f-meta">{metaLine(t)}</div>
+                          </span>
+                        </button>
+                        {editing && (
+                          <div className="tools">
+                            <button className="tbtn" type="button" disabled={i === 0} onClick={() => move(id, -1)} aria-label={`Move up: ${t.title}`}>Move up</button>
+                            <button className="tbtn" type="button" disabled={i === order.length - 1} onClick={() => move(id, 1)} aria-label={`Move down: ${t.title}`}>Move down</button>
+                            <button className="tbtn rm" type="button" onClick={() => remove(id)} aria-label={`Remove: ${t.title}`}>Remove</button>
+                          </div>
+                        )}
                       </div>
-                      <div className="b-title">{t.title}</div>
-                      {e - s >= 90 && <div className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</div>}
-                    </button>
-                  );
-                })}
-                {live && nowParts!.min >= gridStart && nowParts!.min <= gridEnd && (
-                  <div className="nowline" style={{ top: (nowParts!.min - gridStart) * SC }} />
+                    );
+                  })}
+                </div>
+                {editing && (
+                  <div className="add-panel">
+                    <div className="d-label">Add from your Notion tasks</div>
+                    {available.length === 0 && <div className="empty">All of your open tasks are already on the list.</div>}
+                    {available.map((t) => (
+                      <div className="pick" key={t.id}>
+                        <div className="txt">
+                          <div className="f-title">{t.title}</div>
+                          <div className="f-meta">{metaLine(t)}</div>
+                        </div>
+                        <button className="tbtn add" type="button" onClick={() => add(t.id)} aria-label={`Add: ${t.title}`}>Add</button>
+                      </div>
+                    ))}
+                    <div className="d-label">Or type your own</div>
+                    <div className="typebox">
+                      <input
+                        type="text" value={draft} maxLength={120} placeholder="What else matters today?" aria-label="New priority"
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+                      />
+                      <button className="tbtn add" type="button" onClick={addCustom} aria-label="Add typed priority">Add</button>
+                    </div>
+                    <button className="reset" type="button" onClick={reset}>Reset to the default list</button>
+                  </div>
                 )}
-              </div>
-            )}
-            <div className="legend"><span><i className="w" />Work blocks</span><span><i />Routines and meals</span></div>
-          </div>
-        )}
+                <p className="snap">Saved on this device only. Changes here do not update Notion yet.</p>
+              </section>
 
-        <footer>
-          Source: your Tasks database in Notion (Schedule and NOW views). Read only. Tap any block for details.{" "}
-          <a className="portal-link" href="/">Portal home</a>
-        </footer>
+              <section id="sec-habits" className="sec">
+                <div className="label-row">
+                  <div className="label">Habits and self-care</div>
+                  {habits.length > 0 && <span className="count">{habitsDone} of {habits.length} done</span>}
+                </div>
+                <div className="focus">
+                  {habits.length === 0 && <div className="empty">No routine items are scheduled today.</div>}
+                  {habits.map((t) => {
+                    const done = t.status === "Done";
+                    return (
+                      <button className={"habit" + (done ? " done" : "")} type="button" key={t.id} onClick={() => openDetail(t.id)}>
+                        <span className="tick" aria-hidden="true">{done && <Icon kind="check" />}</span>
+                        <span className="h-title">{t.title}</span>
+                        <span className="h-time">{t.start && hasTime(t.start) ? fmtTime(t.start, true) : ""}</span>
+                        <span className="sr">{done ? "Done" : "Not done"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section id="sec-tasks" className="sec">
+                <button className="fold" type="button" aria-expanded={tasksOpen} aria-controls="important-tasks" onClick={() => setTasksOpen((v) => !v)}>
+                  <span className="label">Important Tasks</span>
+                  <span className="count">{importantTasks.length}</span>
+                  <span className={"chev" + (tasksOpen ? " up" : "")} aria-hidden="true" />
+                </button>
+                {tasksOpen && (
+                  <div className="focus" id="important-tasks">
+                    {importantTasks.length === 0 && <div className="empty">No tasks in your NOW list right now.</div>}
+                    {importantTasks.map((t) => (
+                      <button className="focus-item" type="button" key={t.id} onClick={() => openDetail(t.id)}>
+                        <span className={"bullet" + (t.weeklyRole === "Must Happen" ? " hot" : "")} />
+                        <span>
+                          <div className="f-title">{t.title}</div>
+                          <div className="f-meta">{taskMeta(t)}</div>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+
+          <footer>
+            Source: your Tasks database in Notion (Schedule and NOW views). Read only. Tap any block for details.{" "}
+            <a className="portal-link" href="/">Portal home</a>
+          </footer>
+        </div>
+
+        <nav className="tabs" aria-label="Jump to a section">
+          <button type="button" className="t1" onClick={() => jump("sec-now")}>Now</button>
+          <button type="button" className="t2" onClick={() => jump("sec-schedule")}>Schedule</button>
+          <button type="button" className="t3" onClick={() => jump("sec-priorities")}>Priorities</button>
+          <button type="button" className="t4" onClick={() => jump("sec-habits")}>Habits</button>
+          <button type="button" className="t5" onClick={() => jump("sec-tasks")}>Tasks</button>
+        </nav>
       </div>
 
       <div className={"scrim" + (open ? " open" : "")} onClick={closeDetail} />

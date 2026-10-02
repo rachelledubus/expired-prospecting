@@ -1,11 +1,14 @@
 # Today page (`/today`)
 
-A simplified, read-only daily planner. It shows four things and nothing else:
+A simplified, read-only daily planner styled like a paper planner page (cream background, binder holes, side tabs, pastel color coding). It shows:
 
-1. **Current focus**: what the schedule says you should be doing right now (block, time left, progress bar, next instruction, link). Between blocks it says you are free and shows what is up next. Done blocks are skipped. If two blocks overlap, both show.
-2. **Important Tasks**: the rows in the NOW view on the Notion Today page, plus any scheduled item with no set time. These never appear on the agenda.
-3. **Other important priorities**: open tasks (Do Next or In progress) that are not already on the schedule or in Important Tasks. The default list is the top four "Must Happen" tasks in Notion's own priority order. Add, remove and reorder are available through Edit.
-4. **Schedule**: the time-blocked rows in the "TODAY, Full Schedule" view, drawn as an hour-by-hour planner. Tasks marked Done show as done.
+1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Overlapping blocks each get a card. Done blocks are skipped.
+2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
+3. **Other important priorities**: open tasks (Do Next or In progress) not already on the schedule or in Important Tasks. Default is the top four "Must Happen" tasks in Notion's priority order. Add, remove and reorder through Edit (saved on this device only).
+4. **Habits and self-care**: today's Maintenance items from the schedule (the daily occurrences of the habits in Notion), with a done count.
+5. **Important Tasks**: the NOW view rows plus any scheduled item with no set time. Collapsed by default. They never appear on the schedule.
+
+The side tabs jump to each section. On a wide screen the schedule is on the left and the lists are on the right.
 
 Notion stays the only database. This page does not write to Notion and adds no storage of its own.
 
