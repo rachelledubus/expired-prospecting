@@ -33,6 +33,7 @@ Note: if a Notion automation sets Due Dates on its own, it may move tasks back. 
 ## How it reads Notion
 
 - Schedule and Important Tasks are read by asking Notion for the rows of two saved views. Those views already hold the rules for what counts as "today" (they filter on formulas such as Execution Day), so the rules are not copied into this code. If the views change in Notion, the page follows.
+- One addition: the Schedule view filters on the Execution Day formula, and that formula treats anything after 8 PM Eastern (already tomorrow in UTC) as another day, so an evening item such as "Night Close" never reaches the view. The page therefore also asks the Tasks database for scheduled rows whose Due Date is inside today (Eastern) and adds any the view missed. It only adds rows; the view still decides everything it returns. If that extra query fails, the view's rows are shown as before.
 - Notion returns only row ids for a view, so each row is then fetched once for its details. That is about ten small requests per page load.
 - Open tasks come from one query on the Tasks data source.
 - Code: `lib/today.ts` (Notion reads), `app/today/page.tsx` (server page), `app/today/TodayPlanner.tsx` (the screen), `app/today/today.css` (scoped styles, no effect on other pages).

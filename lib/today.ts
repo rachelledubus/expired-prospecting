@@ -220,6 +220,68 @@ async function viewRowIds(viewId: string): Promise<string[]> {
   return ids;
 }
 
+const DAY_TZ = "America/New_York";
+
+/** The instants (as ISO strings) where today and tomorrow start in Eastern time. */
+export function etDayBounds(now: Date): { start: string; end: string } {
+  const dayOf = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: DAY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  const midnight = (ymd: string): Date => {
+    const [y, m, d] = ymd.split("-").map(Number);
+    for (const hour of [4, 5]) {
+      const t = new Date(Date.UTC(y, m - 1, d, hour));
+      const clock = new Intl.DateTimeFormat("en-GB", { timeZone: DAY_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
+      if (clock === "00:00") return t;
+    }
+    return new Date(Date.UTC(y, m - 1, d, 5));
+  };
+  const today = dayOf(now);
+  const [y, m, d] = today.split("-").map(Number);
+  const tomorrow = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+  return { start: midnight(today).toISOString(), end: midnight(tomorrow).toISOString() };
+}
+
+/**
+ * Scheduled tasks whose Due Date falls inside today (Eastern), read straight from the Tasks
+ * database. The Schedule view filters on Notion's "Execution Day" formula, which can call an
+ * evening task (anything after 8 PM Eastern, already tomorrow in UTC) a different day, so the
+ * view alone would miss it. These rows are added to the view's rows, never replace them.
+ */
+async function dueTodayTasks(dataSourceId: string, now: Date): Promise<TodayTask[]> {
+  const { start, end } = etDayBounds(now);
+  const tasks: TodayTask[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < 2; i += 1) {
+    const res = await notion(`/v1/data_sources/${dataSourceId}/query`, {
+      method: "POST",
+      body: {
+        filter: {
+          and: [
+            { property: "Due Date", date: { on_or_after: start } },
+            { property: "Due Date", date: { before: end } },
+            { property: "Calendar Role", select: { is_not_empty: true } },
+            { property: "Archive", checkbox: { equals: false } },
+            {
+              or: [
+                { property: "Status", status: { equals: "Scheduled" } },
+                { property: "Status", status: { equals: "In progress" } },
+                { property: "Status", status: { equals: "Done" } },
+              ],
+            },
+          ],
+        },
+        sorts: [{ property: "Due Date", direction: "ascending" }],
+        page_size: 100,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      },
+    });
+    tasks.push(...(res.results ?? []).map(toTask));
+    if (!res.has_more) break;
+    cursor = res.next_cursor;
+  }
+  return tasks;
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let next = 0;
@@ -391,14 +453,20 @@ function explain(err: unknown, what: string): Error {
 export async function getToday(): Promise<TodayData> {
   const cfg = config();
 
-  const [scheduleIds, nowIds, poolResult] = await Promise.all([
+  const [viewScheduleIds, nowIds, poolResult, dueToday] = await Promise.all([
     viewRowIds(cfg.scheduleViewId).catch((e) => { throw explain(e, "the Schedule view"); }),
     viewRowIds(cfg.nowViewId).catch((e) => { throw explain(e, "the NOW view"); }),
     openTasks(cfg.tasksDataSourceId).then(
       (tasks) => ({ tasks, warning: null as string | null }),
       (e) => ({ tasks: [] as TodayTask[], warning: explain(e, "your open tasks").message })
     ),
+    // Catches evening items the view's formula misses. If this fails the view still works.
+    dueTodayTasks(cfg.tasksDataSourceId, new Date()).catch(() => [] as TodayTask[]),
   ]);
+
+  const inView = new Set(viewScheduleIds);
+  const extraToday = dueToday.filter((t) => !inView.has(t.id));
+  const scheduleIds = [...viewScheduleIds, ...extraToday.map((t) => t.id)];
 
   // Habits are read alongside the task pages. A problem here only costs the Habits section.
   const habitsPromise = loadHabits(cfg, new Set([...scheduleIds, ...nowIds])).then(
@@ -418,14 +486,21 @@ export async function getToday(): Promise<TodayData> {
     }
   );
 
-  const uniqueIds = Array.from(new Set([...scheduleIds, ...nowIds]));
+  // Pages already read from the query need no second read.
+  const fromQuery = new Map<string, TodayTask>(extraToday.map((t) => [t.id, t]));
+  const uniqueIds = Array.from(new Set([...scheduleIds, ...nowIds])).filter((id) => !fromQuery.has(id));
   const pages = await mapLimit(uniqueIds, 5, (id) =>
     notion(`/v1/pages/${id}`).catch((e) => { throw explain(e, "a task from today"); })
   );
-  const byId = new Map<string, TodayTask>(pages.map((p: any) => [p.id, toTask(p)]));
+  const byId = new Map<string, TodayTask>([...fromQuery, ...pages.map((p: any): [string, TodayTask] => [p.id, toTask(p)])]);
 
   const pick = (ids: string[]) => ids.map((id) => byId.get(id)).filter((t): t is TodayTask => Boolean(t));
   const schedule = pick(scheduleIds);
+  if (extraToday.length > 0) {
+    // Keep the day in time order once rows from outside the view have been added.
+    const at = (t: TodayTask) => (t.start ? Date.parse(t.start) : Infinity);
+    schedule.sort((a, b) => at(a) - at(b));
+  }
   const now = pick(nowIds);
 
   const shown = new Set([...scheduleIds, ...nowIds]);
