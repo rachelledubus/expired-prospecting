@@ -6,11 +6,8 @@ import type { TodayData, TodayTask } from "@/lib/today";
 
 const TZ = "America/New_York";
 const SC = 1.7; // pixels per minute on the timeline
-const STORAGE_KEY = "planner.priorities.v2";
 
-type CustomItem = { id: string; title: string };
-type Store = { edited: boolean; order: string[]; custom: CustomItem[] };
-type Item = TodayTask & { custom?: boolean };
+type Item = TodayTask;
 
 // ---------- time helpers (all display is in Eastern time) ----------
 
@@ -82,12 +79,10 @@ function dueText(t: Item) {
 }
 
 function metaLine(t: Item) {
-  if (t.custom) return "Added on this page only";
   const parts = [t.tier, t.workClass, t.minutes ? durText(t.minutes) : null, dueText(t)].filter(Boolean);
   return parts.length ? parts.join("  ·  ") : t.status ?? "";
 }
 function tagsOf(t: Item): string[] {
-  if (t.custom) return ["Not in Notion yet"];
   return [t.weeklyRole, t.workClass, t.tier].filter((x): x is string => Boolean(x));
 }
 
@@ -133,11 +128,8 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const router = useRouter();
   const [refreshing, startTransition] = useTransition();
   const [nowMs, setNowMs] = useState<number | null>(null);
-  const [editing, setEditing] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
-  const [store, setStore] = useState<Store>({ edited: false, order: [], custom: [] });
   const [openId, setOpenId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
   const lastFocus = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -157,48 +149,11 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onVisible); };
   }, [data.fetchedAt, refresh]);
 
-  // Priorities edits live on this device until they are wired to Notion.
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const o = JSON.parse(raw);
-      if (o && o.edited && Array.isArray(o.order) && Array.isArray(o.custom)) {
-        setStore({
-          edited: true,
-          order: o.order.filter((x: unknown) => typeof x === "string"),
-          custom: o.custom.filter((c: any) => c && typeof c.id === "string" && typeof c.title === "string"),
-        });
-      }
-    } catch { /* storage unavailable: use the default list */ }
-  }, []);
-
-  const change = useCallback((next: (s: Store) => Store) => {
-    setStore((prev) => {
-      const base: Store = prev.edited ? prev : { ...prev, order: data.defaultPriorityIds };
-      const updated = { ...next(base), edited: true };
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-      return updated;
-    });
-  }, [data.defaultPriorityIds]);
-
   const items = useMemo(() => {
     const m = new Map<string, Item>();
     [...data.now, ...data.schedule, ...data.pool].forEach((t) => m.set(t.id, t));
-    store.custom.forEach((c) =>
-      m.set(c.id, {
-        id: c.id, url: "", title: c.title, status: "Page only", start: null, end: null, minutes: null,
-        timeBlock: null, calendarRole: null, nextInstruction: "", executionInstructions: "", link: null,
-        canDefer: false, weeklyRole: null, tier: null, workClass: null, custom: true,
-      })
-    );
     return m;
-  }, [data, store.custom]);
-
-  const order = (store.edited ? store.order : data.defaultPriorityIds).filter(
-    (id, i, a) => items.has(id) && a.indexOf(id) === i
-  );
-  const available = data.pool.filter((t) => !order.includes(t.id));
+  }, [data]);
 
   const { placed, unscheduled, gridStart, gridEnd } = useMemo(() => layout(data.schedule), [data.schedule]);
 
@@ -231,6 +186,12 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     if (!importantTasks.some((x) => x.id === t.id)) importantTasks.push(t);
   });
 
+  // The open "Must Happen" tasks that used to be their own list now sit with the rest of the tasks.
+  data.defaultPriorityIds.forEach((id) => {
+    const t = items.get(id);
+    if (t && !importantTasks.some((x) => x.id === id)) importantTasks.push(t);
+  });
+
   const hours: number[] = [];
   for (let m = gridStart; m <= gridEnd && gridEnd > 0; m += 30) hours.push(m);
 
@@ -249,37 +210,9 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [openId, closeDetail]);
 
-  // ---------- priorities actions ----------
-  const move = (id: string, dir: -1 | 1) =>
-    change((s) => {
-      const o = s.order.filter((x) => items.has(x));
-      const i = o.indexOf(id), j = i + dir;
-      if (i < 0 || j < 0 || j >= o.length) return s;
-      [o[i], o[j]] = [o[j], o[i]];
-      return { ...s, order: o };
-    });
-  const remove = (id: string) =>
-    change((s) => ({ ...s, order: s.order.filter((x) => x !== id), custom: s.custom.filter((c) => c.id !== id) }));
-  const add = (id: string) => change((s) => (s.order.includes(id) ? s : { ...s, order: [...s.order, id] }));
-  const addCustom = () => {
-    const title = draft.replace(/\s+/g, " ").trim().slice(0, 120);
-    if (!title) return;
-    const id = `c-${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
-    change((s) => ({ ...s, custom: [...s.custom, { id, title }], order: [...s.order, id] }));
-    setDraft("");
-  };
-  const reset = () => {
-    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-    setStore({ edited: false, order: [], custom: [] });
-  };
-
   const headerDate = new Date(data.fetchedAt);
   const clock = nowMs === null ? "" : new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(new Date(nowMs));
   const updated = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).format(headerDate);
-
-  // Habits and self-care are today's routine items from the schedule (the daily occurrences of the habits in Notion).
-  const habits: Item[] = [...placed.map((p) => p.task), ...unscheduled].filter((t) => t.calendarRole === "Maintenance");
-  const habitsDone = habits.filter((t) => t.status === "Done").length;
 
   const jump = (id: string) => {
     if (id === "sec-tasks") setTasksOpen(true);
@@ -409,86 +342,6 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
             </div>
 
             <div className="col-side">
-              <section id="sec-priorities" className="sec">
-                <div className="label-row">
-                  <div className="label">Other important priorities</div>
-                  <button className={"edit-btn" + (editing ? " on" : "")} type="button" aria-expanded={editing} onClick={() => setEditing((v) => !v)}>
-                    {editing ? "Done" : "Edit"}
-                  </button>
-                </div>
-                <div className="focus">
-                  {order.length === 0 && <div className="empty">Nothing on this list. Tap Edit to choose what to focus on.</div>}
-                  {order.map((id, i) => {
-                    const t = items.get(id)!;
-                    return (
-                      <div className="prio-row" key={id}>
-                        <button className="prio-main" type="button" onClick={() => openDetail(id)}>
-                          <span className="bullet" />
-                          <span>
-                            <div className="f-title">{t.title}</div>
-                            <div className="f-meta">{metaLine(t)}</div>
-                          </span>
-                        </button>
-                        {editing && (
-                          <div className="tools">
-                            <button className="tbtn" type="button" disabled={i === 0} onClick={() => move(id, -1)} aria-label={`Move up: ${t.title}`}>Move up</button>
-                            <button className="tbtn" type="button" disabled={i === order.length - 1} onClick={() => move(id, 1)} aria-label={`Move down: ${t.title}`}>Move down</button>
-                            <button className="tbtn rm" type="button" onClick={() => remove(id)} aria-label={`Remove: ${t.title}`}>Remove</button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {editing && (
-                  <div className="add-panel">
-                    <div className="d-label">Add from your Notion tasks</div>
-                    {available.length === 0 && <div className="empty">All of your open tasks are already on the list.</div>}
-                    {available.map((t) => (
-                      <div className="pick" key={t.id}>
-                        <div className="txt">
-                          <div className="f-title">{t.title}</div>
-                          <div className="f-meta">{metaLine(t)}</div>
-                        </div>
-                        <button className="tbtn add" type="button" onClick={() => add(t.id)} aria-label={`Add: ${t.title}`}>Add</button>
-                      </div>
-                    ))}
-                    <div className="d-label">Or type your own</div>
-                    <div className="typebox">
-                      <input
-                        type="text" value={draft} maxLength={120} placeholder="What else matters today?" aria-label="New priority"
-                        onChange={(e) => setDraft(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-                      />
-                      <button className="tbtn add" type="button" onClick={addCustom} aria-label="Add typed priority">Add</button>
-                    </div>
-                    <button className="reset" type="button" onClick={reset}>Reset to the default list</button>
-                  </div>
-                )}
-                <p className="snap">Saved on this device only. Changes here do not update Notion yet.</p>
-              </section>
-
-              <section id="sec-habits" className="sec">
-                <div className="label-row">
-                  <div className="label">Habits and self-care</div>
-                  {habits.length > 0 && <span className="count">{habitsDone} of {habits.length} done</span>}
-                </div>
-                <div className="focus">
-                  {habits.length === 0 && <div className="empty">No routine items are scheduled today.</div>}
-                  {habits.map((t) => {
-                    const done = t.status === "Done";
-                    return (
-                      <button className={"habit" + (done ? " done" : "")} type="button" key={t.id} onClick={() => openDetail(t.id)}>
-                        <span className="tick" aria-hidden="true">{done && <Icon kind="check" />}</span>
-                        <span className="h-title">{t.title}</span>
-                        <span className="h-time">{t.start && hasTime(t.start) ? fmtTime(t.start, true) : ""}</span>
-                        <span className="sr">{done ? "Done" : "Not done"}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
               <section id="sec-tasks" className="sec">
                 <button className="fold" type="button" aria-expanded={tasksOpen} aria-controls="important-tasks" onClick={() => setTasksOpen((v) => !v)}>
                   <span className="label">Important Tasks</span>
@@ -522,9 +375,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
         <nav className="tabs" aria-label="Jump to a section">
           <button type="button" className="t1" onClick={() => jump("sec-now")}>Now</button>
           <button type="button" className="t2" onClick={() => jump("sec-schedule")}>Schedule</button>
-          <button type="button" className="t3" onClick={() => jump("sec-priorities")}>Priorities</button>
-          <button type="button" className="t4" onClick={() => jump("sec-habits")}>Habits</button>
-          <button type="button" className="t5" onClick={() => jump("sec-tasks")}>Tasks</button>
+          <button type="button" className="t3" onClick={() => jump("sec-tasks")}>Tasks</button>
         </nav>
       </div>
 
@@ -542,7 +393,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
             <div className="chips">
               {open.status && <span className="chip">{open.status}</span>}
               {open.canDefer && <span className="chip">Can defer</span>}
-              {!open.custom && !hasTime(open.start) && dueText(open) && <span className="chip">{dueText(open)}</span>}
+              {!hasTime(open.start) && dueText(open) && <span className="chip">{dueText(open)}</span>}
               {tagsOf(open).map((g) => (
                 <span className={"chip" + (g === "Must Happen" && data.now.some((n) => n.id === open.id) ? " hot" : "")} key={g}>{g}</span>
               ))}
@@ -550,7 +401,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
             {open.nextInstruction && (<><div className="d-label">Next instruction</div><p>{open.nextInstruction}</p></>)}
             {open.executionInstructions && (<><div className="d-label">Execution notes</div><p>{open.executionInstructions}</p></>)}
             {!open.nextInstruction && !open.executionInstructions && (
-              <><div className="d-label">Notes</div><p>{open.custom ? "You typed this one in. It exists only on this page, not in Notion." : "No instruction on this task in Notion."}</p></>
+              <><div className="d-label">Notes</div><p>No instruction on this task in Notion.</p></>
             )}
             <div className="actions">
               {open.link && <a className="pill" href={open.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}

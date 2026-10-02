@@ -4,12 +4,9 @@ A simplified, read-only daily planner styled like a paper planner page (cream ba
 
 1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
 2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
-3. **Other important priorities**: open tasks (Do Next or In progress) not already on the schedule or in Important Tasks. Default is the top four "Must Happen" tasks in Notion's priority order. Add, remove and reorder through Edit (saved on this device only).
-4. **Habits and self-care**: today's Maintenance items from the schedule (the daily occurrences of the habits in Notion), with a done count.
-5. **Important Tasks**: the NOW view rows plus any scheduled item with no set time. Collapsed by default. They never appear on the schedule.
+3. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
 
-The side tabs jump to each section. On a wide screen the schedule is on the left and the lists are on the right.
-
+The side tabs jump to each section. 
 Notion stays the only database. This page does not write to Notion and adds no storage of its own.
 
 ## How it reads Notion
@@ -49,7 +46,6 @@ The page shows a plain message instead of failing silently:
 
 ## Known limits
 
-- **Priorities edits are saved in the browser on that device only.** They do not update Notion. A typed-in priority exists only on this page. Making Add and Remove change Notion needs a way to mark a task as a current focus in the Tasks database (for example a checkbox). That is a change to the Tasks structure and needs explicit approval first.
 - The view ids above were taken from the Notion tools, not from the REST API. If Notion answers "not found" for a view after the setup steps, the first thing to check is that the Today page itself was added under Connections.
 - Time is shown in Eastern time (`America/New_York`).
 
