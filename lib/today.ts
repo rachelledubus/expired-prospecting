@@ -614,14 +614,10 @@ export async function getWaiting(): Promise<WaitingData> {
             and: [
               { property: "Archive", checkbox: { equals: false } },
               {
+                // Notion allows only two levels of and/or, so Hold tasks with no blocker note are dropped below instead.
                 or: [
                   { property: "Status", status: { equals: "Waiting for" } },
-                  {
-                    and: [
-                      { property: "Status", status: { equals: "Hold" } },
-                      { property: "Waiting On / Blocker", rich_text: { is_not_empty: true } },
-                    ],
-                  },
+                  { property: "Status", status: { equals: "Hold" } },
                 ],
               },
             ],
@@ -646,7 +642,7 @@ export async function getWaiting(): Promise<WaitingData> {
     const kind = status === "Waiting for" ? "waiting" : "hold";
     const full = readText(p["Waiting On / Blocker"]).trim();
     // A note that starts with "Resolved" is history, so a held task like that is not waiting on anything.
-    if (kind === "hold" && /^resolved\b/i.test(full)) continue;
+    if (kind === "hold" && (!full || /^resolved\b/i.test(full))) continue;
     const sinceRaw = readDate(p["Waiting since"]).start;
     const checkRaw = readDate(p["Check back on"]).start;
     const since = sinceRaw ? sinceRaw.slice(0, 10) : page.created_time ? etDate(new Date(page.created_time)) : null;
