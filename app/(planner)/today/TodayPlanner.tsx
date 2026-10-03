@@ -380,8 +380,6 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
               <button className="refresh" type="button" onClick={refresh} disabled={refreshing}>
                 {refreshing ? "Refreshing..." : "Refresh"}
               </button>
-              <br />
-              <a className="refresh" href="/waiting">Waiting On</a>
             </div>
           </header>
           <p className="state-line">Updated from Notion at {updated}.</p>

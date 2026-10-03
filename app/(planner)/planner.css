@@ -1,0 +1,23 @@
+/* Planner frame: page tabs along the top edge. Scoped to .planner so nothing else on the portal changes. */
+.tp.planner .ptabs { position: sticky; top: 0; z-index: 15; background: var(--sand); }
+.tp.planner .ptabs-row { max-width: 820px; margin: 0 auto; padding: 10px 6px 0 10px; display: flex; align-items: flex-end;
+  gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tp.planner .ptabs-row::-webkit-scrollbar { display: none; }
+.tp.planner .ptabs-row::before { content: ""; flex: 0 0 22px; }
+.tp.planner .ptab { flex: 0 0 auto; display: flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 12px 12px 0 0;
+  font: 600 14px "DM Sans", system-ui, sans-serif; color: var(--navy); text-decoration: none; white-space: nowrap;
+  box-shadow: inset 0 -3px 5px -4px rgba(22,50,79,.25); margin-bottom: 0; }
+.tp.planner .ptab.on { background: var(--paper); min-height: 46px; box-shadow: 0 -2px 6px rgba(22,50,79,.08); position: relative; }
+.tp.planner .ptab:not(.on):active { filter: brightness(.95); }
+.tp.planner .ptab-home { margin-left: auto; flex: 0 0 auto; align-self: center; padding: 0 6px 6px 14px; color: var(--muted);
+  font: 600 13px "DM Sans", system-ui, sans-serif; text-decoration: none; }
+.tp.planner .shell { padding-top: 0; }
+.tp.planner .paper { border-top-left-radius: 0; }
+
+.tp .page-turn { animation: page-turn .18s ease-out; }
+@keyframes page-turn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tp .page-turn { animation: none; } }
+
+/* Pages without side tabs keep the same right margin as Today, so the paper does not jump when you flip. */
+.tp.planner .shell.gutter { padding-right: 35px; }
+@media (min-width: 900px) { .tp.planner .shell.gutter { padding-right: 45px; } }

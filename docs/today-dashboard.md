@@ -37,6 +37,10 @@ Note: if a Notion automation sets Due Dates on its own, it may move tasks back. 
 - In both views, free stretches of 45 minutes or more are folded into one short row ("1 h 30 min free, 7:00 PM to 8:30 PM"), so the day is not a long empty ruler. If the current time falls in a folded stretch, that row says "Now ... Free until ...". In From now, a note above the schedule says how long you are free before the next block, and a link shows how many earlier items are hidden.
 - The 45 minute threshold is `GAP_MIN` in `app/today/TodayPlanner.tsx`.
 
+## Planner tabs
+
+Today and Waiting On live in one planner frame (`app/(planner)/`). Page tabs run along the top edge like binder dividers, the open page's tab is paper-colored, and switching pages plays a short slide-in. Today keeps its own tabs on the right edge for jumping between its sections. The URLs are still `/today` and `/waiting`. To add a page, put its folder inside `app/(planner)/` and add one line to the `PAGES` list in `PlannerTabs.tsx`. "Portal" at the end of the tab row goes back to the portal home.
+
 ## Waiting On page (`/waiting`)
 
 Read-only. It uses the same Notion key as Today and one query on the Tasks database.

@@ -1,6 +1,5 @@
 import { getToday, TodaySetupError } from "@/lib/today";
 import TodayPlanner from "./TodayPlanner";
-import "./today.css";
 
 // Always read Notion fresh; this page is behind the portal password.
 export const dynamic = "force-dynamic";

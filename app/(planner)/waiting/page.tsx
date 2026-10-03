@@ -1,6 +1,4 @@
 import { getWaiting, TodaySetupError, type WaitingItem } from "@/lib/today";
-import "../today/today.css";
-import "./waiting.css";
 
 // Always read Notion fresh; this page is behind the portal password.
 export const dynamic = "force-dynamic";
@@ -78,7 +76,7 @@ export default async function WaitingPage() {
       <>
         {fonts}
         <div className="tp">
-          <div className="shell">
+          <div className="shell gutter">
            <div className="paper">
             <div className="holes" aria-hidden="true" />
             <header className="hd">
@@ -87,11 +85,6 @@ export default async function WaitingPage() {
                 <div className="dmy">
                   {dow}, {MONTHS[m - 1]} {d}
                 </div>
-              </div>
-              <div className="hd-right">
-                <a className="refresh" href="/today">Today</a>
-                <br />
-                <a className="refresh" href="/">Portal home</a>
               </div>
             </header>
 
