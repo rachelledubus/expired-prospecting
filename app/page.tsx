@@ -19,6 +19,11 @@ export default function Dashboard() {
         <div className="muted">Your schedule, what to focus on now, and your other priorities. Read from Notion, nothing else on the page.</div>
       </a>
 
+      <a className="action-card" href="/waiting" style={{ marginTop: 12 }}>
+        <div className="action-title">Waiting On</div>
+        <div className="muted">Things waiting on someone or something, with how long and when to check back. Read from Notion.</div>
+      </a>
+
       <div className="section-label">Daily safety gate</div>
       <a className="action-card" href="/status-refresh">
         <div className="action-title">1. Refresh Backlog Market Status</div>

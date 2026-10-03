@@ -553,3 +553,132 @@ export async function setHabitDone(key: string, pageId: string, done: boolean): 
   }
   await notion(`/v1/pages/${pageId}`, { method: "PATCH", key, body: { properties: { Checkbox: { checkbox: done } } } });
 }
+
+// ---------- Waiting On (read-only) ----------
+
+export type WaitingItem = {
+  id: string;
+  url: string;
+  title: string;
+  kind: "waiting" | "hold";
+  /** First sentence of the Waiting On / Blocker note, shortened. */
+  short: string;
+  /** The whole note, shown only when the card is opened. */
+  full: string;
+  /** YYYY-MM-DD. Falls back to the day the task was created, flagged by sinceEstimated. */
+  since: string | null;
+  sinceEstimated: boolean;
+  checkBack: string | null;
+  daysWaiting: number | null;
+  /** Days until the check-back date, negative once it has passed. */
+  daysToCheck: number | null;
+};
+
+export type WaitingData = {
+  fetchedAt: string;
+  today: string;
+  due: WaitingItem[];
+  waiting: WaitingItem[];
+  hold: WaitingItem[];
+};
+
+function etDate(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: DAY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
+function dayNumber(ymd: string): number {
+  const [y, m, d] = ymd.slice(0, 10).split("-").map(Number);
+  return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+}
+
+function firstSentence(text: string): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const m = t.match(/^.*?[.!?](?=\s|$)/);
+  const s = m ? m[0] : t;
+  return s.length > 140 ? `${s.slice(0, 137).trimEnd()}...` : s;
+}
+
+export async function getWaiting(): Promise<WaitingData> {
+  const cfg = config();
+  const now = new Date();
+  const today = etDate(now);
+  const rows: any[] = [];
+  try {
+    let cursor: string | undefined;
+    for (let i = 0; i < 3; i += 1) {
+      const res = await notion(`/v1/data_sources/${cfg.tasksDataSourceId}/query`, {
+        method: "POST",
+        body: {
+          filter: {
+            and: [
+              { property: "Archive", checkbox: { equals: false } },
+              {
+                or: [
+                  { property: "Status", status: { equals: "Waiting for" } },
+                  {
+                    and: [
+                      { property: "Status", status: { equals: "Hold" } },
+                      { property: "Waiting On / Blocker", rich_text: { is_not_empty: true } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          sorts: [{ timestamp: "created_time", direction: "ascending" }],
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        },
+      });
+      rows.push(...(res.results ?? []));
+      if (!res.has_more) break;
+      cursor = res.next_cursor;
+    }
+  } catch (err) {
+    throw explain(err, "the waiting list");
+  }
+
+  const items: WaitingItem[] = [];
+  for (const page of rows) {
+    const p = page.properties ?? {};
+    const status = readText(p["Status"]);
+    const kind = status === "Waiting for" ? "waiting" : "hold";
+    const full = readText(p["Waiting On / Blocker"]).trim();
+    // A note that starts with "Resolved" is history, so a held task like that is not waiting on anything.
+    if (kind === "hold" && /^resolved\b/i.test(full)) continue;
+    const sinceRaw = readDate(p["Waiting since"]).start;
+    const checkRaw = readDate(p["Check back on"]).start;
+    const since = sinceRaw ? sinceRaw.slice(0, 10) : page.created_time ? etDate(new Date(page.created_time)) : null;
+    const checkBack = checkRaw ? checkRaw.slice(0, 10) : null;
+    items.push({
+      id: page.id,
+      url: page.url,
+      title: readText(p["Task"]) || "(untitled)",
+      kind,
+      short: firstSentence(full),
+      full,
+      since,
+      sinceEstimated: !sinceRaw,
+      checkBack,
+      daysWaiting: since ? Math.max(0, dayNumber(today) - dayNumber(since)) : null,
+      daysToCheck: checkBack ? dayNumber(checkBack) - dayNumber(today) : null,
+    });
+  }
+
+  const waitingAll = items.filter((i) => i.kind === "waiting");
+  const due = waitingAll
+    .filter((i) => i.daysToCheck !== null && i.daysToCheck <= 0)
+    .sort((a, b) => (a.daysToCheck ?? 0) - (b.daysToCheck ?? 0));
+  const dueIds = new Set(due.map((i) => i.id));
+  // Undated items first (oldest first), then dated ones by their check-back day, so nothing future-dated crowds the top.
+  const waiting = waitingAll
+    .filter((i) => !dueIds.has(i.id))
+    .sort((a, b) => {
+      if ((a.checkBack === null) !== (b.checkBack === null)) return a.checkBack === null ? -1 : 1;
+      if (a.checkBack && b.checkBack) return a.checkBack.localeCompare(b.checkBack);
+      return (a.since ?? "").localeCompare(b.since ?? "");
+    });
+  const hold = items.filter((i) => i.kind === "hold");
+  return { fetchedAt: now.toISOString(), today, due, waiting, hold };
+}
