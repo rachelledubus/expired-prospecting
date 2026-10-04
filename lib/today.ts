@@ -78,13 +78,13 @@ export type TodayData = {
 /** Thrown with a message that is safe and useful to show on the page. */
 export class TodaySetupError extends Error {}
 
-class NotionHttpError extends Error {
+export class NotionHttpError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
   }
 }
 
-function config() {
+export function config() {
   // A separate read-only integration is preferred, so the Today page never holds
   // edit access to the Tasks database. The prospecting key is only a fallback.
   const apiKey = process.env.NOTION_TODAY_API_KEY || process.env.NOTION_API_KEY;
@@ -104,7 +104,7 @@ function config() {
   };
 }
 
-async function notion(path: string, init: { method?: string; body?: unknown; key?: string } = {}, attempt = 0): Promise<any> {
+export async function notion(path: string, init: { method?: string; body?: unknown; key?: string } = {}, attempt = 0): Promise<any> {
   const { apiKey, base } = config();
   const res = await fetch(`${base}${path}`, {
     method: init.method ?? "GET",
@@ -145,7 +145,7 @@ function richText(parts: any): string {
   return Array.isArray(parts) ? parts.map((p: any) => p?.plain_text ?? "").join("") : "";
 }
 
-function readText(prop: any): string {
+export function readText(prop: any): string {
   if (!prop) return "";
   switch (prop.type) {
     case "title": return richText(prop.title);
@@ -158,21 +158,21 @@ function readText(prop: any): string {
   }
 }
 
-function readNumber(prop: any): number | null {
+export function readNumber(prop: any): number | null {
   if (!prop) return null;
   if (prop.type === "number") return prop.number ?? null;
   if (prop.type === "formula" && prop.formula?.type === "number") return prop.formula.number ?? null;
   return null;
 }
 
-function readBool(prop: any): boolean {
+export function readBool(prop: any): boolean {
   if (!prop) return false;
   if (prop.type === "checkbox") return Boolean(prop.checkbox);
   if (prop.type === "formula" && prop.formula?.type === "boolean") return Boolean(prop.formula.boolean);
   return false;
 }
 
-function readDate(prop: any): { start: string | null; end: string | null; timeZone: string | null } {
+export function readDate(prop: any): { start: string | null; end: string | null; timeZone: string | null } {
   const d = prop?.type === "date" ? prop.date : null;
   return { start: d?.start ?? null, end: d?.end ?? null, timeZone: d?.time_zone ?? null };
 }
@@ -430,7 +430,7 @@ async function loadHabits(cfg: ReturnType<typeof config>, shownTaskIds: Set<stri
   };
 }
 
-function explain(err: unknown, what: string): Error {
+export function explain(err: unknown, what: string): Error {
   if (err instanceof TodaySetupError) return err;
   if (err instanceof NotionHttpError) {
     if (err.status === 401) {
@@ -582,16 +582,16 @@ export type WaitingData = {
   hold: WaitingItem[];
 };
 
-function etDate(d: Date): string {
+export function etDate(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: DAY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
-function dayNumber(ymd: string): number {
+export function dayNumber(ymd: string): number {
   const [y, m, d] = ymd.slice(0, 10).split("-").map(Number);
   return Math.round(Date.UTC(y, m - 1, d) / 86400000);
 }
 
-function firstSentence(text: string): string {
+export function firstSentence(text: string): string {
   const t = text.replace(/\s+/g, " ").trim();
   if (!t) return "";
   const m = t.match(/^.*?[.!?](?=\s|$)/);

@@ -41,6 +41,18 @@ Note: if a Notion automation sets Due Dates on its own, it may move tasks back. 
 
 Today and Waiting On live in one planner frame (`app/(planner)/`). Page tabs run along the top edge like binder dividers, the open page's tab is paper-colored, and switching pages plays a short slide-in. Today keeps its own tabs on the right edge for jumping between its sections. The URLs are still `/today` and `/waiting`. To add a page, put its folder inside `app/(planner)/` and add one line to the `PAGES` list in `PlannerTabs.tsx`. "Portal" at the end of the tab row goes back to the portal home.
 
+## Projects page (`/projects`)
+
+Reads the Projects database (it is titled "This Week" in Notion) and can change four things on a project, one at a time, each saved to Notion right away.
+
+- Shows every project that is not Done and not retired, as cards grouped by Project Scope (Business, School, Personal, Mixed, then any other scope, then "No scope yet"). A new scope option in Notion becomes a new group with no code change. Someday Maybe projects are in a closed section at the bottom.
+- Each card: name, status, first sentence of Next Physical Action ("Full note" opens the rest), due date (past dates read "Was due"), days since Last Progress, and Notion's own open task count. A project In progress that has gone quiet longer than its Stall After Days gets an accent bar and a colored line. Nothing flashes or alerts.
+- **Moved it today** sets Last Progress to today. **Edit** opens the next action text, the status choices (Not started, In progress, Waiting on Client, Someday Maybe, Done), and the due date. Marking Done removes the card from the page.
+- A change appears right away and is put back, with a message, if Notion does not accept it.
+- Edits go through `/api/projects/update`. It is same-origin only, uses `NOTION_TODAY_EDIT_API_KEY`, accepts only those four fields with checked values, and reads the page first and refuses anything that is not a row of the Projects database. It cannot create, delete, or archive anything.
+- Setup: open the Projects database (This Week) in Notion, choose ••• then **Connections**, and add both "Today (read only)" and "Today (edit times)". Without the second, the page loads but edits show a message saying how to add it.
+- Optional variable `NOTION_PROJECTS_DATA_SOURCE_ID` (default `3a2f408a-fdce-822a-abbb-87df8f4efd77`).
+
 ## Waiting On page (`/waiting`)
 
 Read-only. It uses the same Notion key as Today and one query on the Tasks database.

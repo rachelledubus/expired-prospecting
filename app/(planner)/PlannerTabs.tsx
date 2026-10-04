@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const PAGES = [
   { href: "/today", label: "Today", bg: "#F4E6B8" },
   { href: "/waiting", label: "Waiting On", bg: "var(--work-bg)" },
+  { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
 ];
 
 export default function PlannerTabs() {
