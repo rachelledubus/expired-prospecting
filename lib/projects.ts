@@ -95,6 +95,13 @@ export async function getProjects(): Promise<ProjectsData> {
       cursor = res.next_cursor;
     }
   } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 403 || status === 404) {
+      throw new TodaySetupError(
+        "Notion could not find the Projects database (it is titled \"This Week\"). In Notion, open it, choose ••• then Connections, " +
+          "and add \"Today (read only)\". To edit projects from the portal, also add \"Today (edit times)\".",
+      );
+    }
     throw explain(err, "the projects list");
   }
   const cards = rows.map(toCard);

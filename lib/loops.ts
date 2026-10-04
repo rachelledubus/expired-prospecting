@@ -106,7 +106,7 @@ export async function getLoops(): Promise<LoopsData> {
       .map((p) => ({ ...p, quietDays: dayNumber(today) - dayNumber(p.lastProgress!) }))
       .filter((p) => p.quietDays > (p.stallAfterDays ?? Infinity))
       .sort((a, b) => b.quietDays - a.quietDays);
-  } else warnings.push("The projects could not be read, so they are left out.");
+  } else warnings.push(`Projects are left out. ${(pj.reason as Error)?.message ?? ""}`.trim());
 
   let pastDue = { tasks: [] as LoopTask[], more: false };
   if (pd.status === "fulfilled") pastDue = pd.value;
