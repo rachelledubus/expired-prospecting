@@ -1,5 +1,6 @@
 import "./today/today.css";
 import "./waiting/waiting.css";
+import "./inbox/inbox.css";
 import "./projects/projects.css";
 import "./loops/loops.css";
 import "./planner.css";

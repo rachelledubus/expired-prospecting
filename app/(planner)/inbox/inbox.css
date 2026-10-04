@@ -1,0 +1,19 @@
+/* Inbox page. Reuses the Waiting On cards (.wo-*), Projects buttons (.pj-*) and Open Loops rows (.lp-*). */
+.tp .ib-box { background: var(--sand); border-radius: 14px; padding: 12px; margin: 4px 0 12px; }
+.tp .ib-box textarea { width: 100%; max-width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  font: 16px "Source Sans 3", system-ui, sans-serif; color: var(--ink); background: #fff; }
+.tp .ib-hint { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.tp .ib-card { background: var(--card); border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 6px rgba(22,50,79,.06); border-left: 4px solid var(--sage); }
+.tp .ib-card.look { border-left-color: var(--accent); }
+.tp .ib-card.busy { opacity: .6; }
+.tp .ib-title { font: 600 15px "DM Sans", system-ui, sans-serif; color: var(--navy); line-height: 1.3; overflow-wrap: anywhere; }
+.tp .ib-meta { margin-top: 3px; color: var(--muted); font: 500 13px "DM Sans", system-ui, sans-serif; }
+.tp .ib-said { margin-top: 3px; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.tp .ib-tag { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--sand); color: var(--muted);
+  font: 600 11px "DM Sans", system-ui, sans-serif; }
+.tp .ib-acts { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tp .ib-fix { margin-top: 10px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.tp .ib-fix select, .tp .ib-fix input[type="date"] { max-width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px;
+  font: 16px "Source Sans 3", system-ui, sans-serif; color: var(--ink); background: #fff; }
+.tp .ib-fix select { width: 100%; }
+.tp .ib-copy { margin: 0 0 8px; }

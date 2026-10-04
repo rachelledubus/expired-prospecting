@@ -75,6 +75,31 @@ After a change the page shows **Undo**, which puts back each task's earlier Stat
 
 Safety: changes go through `/api/loops/tasks` (same-origin, edit key only). A selection is sent in batches of 12. For every batch the server re-reads Notion and only changes tasks that are still past due, not Done, and not archived, so a stale page cannot touch anything that has changed since it loaded. Undo checks that each page is a Tasks row. Nothing is created or deleted. The Tasks database must be shared with "Today (edit times)", which Restart time already needs.
 
+## Inbox page (`/inbox`)
+
+A capture box. Type one item per line (up to 10 at a time) and it is saved to the Tasks database and sorted automatically. The sorting is free: it uses plain rules in `lib/inbox-sort.ts`, with no AI and no outside service.
+
+What the rules do:
+
+- **Dates:** reads today, tomorrow, weekday names (Friday, next Friday), "in 2 weeks", "oct 15", and "by 10/15". A date like "aligner 10/21" is not read as a date. Two different dates in one line means no date is set.
+- **Projects:** matches words in the line to your active project names. A word that appears in only one project name counts strongly. Words shared by several projects, or a tie, match nothing.
+- **Type:** question, idea, reference or link, lead or contact, school, home repair, buy, otherwise task.
+- **Sorted or not:** a plain task with an action word, a project or a date is filed as a normal task (Intake State Routed, Status Schedule, or Scheduled when it has a date). Everything else stays in the Inbox (Intake State Inbox, Status Inbox) with a suggested Capture Type and Route Destination.
+- **Your words are kept:** the Task title is cleaned up (filler words and the date phrase removed). Exactly what you typed goes in Captured Context, starting with `Portal capture: `. That marker is how the portal knows a row is its own.
+
+On the page:
+
+- **Needs a look** lists everything with Intake State Inbox, including older items that were not added here. Items added here have Keep as a task, Fix (type, project, date) and Drop. Older items are read-only, with a link to Notion.
+- **Sorted for you** lists items sorted in the last 3 days, with Fix and Drop.
+- **Undo** appears after adding a batch and after a drop. Dropped items are archived with Intake State Dropped, never deleted.
+- **Copy these for cleanup** copies the waiting items, with their Notion links, so they can be pasted into a chat with an assistant that is connected to Notion.
+
+Setup: on the "Today (edit times)" integration, turn on **Insert content** (it already has Read and Update). This is the only thing that needs it. Nothing else the portal does creates rows.
+
+Safety: the route only creates rows in the Tasks database, and only changes or archives rows whose Captured Context starts with the portal marker. It is same-origin only and behind the portal login.
+
+Limits: the rules read plain English and cannot understand loose phrasing, so those items wait in Needs a look. Matching is by words, so a project can be matched wrongly. Fix changes it, and the project list only includes active and someday projects.
+
 ## Waiting On page (`/waiting`)
 
 Read-only. It uses the same Notion key as Today and one query on the Tasks database.
@@ -111,7 +136,7 @@ Optional environment variables (the defaults are Rachelle's current Notion ids):
 | `NOTION_HABITS_DATA_SOURCE_ID` | Habits + Routines data source. Default `85ff408a-fdce-83fd-8dae-0715a2654ee8`. |
 | `NOTION_TODAY_SCHEDULE_VIEW_ID` | Schedule view. Default `3d5f408a-fdce-815c-8533-000c40cb6885`. |
 | `NOTION_TODAY_NOW_VIEW_ID` | NOW view. Default `3d5f408a-fdce-81a1-90b1-000c18b2ce11`. |
-| `NOTION_TODAY_EDIT_API_KEY` | Secret for the "Today (edit times)" integration. Only used by Restart time. |
+| `NOTION_TODAY_EDIT_API_KEY` | Secret for the "Today (edit times)" integration. Used by Restart time, the Projects page, Open Loops, and the Inbox. The Inbox also needs Insert content. |
 | `NOTION_API_BASE` | Testing only. Points the page at a fake Notion server. |
 
 ## What shows if something is wrong

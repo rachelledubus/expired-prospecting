@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 // Add a page here and it gets a tab. Colors reuse the Today palette.
 const PAGES = [
   { href: "/today", label: "Today", bg: "#F4E6B8" },
+  { href: "/inbox", label: "Inbox", bg: "#E3EDDD" },
   { href: "/waiting", label: "Waiting On", bg: "var(--work-bg)" },
   { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
   { href: "/loops", label: "Open Loops", bg: "var(--other-bg, #EFE7DA)" },

@@ -22,10 +22,14 @@
 .tp.planner .shell.gutter { padding-right: 35px; }
 @media (min-width: 900px) { .tp.planner .shell.gutter { padding-right: 45px; } }
 
-/* Four tabs fit on a phone: tighter padding on narrow screens. */
+/* Five tabs fit on a phone: tighter padding on narrow screens. */
 @media (max-width: 440px) {
-  .tp.planner .ptabs-row { gap: 3px; padding-left: 8px; }
-  .tp.planner .ptabs-row::before { flex-basis: 14px; }
-  .tp.planner .ptab { padding: 0 8px; font-size: 13px; }
-  .tp.planner .ptab-home { padding: 0 2px 6px 4px; font-size: 11px; }
+  .tp.planner .ptabs-row { gap: 2px; padding-left: 6px; padding-right: 4px; }
+  .tp.planner .ptabs-row::before { flex-basis: 8px; }
+  .tp.planner .ptab { padding: 0 6px; font-size: 12px; }
+  .tp.planner .ptab-home { padding: 0 2px 6px 4px; font-size: 10px; }
+}
+/* On the narrowest phones the tab row scrolls sideways rather than squeezing further. */
+@media (max-width: 360px) {
+  .tp.planner .ptab { padding: 0 5px; font-size: 11.5px; }
 }
