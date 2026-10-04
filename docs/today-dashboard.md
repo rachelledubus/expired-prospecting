@@ -53,6 +53,28 @@ Reads the Projects database (it is titled "This Week" in Notion) and can change 
 - Setup: open the Projects database (This Week) in Notion, choose ••• then **Connections**, and add both "Today (read only)" and "Today (edit times)". Without the second, the page loads but edits show a message saying how to add it.
 - Optional variable `NOTION_PROJECTS_DATA_SOURCE_ID` (default `3a2f408a-fdce-822a-abbb-87df8f4efd77`).
 
+## Open Loops page (`/loops`)
+
+A short page of things that may have slipped. Sections that are empty do not appear. Each shows its 5 most important items and points to the page where the rest live.
+
+- **Past due:** open tasks (not Done, not archived) whose Due Date is before today in Eastern time, oldest first. The page shows the 5 oldest and "and N more. Review them all". It reads up to 300 and says "300+" beyond that.
+- **Waiting too long:** waiting items whose Check back on day has passed, plus waiting items with no check-back date that have waited 14 days or more (`WAITING_UNDATED_DAYS` in `lib/loops.ts`).
+- **Projects with no next action** and **Projects gone quiet** (In progress, longer since Last Progress than Stall After Days).
+- Carried-forward tasks are not included, because Rollover Count is not updated by anything yet.
+
+**Cleaning up past-due tasks in bulk.** Tick tasks (or "Select all"), choose an action, and confirm. The confirmation names the action, the count, and the first three titles.
+
+| Button | What it writes in Notion |
+|---|---|
+| Drop it | Archive checkbox on. The task stays in Notion. |
+| Back to to-schedule | Due Date cleared and Status set to Schedule. |
+| Mark Done | Status set to Done. This counts as finished in totals and reviews. |
+| Move to today | Due Date set to today (date only, so a timed block becomes an all-day item). Status unchanged. |
+
+After a change the page shows **Undo**, which puts back each task's earlier Status, Due Date (including time and end), and Archive value. Undo lasts until you leave or reload the page.
+
+Safety: changes go through `/api/loops/tasks` (same-origin, edit key only). A selection is sent in batches of 12. For every batch the server re-reads Notion and only changes tasks that are still past due, not Done, and not archived, so a stale page cannot touch anything that has changed since it loaded. Undo checks that each page is a Tasks row. Nothing is created or deleted. The Tasks database must be shared with "Today (edit times)", which Restart time already needs.
+
 ## Waiting On page (`/waiting`)
 
 Read-only. It uses the same Notion key as Today and one query on the Tasks database.

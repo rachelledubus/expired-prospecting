@@ -1,6 +1,7 @@
 import "./today/today.css";
 import "./waiting/waiting.css";
 import "./projects/projects.css";
+import "./loops/loops.css";
 import "./planner.css";
 import PlannerTabs from "./PlannerTabs";
 

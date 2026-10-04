@@ -282,7 +282,7 @@ async function dueTodayTasks(dataSourceId: string, now: Date): Promise<TodayTask
   return tasks;
 }
 
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+export async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let next = 0;
   async function worker() {
