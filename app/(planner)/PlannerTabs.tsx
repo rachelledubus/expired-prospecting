@@ -7,9 +7,10 @@ import { usePathname } from "next/navigation";
 const PAGES = [
   { href: "/today", label: "Today", bg: "#F4E6B8" },
   { href: "/inbox", label: "Inbox", bg: "#E3EDDD" },
-  { href: "/waiting", label: "Waiting On", bg: "var(--work-bg)" },
+  { href: "/waiting", label: "Waiting", bg: "var(--work-bg)" },
   { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
-  { href: "/loops", label: "Open Loops", bg: "var(--other-bg, #EFE7DA)" },
+  { href: "/loops", label: "Loops", bg: "var(--other-bg, #EFE7DA)" },
+  { href: "/review", label: "Review", bg: "#F4E6B8" },
 ];
 
 export default function PlannerTabs() {

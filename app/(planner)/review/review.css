@@ -1,0 +1,15 @@
+/* Weekly Review. Reuses the Waiting On cards (.wo-*) and Projects links (.pj-link). */
+.tp .rv-switch { display: flex; gap: 8px; margin: 2px 0 10px; }
+.tp .rv-pill { min-height: 36px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff;
+  color: var(--navy); font: 600 13px "DM Sans", system-ui, sans-serif; text-decoration: none; }
+.tp .rv-pill.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.tp .rv-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 14px; }
+.tp .rv-stat { background: var(--sand); border-radius: 14px; padding: 10px 12px; }
+.tp .rv-stat b { display: block; font: 700 26px "DM Sans", system-ui, sans-serif; color: var(--navy); line-height: 1.1; }
+.tp .rv-stat span { color: var(--muted); font: 600 12px "DM Sans", system-ui, sans-serif; }
+.tp .rv-stat.warn b { color: var(--accent); }
+.tp .rv-sub { margin: 10px 0 4px; color: var(--muted); font: 700 12px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .05em; }
+.tp .rv-note { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.tp .rv-more { display: inline-block; margin: 8px 0 0; margin-left: 0; }
+.tp .rv-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0 0; }
+.tp .rv-links .pj-link { margin-left: 0; }

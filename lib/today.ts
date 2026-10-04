@@ -223,22 +223,24 @@ async function viewRowIds(viewId: string): Promise<string[]> {
 const DAY_TZ = "America/New_York";
 
 /** The instants (as ISO strings) where today and tomorrow start in Eastern time. */
+/** Midnight at the start of a calendar day in Eastern time, as a Date. */
+export function etMidnight(ymd: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  for (const hour of [4, 5]) {
+    const t = new Date(Date.UTC(y, m - 1, d, hour));
+    const clock = new Intl.DateTimeFormat("en-GB", { timeZone: DAY_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
+    if (clock === "00:00") return t;
+  }
+  return new Date(Date.UTC(y, m - 1, d, 5));
+}
+
 export function etDayBounds(now: Date): { start: string; end: string } {
   const dayOf = (d: Date) =>
     new Intl.DateTimeFormat("en-CA", { timeZone: DAY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
-  const midnight = (ymd: string): Date => {
-    const [y, m, d] = ymd.split("-").map(Number);
-    for (const hour of [4, 5]) {
-      const t = new Date(Date.UTC(y, m - 1, d, hour));
-      const clock = new Intl.DateTimeFormat("en-GB", { timeZone: DAY_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
-      if (clock === "00:00") return t;
-    }
-    return new Date(Date.UTC(y, m - 1, d, 5));
-  };
   const today = dayOf(now);
   const [y, m, d] = today.split("-").map(Number);
   const tomorrow = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
-  return { start: midnight(today).toISOString(), end: midnight(tomorrow).toISOString() };
+  return { start: etMidnight(today).toISOString(), end: etMidnight(tomorrow).toISOString() };
 }
 
 /**

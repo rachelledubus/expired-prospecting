@@ -84,6 +84,11 @@ async function pastDueTasks(now: Date): Promise<{ tasks: LoopTask[]; more: boole
 }
 
 export async function getLoops(): Promise<LoopsData> {
+  return (await loadLoops()).loops;
+}
+
+/** Same as getLoops, plus the active project cards, so the Weekly Review does not read Projects twice. */
+export async function loadLoops(): Promise<{ loops: LoopsData; active: ProjectCard[] }> {
   const now = new Date();
   const today = etDate(now);
   const warnings: string[] = [];
@@ -112,7 +117,8 @@ export async function getLoops(): Promise<LoopsData> {
   if (pd.status === "fulfilled") pastDue = pd.value;
   else warnings.push(explain(pd.reason, "the past-due tasks").message);
 
-  return { fetchedAt: now.toISOString(), today, canEdit: Boolean(config().editKey), waiting, noNext, quiet, pastDue, warnings };
+  const active = pj.status === "fulfilled" ? pj.value.active : [];
+  return { loops: { fetchedAt: now.toISOString(), today, canEdit: Boolean(config().editKey), waiting, noNext, quiet, pastDue, warnings }, active };
 }
 
 // ---------- changing past-due tasks ----------

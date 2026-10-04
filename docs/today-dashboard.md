@@ -100,6 +100,17 @@ Safety: the route only creates rows in the Tasks database, and only changes or a
 
 Limits: the rules read plain English and cannot understand loose phrasing, so those items wait in Needs a look. Matching is by words, so a project can be matched wrongly. Fix changes it, and the project list only includes active and someday projects.
 
+## Weekly Review page (`/review`)
+
+The week on one page, read-only. "This week" is Monday to Sunday (shown "so far" until Sunday). "Last week" is the one before.
+
+- **Done:** finished tasks that have a Due Date in the week, routine blocks left out (Occurrence Type "Routine Block"). Notion does not record when a task was finished, so a done task is counted by its date. Routine blocks are shown as "X of Y done so far" and only count blocks whose day has come.
+- **Projects:** moved this week (Last Progress inside the week), gone quiet, and with no next action.
+- **Loose ends:** past-due count with the oldest three, waiting too long, and how many are in the Inbox. These are as of now, even when viewing last week.
+- **Next week:** tasks dated in the following Monday to Sunday, not done, routine blocks left out, with a count of routine blocks already scheduled.
+
+Uses only the read-only key. Nothing is written. If one part cannot be read, the rest still shows with a one-line warning. Weekly numbers read up to 300 tasks per week.
+
 ## Waiting On page (`/waiting`)
 
 Read-only. It uses the same Notion key as Today and one query on the Tasks database.
