@@ -76,6 +76,46 @@
 .tp.gm .gm-item input:checked ~ .gm-txt { color: var(--muted); text-decoration: line-through; text-decoration-color: #B9B2A4; }
 .tp.gm .gm-txt { padding-top: 1px; }
 
+/* Item rows can carry a small second line (other seasons, weather, time of day). */
+.tp.gm .gm-name { display: block; }
+.tp.gm .gm-sub { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
+.tp.gm .gm-item input:checked ~ .gm-txt .gm-sub { text-decoration: none; }
+
+/* Community Center: room progress, season tabs, bundle cards */
+.tp.gm .gm-rooms { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }
+.tp.gm .gm-room { background: #EDE7DB; color: var(--muted); border-radius: 999px; padding: 4px 11px; font: 600 13px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-room b { color: var(--navy); margin-left: 3px; }
+.tp.gm .gm-room.done { background: var(--sage); color: #fff; }
+.tp.gm .gm-room.done b { color: #fff; }
+
+.tp.gm .gm-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0 0 10px; }
+.tp.gm .gm-tab { position: relative; border: 0; cursor: pointer; background: #EDE7DB; color: var(--navy); border-radius: 12px; min-height: 56px;
+  padding: 6px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  font: 600 13px/1.15 "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-tab b { font-size: 17px; }
+.tp.gm .gm-tab.on { background: var(--navy); color: #fff; }
+.tp.gm .gm-tab em { position: absolute; top: -7px; right: 4px; font: 700 10px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  font-style: normal; background: var(--sage); color: #fff; border-radius: 99px; padding: 1px 6px; }
+.tp.gm .gm-tab:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.tp.gm .gm-viewrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+.tp.gm .gm-viewrow .gm-note { margin: 0; flex: 1 1 200px; }
+
+.tp.gm .gm-bundle { background: var(--card); border-radius: 16px; box-shadow: 0 2px 10px rgba(22,50,79,.08); margin: 0 0 12px; overflow: hidden; }
+.tp.gm .gm-bh { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 1px; width: 100%; padding: 14px 16px 6px; }
+.tp.gm button.gm-bh { cursor: pointer; padding-bottom: 14px; }
+.tp.gm button.gm-bh:focus-visible { outline: 2px solid var(--sage); outline-offset: -2px; border-radius: 16px; }
+.tp.gm .gm-bh-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tp.gm .gm-room-label { font: 700 12px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--sage); }
+.tp.gm .gm-bcount { font: 700 13px "DM Sans", system-ui, sans-serif; color: var(--navy); background: #EDE7DB; border-radius: 99px; padding: 2px 10px; }
+.tp.gm .gm-bcount.done { background: var(--sage); color: #fff; }
+.tp.gm .gm-bname { font: 700 18px/1.25 "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-bneed { font-size: 14px; color: var(--muted); }
+.tp.gm .gm-bitems { padding: 0 16px 10px; }
+.tp.gm .gm-bundle.done .gm-bname { color: var(--muted); }
+
+.tp.gm .gm-foot-actions { margin: 4px 0 12px; }
+.tp.gm .gm-footnotes { margin-top: 12px; font-size: 14px; }
+
 .tp.gm .gm-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 0; }
 .tp.gm .gm-foot .gm-small { margin: 0; }
 

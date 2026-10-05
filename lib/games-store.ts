@@ -1,9 +1,11 @@
 import { getDeployStore, getStore } from "@netlify/blobs";
 import {
   GAMES,
+  SEASONS,
   emptyProgress,
   knownCheckKeys,
   knownFieldKeys,
+  seasonKey,
   type Game,
   type GameProgress,
   type GameProgressPatch,
@@ -64,6 +66,7 @@ export function parsePatch(game: Game, body: unknown): GameProgressPatch | strin
     for (const [k, v] of Object.entries(b.fields)) {
       if (!fieldKeys.has(k)) return "That text field does not exist in this checklist.";
       if (typeof v !== "string") return "Each text field must be text.";
+      if (k === seasonKey(game.id) && v !== "" && !(SEASONS as readonly string[]).includes(v)) return "That is not a season.";
       patch.fields[k] = v.slice(0, MAX_FIELD_LENGTH);
     }
   }
