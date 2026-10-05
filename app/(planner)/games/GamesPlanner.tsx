@@ -128,6 +128,24 @@ function phaseRemainingText(game: ChecklistGame, phase: GamePhase, progress: Gam
   return lines.join("\n");
 }
 
+type ParsedGameDate = { season: string; day: number; year: number; totalDay: number };
+
+function parseGameDate(value: string): ParsedGameDate | null {
+  const m = value.match(/(Spring|Summer|Fall|Winter)\s+(\d{1,2}).*?Year\s*(\d+)/i);
+  if (!m) return null;
+  const season = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+  const day = Number(m[2]);
+  const year = Number(m[3]);
+  if (!Number.isFinite(day) || !Number.isFinite(year) || day < 1 || day > 28 || year < 1) return null;
+  const seasonIndex = ["Spring", "Summer", "Fall", "Winter"].indexOf(season);
+  return { season, day, year, totalDay: (year - 1) * 112 + seasonIndex * 28 + day };
+}
+
+function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
+  if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
+  return questKey(game.id, story.id, step.id);
+}
+
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
@@ -135,9 +153,23 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     () => game.phases.map((p) => ({ phase: p, ...phaseCounts(game, p, prog) })),
     [game, prog],
   );
-  const current = stats.find((s) => s.done < s.total)?.phase ?? null;
-  const total = stats.reduce((n, s) => n + s.total, 0);
-  const done = stats.reduce((n, s) => n + s.done, 0);
+  const current = game.questBoard ? null : (stats.find((s) => s.done < s.total)?.phase ?? null);
+  const questStats = useMemo(() => {
+    if (!game.questBoard) return { done: 0, total: 0 };
+    let qDone = 0;
+    let qTotal = 0;
+    for (const story of game.questBoard.storylines) {
+      for (const step of story.steps) {
+        qTotal += 1;
+        if (prog.checks[questStepKey(game, story, step)]) qDone += 1;
+      }
+    }
+    return { done: qDone, total: qTotal };
+  }, [game, prog]);
+  const phaseTotal = stats.reduce((n, s) => n + s.total, 0);
+  const phaseDone = stats.reduce((n, s) => n + s.done, 0);
+  const total = game.questBoard ? questStats.total : phaseTotal;
+  const done = game.questBoard ? questStats.done : phaseDone;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   // When the current phase changes, drop manual open/close choices so the new current one opens and the finished one closes.
@@ -168,6 +200,95 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   };
 
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
+  const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
+
+  const questRows = useMemo(() => {
+    if (!game.questBoard) return [];
+    const storyById = new Map(game.questBoard.storylines.map((story) => [story.id, story]));
+    const isRefDone = (ref: string) => {
+      const split = ref.indexOf(":");
+      if (split < 0) return false;
+      const story = storyById.get(ref.slice(0, split));
+      if (!story) return false;
+      const step = story.steps.find((s) => s.id === ref.slice(split + 1));
+      return !!step && !!prog.checks[questStepKey(game, story, step)];
+    };
+
+    return game.questBoard.storylines
+      .map((story) => {
+        const index = story.steps.findIndex((step) => !prog.checks[questStepKey(game, story, step)]);
+        if (index < 0) return { story, step: null, bucket: "done" as const, reason: "", index };
+
+        const step = story.steps[index];
+        let bucket: "deadline" | "now" | "toward" | "waiting" = step.bucket;
+        let reason = "";
+
+        const missingReq = step.requires?.find((ref) => !isRefDone(ref));
+        if (missingReq) {
+          bucket = "waiting";
+          reason = step.unlock ?? "Finish the required storyline first";
+        }
+
+        if (!missingReq && step.gate && gameDate) {
+          const g = step.gate;
+          let met = true;
+          if (g.year !== undefined && gameDate.year !== g.year) met = false;
+          if (g.seasons?.length && !g.seasons.includes(gameDate.season)) met = false;
+          if (g.minDay !== undefined && gameDate.day < g.minDay) met = false;
+          if (g.maxDay !== undefined && gameDate.day > g.maxDay) met = false;
+          if (g.minTotalDay !== undefined && gameDate.totalDay < g.minTotalDay) met = false;
+          if (!met && bucket !== "toward") {
+            bucket = "waiting";
+            reason = step.unlock ?? "Calendar gate not met yet";
+          }
+        }
+
+        return { story, step, bucket, reason, index };
+      })
+      .filter((row) => row.step !== null);
+  }, [game, prog, gameDate]);
+
+  const playNext = useMemo(() => {
+    const actionable = questRows
+      .filter((r) => r.bucket === "deadline" || r.bucket === "now")
+      .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0));
+    if (actionable.length >= 5) return actionable.slice(0, 5);
+    const toward = questRows
+      .filter((r) => r.bucket === "toward")
+      .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0));
+    return [...actionable, ...toward].slice(0, 5);
+  }, [questRows]);
+
+  const renderQuestRow = (
+    row: (typeof questRows)[number],
+    compact = false,
+  ) => {
+    if (!row.step) return null;
+    const key = questStepKey(game, row.story, row.step);
+    const status =
+      row.bucket === "deadline"
+        ? "Do before the window closes"
+        : row.bucket === "now"
+          ? "Available now"
+          : row.bucket === "toward"
+            ? "Work toward"
+            : row.reason || row.step.unlock || "Waiting";
+    const details = [row.story.mod, status, row.step.how].filter(Boolean).join(" · ");
+    return (
+      <div className={"gm-quest-row " + row.bucket + (compact ? " compact" : "")} key={`${row.story.id}:${row.step.id}`}>
+        <div className="gm-quest-context">
+          <span className="gm-quest-mod">{row.story.mod}</span>
+          <b>{row.story.title}</b>
+        </div>
+        <Check
+          label={row.step.label}
+          sub={details}
+          checked={!!prog.checks[key]}
+          onChange={(v) => setCheck(key, v)}
+        />
+      </div>
+    );
+  };
 
   return (
     <>
@@ -206,56 +327,131 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </ul>
       </div>
 
-      <div className="label">My current objectives</div>
-      <div className="gm-card">
-        <p className="gm-small">Whenever I load the game, I start with this card.</p>
-        <div className="gm-cur">
-          <span className="gm-small">Current phase:</span>
-          <b>{current ? `${current.title} (${current.when})` : "All phases done"}</b>
-          {current && (
-            <button type="button" className="gm-pill" onClick={jumpToCurrent}>
-              Open it
-            </button>
-          )}
-        </div>
-        <div className="gm-sublabel">Next 5 things</div>
-        {game.objectives.next.map((t) => {
-          const key = objKey(game.id, t);
-          return <Check key={t} label={t} checked={!!prog.checks[key]} onChange={(v) => setCheck(key, v)} />;
-        })}
-        <div className="gm-after">
-          <div className="gm-sublabel">After those are done</div>
-          <ul className="gm-ul">
-            {game.objectives.after.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-          <p className="gm-small">{game.objectives.closing}</p>
-        </div>
-        {current?.early && (
-          <div className="gm-early">
-            <div className="gm-sublabel">Done early? Safe to start now</div>
-            <p className="gm-small">None of these depend on the date or on a story event.</p>
-            <ul className="gm-ul">
-              {current.early.safe.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-            <div className="gm-sublabel">Still wait</div>
-            <ul className="gm-ul">
-              {current.early.wait.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-            <div className="gm-sublabel">Finished the week's friending or the day's list?</div>
-            <ul className="gm-ul">
-              {game.guide.early.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
+      {game.questBoard ? (
+        <>
+          <div className="label">Play this next</div>
+          <div className="gm-card gm-quest-board">
+            <p className="gm-small">{game.questBoard.intro}</p>
+            {gameDate ? (
+              <div className="gm-date-chip">{gameDate.season} {gameDate.day}, Year {gameDate.year}</div>
+            ) : (
+              <div className="gm-callout warn"><b>Date not recognized.</b> Use a format like “Spring 10, Year 1” so calendar gates can update automatically.</div>
+            )}
+            <div className="gm-play-next">
+              {playNext.length ? playNext.map((row) => renderQuestRow(row, true)) : <p className="gm-note">No actionable storyline steps are left right now.</p>}
+            </div>
           </div>
-        )}
-      </div>
+
+          <div className="label">What can I do?</div>
+          <div className="gm-status-grid">
+            <section className="gm-card gm-status-card">
+              <div className="gm-status-title"><span>🟢</span><b>Available now</b></div>
+              {questRows.filter((r) => r.bucket === "deadline" || r.bucket === "now").length ? (
+                questRows
+                  .filter((r) => r.bucket === "deadline" || r.bucket === "now")
+                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
+                  .map((row) => renderQuestRow(row))
+              ) : <p className="gm-note">Nothing currently actionable.</p>}
+            </section>
+
+            <section className="gm-card gm-status-card">
+              <div className="gm-status-title"><span>🟡</span><b>Work toward</b></div>
+              {questRows.filter((r) => r.bucket === "toward").length ? (
+                questRows
+                  .filter((r) => r.bucket === "toward")
+                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
+                  .map((row) => renderQuestRow(row))
+              ) : <p className="gm-note">No prep goals right now.</p>}
+            </section>
+
+            <section className="gm-card gm-status-card">
+              <div className="gm-status-title"><span>🔒</span><b>Waiting on</b></div>
+              {questRows.filter((r) => r.bucket === "waiting").length ? (
+                questRows
+                  .filter((r) => r.bucket === "waiting")
+                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
+                  .map((row) => renderQuestRow(row))
+              ) : <p className="gm-note">Nothing is hard-locked right now.</p>}
+            </section>
+          </div>
+
+          <div className="label">Storylines</div>
+          {game.questBoard.storylines
+            .filter((story) => story.steps.some((step) => !prog.checks[questStepKey(game, story, step)]))
+            .map((story) => {
+              const d = story.steps.filter((step) => !!prog.checks[questStepKey(game, story, step)]).length;
+              const currentIndex = story.steps.findIndex((step) => !prog.checks[questStepKey(game, story, step)]);
+              return (
+                <details className="gm-card gm-story" key={story.id}>
+                  <summary>
+                    <span>
+                      <small>{story.mod}</small>
+                      <b>{story.title}</b>
+                    </span>
+                    <em>{d}/{story.steps.length}</em>
+                  </summary>
+                  {story.note && <p className="gm-note">{story.note}</p>}
+                  <div className="gm-story-steps">
+                    {story.steps.map((step, idx) => {
+                      const key = questStepKey(game, story, step);
+                      const currentStep = idx === currentIndex;
+                      return (
+                        <div className={currentStep ? "gm-story-step current" : "gm-story-step"} key={step.id}>
+                          {currentStep && <span className="gm-current-tag">Next</span>}
+                          <Check
+                            label={step.label}
+                            sub={step.how || step.unlock}
+                            checked={!!prog.checks[key]}
+                            onChange={(v) => setCheck(key, v)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              );
+            })}
+
+          {game.questBoard.storylines.some((story) => story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)])) && (
+            <details className="gm-card gm-details">
+              <summary>Completed storylines</summary>
+              <ul className="gm-ul">
+                {game.questBoard.storylines
+                  .filter((story) => story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)]))
+                  .map((story) => <li key={story.id}>{story.title}</li>)}
+              </ul>
+            </details>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="label">My current objectives</div>
+          <div className="gm-card">
+            <p className="gm-small">Whenever I load the game, I start with this card.</p>
+            <div className="gm-cur">
+              <span className="gm-small">Current phase:</span>
+              <b>{current ? `${current.title} (${current.when})` : "All phases done"}</b>
+              {current && (
+                <button type="button" className="gm-pill" onClick={jumpToCurrent}>
+                  Open it
+                </button>
+              )}
+            </div>
+            <div className="gm-sublabel">Next 5 things</div>
+            {game.objectives.next.map((t) => {
+              const key = objKey(game.id, t);
+              return <Check key={t} label={t} checked={!!prog.checks[key]} onChange={(v) => setCheck(key, v)} />;
+            })}
+            <div className="gm-after">
+              <div className="gm-sublabel">After those are done</div>
+              <ul className="gm-ul">
+                {game.objectives.after.map((t) => <li key={t}>{t}</li>)}
+              </ul>
+              <p className="gm-small">{game.objectives.closing}</p>
+            </div>
+          </div>
+        </>
+      )}
 
       <details className="gm-card gm-details">
         <summary>How events trigger</summary>
@@ -266,10 +462,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </ul>
       </details>
 
-      <div className="label">Phases</div>
+      <div className="label">{game.questBoard ? "Long-term roadmap — not a gate" : "Phases"}</div>
       {stats.map(({ phase, done: d, total: t }, idx) => {
         const isDone = d === t;
-        const isCur = current?.id === phase.id;
+        const isCur = !game.questBoard && current?.id === phase.id;
         const expanded = isOpen(phase);
         return (
           <section
@@ -287,7 +483,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
                 <b>
                   {d}/{t}
                 </b>
-                <em>{isDone ? "Done" : isCur ? "Current" : "Later"}</em>
+                <em>{isDone ? "Done" : game.questBoard ? "Roadmap" : isCur ? "Current" : "Later"}</em>
               </span>
               <i className="gm-chev" aria-hidden="true" />
             </button>
