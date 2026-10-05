@@ -232,7 +232,39 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           </ul>
           <p className="gm-small">{game.objectives.closing}</p>
         </div>
+        {current?.early && (
+          <div className="gm-early">
+            <div className="gm-sublabel">Done early? Safe to start now</div>
+            <p className="gm-small">None of these depend on the date or on a story event.</p>
+            <ul className="gm-ul">
+              {current.early.safe.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <div className="gm-sublabel">Still wait</div>
+            <ul className="gm-ul">
+              {current.early.wait.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <div className="gm-sublabel">Finished the week's friending or the day's list?</div>
+            <ul className="gm-ul">
+              {game.guide.early.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
+
+      <details className="gm-card gm-details">
+        <summary>How events trigger</summary>
+        <ul className="gm-ul">
+          {game.guide.events.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+      </details>
 
       <div className="label">Phases</div>
       {stats.map(({ phase, done: d, total: t }, idx) => {
@@ -293,8 +325,15 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
                     )}
                     {g.items.map((text) => {
                       const key = itemKey(game.id, phase.id, g.label, text);
+                      const done = !!prog.checks[key];
                       return (
-                        <Check key={text} label={text} checked={!!prog.checks[key]} onChange={(v) => setCheck(key, v)} />
+                        <Check
+                          key={text}
+                          label={text}
+                          sub={done ? undefined : g.how?.[text]}
+                          checked={done}
+                          onChange={(v) => setCheck(key, v)}
+                        />
                       );
                     })}
                     {g.after && <p className="gm-note end">{g.after}</p>}

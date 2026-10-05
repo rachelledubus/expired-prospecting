@@ -81,6 +81,16 @@
 .tp.gm .gm-sub { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
 .tp.gm .gm-item input:checked ~ .gm-txt .gm-sub { text-decoration: none; }
 
+/* Done early block and the how-events-trigger card */
+.tp.gm .gm-early { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.tp.gm .gm-early .gm-sublabel { margin-top: 10px; }
+.tp.gm .gm-early .gm-sublabel:first-child { margin-top: 0; }
+.tp.gm .gm-details { margin-top: 12px; }
+.tp.gm .gm-details summary { cursor: pointer; font: 700 12px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--sage); min-height: 24px; }
+.tp.gm .gm-details summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; border-radius: 6px; }
+.tp.gm .gm-details[open] summary { margin-bottom: 8px; }
+
 /* Community Center: room progress, season tabs, bundle cards */
 .tp.gm .gm-rooms { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }
 .tp.gm .gm-room { background: #EDE7DB; color: var(--muted); border-radius: 999px; padding: 4px 11px; font: 600 13px "DM Sans", system-ui, sans-serif; }

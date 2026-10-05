@@ -9,6 +9,8 @@ export type GameGroup = {
   after?: string;
   /** A fill-in blank shown above the boxes, e.g. which character you picked. */
   field?: string;
+  /** A short "how to trigger it" line shown under an item, keyed by the exact item text. Hidden once the box is checked. */
+  how?: Record<string, string>;
 };
 
 export type GamePhase = {
@@ -18,6 +20,8 @@ export type GamePhase = {
   callout?: { lead: string; text: string };
   groups: GameGroup[];
   footer?: { warn?: boolean; lead: string; text: string };
+  /** What to do if this phase is finished before its dates run out. Plain lines, not boxes. */
+  early?: { safe: string[]; wait: string[] };
 };
 
 /** A phase-by-phase checklist: only the first unfinished phase is open. */
@@ -31,6 +35,8 @@ export type ChecklistGame = {
   saveDefault: string;
   rule: { text: string; notLabel: string; not: string[] };
   objectives: { next: string[]; after: string[]; closing: string };
+  /** General how-tos shown on the page: how events trigger, and what to do with a finished day. */
+  guide: { events: string[]; early: string[] };
   phases: GamePhase[];
 };
 
@@ -440,14 +446,30 @@ export const GAMES: Game[] = [
       after: ["Keep mining.", "Keep befriending Marlon.", "Wait for Spring 20."],
       closing: "I do not need to worry about anything else yet.",
     },
+    guide: {
+      events: [
+        "A heart event plays when you walk into its location during its time window, on a day that fits its weather, with enough hearts and the earlier event already seen.",
+        "Weather has two settings. Events marked Sunny also play on windy and snowy days. Storms and green rain count as rain.",
+        "Some events wait days or weeks after the one before them. If one will not play, check that wait before assuming it is broken.",
+        "Buildings are locked on festival days, so do not expect an indoor event then.",
+        "Event Lookup (default key N) lists the heart events you can trigger today and how. It covers Stardew Valley Expanded and Ridgeside. I could not confirm it lists East Scarp or Sword & Sorcery events, so for those use the event tables on eastscarp.wiki.gg.",
+      ],
+      early: [
+        "Gifts: one a day, two a week per person, plus a birthday gift on top. Talking once a day gives +20 friendship. When the week's two gifts are given, just talk to them and spend the time elsewhere.",
+        "You can go to bed whenever you like and the day ends. Bed before midnight restores full energy. Talk to Marlon and Mateo first if you want the +20.",
+        "Seasonal items cannot be gotten early. When this season's items are done, use the Any season tab on the Community Center tracker.",
+      ],
+    },
     phases: [
       {
         id: "p1",
+        early: {"safe": ["Mine Floors 50 to 80 and the Firewalker Boots (Late Spring list)", "Silo, a Coop or Barn, artisan goods, and food for mining (Late Spring list)", "Steel Pickaxe when you can afford it", "Construction and Boiler Room bundles (Any season tab on the Community Center tracker)"], "wait": ["The minecart quest. It needs 20 days played, a talk with Yuuma, and a sunny morning, so the date is the limit.", "Adding East Scarp or Ridgeside characters. That is your STOP rule.", "Summer bundle items. They cannot be gotten in Spring."]},
         title: "Right Now",
         when: "Spring 10 to 19, Year 1",
         groups: [
           {
             label: "Main Progression",
+            how: {"Unlock the Community Center": "Walk into Pelican Town from the Bus Stop on a day it is not raining, from Spring 5, between 8 AM and 1 PM. Lewis opens it in a cutscene."},
             items: [
               "Unlock the Community Center",
               "Check which Spring bundle items I still need",
@@ -461,6 +483,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Stardew Valley Expanded",
+            how: {"Find/talk to Marlon": "Adventurer's Guild, up the Mountain trail. Your first visit plays the Guild Initiation, which needs 10 days played and the sword scene at the Mines entrance already seen. On rainy days he guards the mine ladder.", "Begin giving Marlon gifts": "Loves: Roots Platter, slime eggs, Life Elixir, Void Delight, Haste and Armor Elixirs. Likes: Fried Mushroom, Purple Mushroom, Bomb, Beer. Dislikes most forage and hates all flowers."},
             items: [
               "Find/talk to Marlon",
               "Begin giving Marlon gifts",
@@ -471,6 +494,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Ridgeside Village",
+            how: {"Take the cable car to Ridgeside": "The cable car is northeast of the Bus Stop and is always open.", "Talk to Yuuma at least once": "The minecart quest in Late Spring will not start until you have done this."},
             items: [
               "Take the cable car to Ridgeside",
               "Find Yuuma",
@@ -482,6 +506,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "East Scarp + Sword & Sorcery",
+            how: {"Visit East Scarp": "Take the path east of the blacksmith in Pelican Town, or cross Shearwater Bridge.", "Find Mateo": "His tent is in the south-east of East Scarp's main area.", "Watch Mateo’s introduction events as they appear": "Part I plays at the Museum, any time or weather. Part II plays in the Mines and needs Part I seen and the sword from Marlon. His daily schedule only starts after Part II.", "Keep the Player’s Handbook": "It is mailed to you when the mod is installed."},
             items: [
               "Visit East Scarp",
               "Find Mateo",
@@ -500,12 +525,14 @@ export const GAMES: Game[] = [
       },
       {
         id: "p2",
+        early: {"safe": ["Mine Floors 90 to 120 and the Skull Key. Reaching the bottom also lets Marlon's 4-heart event play.", "Marlon to 5 hearts, then the sewer-key event", "Construction and Boiler Room bundles"], "wait": ["Mateo's 7-heart events. They need you to have met Krobus first.", "Summer Crops and Summer Foraging bundles. Wait for Summer."]},
         title: "Late Spring",
         when: "Spring 20 to 28",
         callout: { lead: "", text: "Unlock this section after reaching Spring 20." },
         groups: [
           {
             label: "Ridgeside Transportation Quest",
+            how: {"Trigger the Ridgeside minecart restoration quest": "Needs 20 in-game days played with Ridgeside installed and a talk with Yuuma. Then leave the farmhouse on a sunny morning.", "Deposit the materials": "Donation box at the minecarts, next to Heaps.", "Sleep": "The minecarts are fixed the next day."},
             items: [
               "Trigger the Ridgeside minecart restoration quest",
               "Collect 300 Wood",
@@ -518,6 +545,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Mining Progression",
+            how: {"Obtain the Firewalker Boots": "Chest on Mine Floor 80. You can also buy them at the Adventurer's Guild for 2,000g after reaching Floor 80."},
             items: [
               "Reach Mine Floor 50",
               "Reach Mine Floor 60",
@@ -527,9 +555,11 @@ export const GAMES: Game[] = [
               "Upgrade Pickaxe to Steel when affordable",
             ],
           },
-          { label: "Marlon", items: ["Reach 3 hearts with Marlon", "Reach 4 hearts with Marlon"] },
+          { label: "Marlon",
+            how: {"Reach 4 hearts with Marlon": "The 4-heart event plays at the Railroad on a rainy day, and only after you have reached the bottom of the Mines (Floor 120)."}, items: ["Reach 3 hearts with Marlon", "Reach 4 hearts with Marlon"] },
           {
             label: "Mateo",
+            how: {"Reach 2 hearts with Mateo": "The 2-heart event plays in Town, 8 PM to midnight, on a sunny day.", "Reach 4 hearts with Mateo": "The 4-heart event plays on the Beach, 6 PM to midnight, on a sunny day."},
             items: [
               "Check Mateo’s Player’s Handbook",
               "Continue Mateo’s available events",
@@ -550,12 +580,14 @@ export const GAMES: Game[] = [
       },
       {
         id: "p3",
+        early: {"safe": ["Gold Pickaxe, sprinklers, and daily income (Late Summer list)", "Food for mining and combat", "Saving toward the Bus. The four Vault bundles total 42,500g, so it is a gold goal, not a date."], "wait": ["The Ridge Forest and the Ninja House. That story starts as soon as you clear the log with a Steel Axe and enter the Ninja House, so upgrade the axe when you want it to begin.", "Fall Crops and Fall Foraging bundles. Wait for Fall.", "Choosing an East Scarp character. Your plan holds that until Late Summer."]},
         title: "Early Summer",
         when: "Summer 1 to 14",
         callout: { lead: "Main goal:", text: "Finish the regular Mines." },
         groups: [
           {
             label: "Mining Progression",
+            how: {"Obtain the Skull Key": "Chest on Mine Floor 120."},
             items: [
               "Reach Mine Floor 90",
               "Reach Mine Floor 100",
@@ -566,6 +598,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "SVE / Marlon",
+            how: {"Trigger Marlon’s sewer-key event": "Wiki: 5 hearts in Year 1, with the Guild Initiation already seen. The wiki lists it two ways, at the Adventurer Summit in any weather or in Town on a rainy day, and players also mention 60 Museum donations. If it will not play, check Event Lookup (N).", "Receive access to the Sewers": "Marlon gives you the key in the same scene.", "Meet Krobus": "Marlon introduces him in that scene.", "Enter the Sewers at least once": "The cover in the south of Pelican Town, or the grates in the south of Cindersap Forest."},
             items: [
               "Reach 5 hearts with Marlon",
               "Trigger Marlon’s sewer-key event",
@@ -576,6 +609,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Sword & Sorcery",
+            how: {"Continue toward Mateo’s later heart events": "5 hearts is three parts: Mines (6 PM to midnight), then the Saloon (you miss it if more than 3 in-game days pass), then the Adventurer's Guild (2 to 10 PM). 6 hearts: Town on a sunny day, then Cindersap Forest on a rainy night. 7 hearts needs Krobus met, on any day but Friday."},
             note: "Now that Krobus is handled:",
             items: [
               "Continue Mateo’s story",
@@ -601,6 +635,7 @@ export const GAMES: Game[] = [
       },
       {
         id: "p4",
+        early: {"safe": ["The Bus and the Desert. The bus is fixed by finishing the four Vault bundles (42,500g).", "Skull Cavern, once you have the Skull Key and the bus is fixed", "Iridium Bars and Galaxy Sword work", "Vault and Boiler Room bundles"], "wait": ["Fall bundle items. Wait for Fall.", "A second East Scarp character. Your plan holds that until Winter."]},
         title: "Late Summer",
         when: "Summer 15 to 28",
         groups: [
@@ -616,6 +651,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Ridgeside Main Story Begins",
+            how: {"Find the entrance to the Ridge Forest": "North of The Ridge, behind a large log.", "Clear the large log blocking access": "Needs a Steel Axe.", "Find the Ninja House": "East side of The Ridge. Open 8 AM to 8 PM, closed on festival days.", "Read available clues/books": "The red book and the Ancient Book are both in the Ninja House.", "Begin The Preparations when it becomes available": "It starts when you enter the Ninja House after visiting the Ridge Forest. The Seer gives it through her subjects."},
             note: "Your Steel Axe gives you a reason to start exploring more seriously.",
             items: [
               "Find the entrance to the Ridge Forest",
@@ -629,6 +665,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "The Preparations",
+            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 25 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
             note: "Do these naturally instead of trying to finish everything in one day.",
             items: [
               "Find the quest’s required cursed artifacts",
@@ -639,6 +676,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "East Scarp",
+            how: {"Watch their early events": "Several East Scarp events need the person to be home or present, and often a sunny day. Check their row on eastscarp.wiki.gg."},
             note: "You may now choose ONE East Scarp character besides Mateo.",
             field: "Character",
             items: [
@@ -653,6 +691,7 @@ export const GAMES: Game[] = [
       },
       {
         id: "p5",
+        early: {"safe": ["Galaxy Sword, tools toward Iridium, and the bottom of Skull Cavern (Winter list)", "Ginger Island preparation (Winter list)"], "wait": ["Winter Foraging bundle and winter fish. Wait for Winter.", "The Spirit Realm. It opens only after you place all nine relics.", "East Scarp characters #2 and #3, until the first one has progressed."]},
         title: "Fall, Year 1",
         when: "Adventure Season",
         callout: {
@@ -662,6 +701,7 @@ export const GAMES: Game[] = [
         groups: [
           {
             label: "Ridgeside Main Campaign",
+            how: {"Continue quests from the Ninja House": "Jio runs the quest board there.", "Continue Belinda/Raeriyala-related storyline": "More Preparations starts once you have met Belinda. Go to the Ridge Forest on a sunny day before 7 PM.", "Complete available crystal quests": "Seven quests arrive together after More Preparations. Donate 30 items of each crystal's color to its crystal in the Ridge Forest.", "Unlock access toward Ridge Falls": "Finish all seven, wait a day, then go to The Ridge on a clear night after 8 PM for The Unsealing. That unlocks Ridge Falls, west of The Ridge.", "Use the Ancient Book/clues instead of randomly searching": "The artifact pages are added after The Unsealing. Ridge Falls adds a second edition with more clues.", "Continue toward opening the Spirit Realm": "The Open the Portal quest: place all nine relics in the right order on the pedestals west of Ridge Falls. The foxes' eyes glow when it is right."},
             items: [
               "Continue quests from the Ninja House",
               "Continue Belinda/Raeriyala-related storyline",
@@ -676,6 +716,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Sword & Sorcery Campaign",
+            how: {"Finish remaining Mateo progression": "8 hearts: wait two weeks after 7, and finish the quest from Part I before Part II. 10 hearts: Railroad at night on a sunny day, then the Deep Mountains.", "Meet the next S&S character when introduced": "Wiki: one of them appears at the Railroad after Mateo's 10-heart event. The later ones have no trigger listed yet, so let the mod introduce them."},
             items: [
               "Finish remaining Mateo progression",
               "Meet the next S&S character when introduced",
@@ -688,6 +729,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Regular Progression",
+            how: {"Repair the Bus": "Finish all four Vault bundles (42,500g in total).", "Visit the Desert": "Needs the bus repaired.", "Enter Skull Cavern": "Needs the Skull Key from Mine Floor 120."},
             items: [
               "Repair the Bus",
               "Visit the Desert",
@@ -713,12 +755,14 @@ export const GAMES: Game[] = [
       },
       {
         id: "p6",
+        early: {"safe": ["Finish the Community Center, or get down to seasonal items. Use the Any season tab first.", "Skull Cavern, Galaxy Sword, and tool upgrades toward Iridium", "Ginger Island preparation"], "wait": ["Year 2 projects such as Grandpa's Shed and the Ginger Island farm. Your plan holds those until Year 2.", "Next season's bundle items. Wait for the season to start."]},
         title: "Winter, Year 1",
         when: "Quest Season",
         callout: { lead: "", text: "Winter is for story content." },
         groups: [
           {
             label: "Ridgeside",
+            how: {"Enter the Spirit Realm": "Step into the portal at Ridge Falls. The pink crystals inside take you back out.", "Save/cleanse the Spirit Realm": "Extinguish the five Corrupted Flames.", "Unlock Summit Farm": "Saving the Spirit Realm unlocks it. Raeriyala clears the boulders at the top of the Ridge Forest."},
             items: [
               "Continue Blessed Artifact hunt",
               "Finish prerequisites for the Spirit Realm",

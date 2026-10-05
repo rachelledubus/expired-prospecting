@@ -14,6 +14,20 @@ the top of the page.
   Changes are merged on save, so two devices do not overwrite each other. Nothing is saved to Notion.
 - The page and its save route sit behind the same portal login as every other page.
 
+## Event triggers and "Done early?" (Stardew checklist)
+
+- Under many items there is a short grey line saying how to trigger it: hearts, place, time, weather, and what has to
+  happen first. It hides once you tick the box. Add one by putting `how: { "exact item text": "line" }` on the group.
+- **My Current Objectives** has a "Done early? Safe to start now" block for the current phase. It lists what does not
+  depend on the date or a story event, what should still wait, and the gifting and bed rules for a finished day.
+  Set it with `early: { safe: [...], wait: [...] }` on a phase. Phases 7 to 9 have none.
+- A collapsed **How events trigger** card sits under the objectives. Both texts live in `guide` on the game.
+- The lines come from the Stardew Valley wiki, the Ridgeside Village wiki, and the East Scarp wiki (which also covers
+  Sword & Sorcery). They avoid spoilers on purpose: no artifact locations, no placement order, no names of later
+  Sword & Sorcery characters. Mod versions change, so spot-check a line in game if it does not work.
+- Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
+  Sorcery events is not confirmed.
+
 ## Community Center tracker
 
 - Tabs for Spring, Summer, Fall, Winter and **Any season**. Each tab lists the items you can collect in that season,
