@@ -4,6 +4,7 @@ import "./inbox/inbox.css";
 import "./review/review.css";
 import "./projects/projects.css";
 import "./loops/loops.css";
+import "./games/games.css";
 import "./planner.css";
 import PlannerTabs from "./PlannerTabs";
 

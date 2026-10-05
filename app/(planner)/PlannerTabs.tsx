@@ -11,6 +11,7 @@ const PAGES = [
   { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
   { href: "/loops", label: "Loops", bg: "var(--other-bg, #EFE7DA)" },
   { href: "/review", label: "Review", bg: "#F4E6B8" },
+  { href: "/games", label: "Games", bg: "#E3EAF2" },
 ];
 
 export default function PlannerTabs() {
