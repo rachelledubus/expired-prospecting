@@ -345,13 +345,26 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             </div>
           </div>
 
+          {questRows.some((r) => r.bucket === "deadline") && (
+            <>
+              <div className="label">Do before the window closes</div>
+              <section className="gm-card gm-status-card gm-deadline-card">
+                <div className="gm-status-title"><span>⏰</span><b>Time-sensitive</b></div>
+                {questRows
+                  .filter((r) => r.bucket === "deadline")
+                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
+                  .map((row) => renderQuestRow(row))}
+              </section>
+            </>
+          )}
+
           <div className="label">What can I do?</div>
           <div className="gm-status-grid">
             <section className="gm-card gm-status-card">
               <div className="gm-status-title"><span>🟢</span><b>Available now</b></div>
-              {questRows.filter((r) => r.bucket === "deadline" || r.bucket === "now").length ? (
+              {questRows.filter((r) => r.bucket === "now").length ? (
                 questRows
-                  .filter((r) => r.bucket === "deadline" || r.bucket === "now")
+                  .filter((r) => r.bucket === "now")
                   .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
                   .map((row) => renderQuestRow(row))
               ) : <p className="gm-note">Nothing currently actionable.</p>}
