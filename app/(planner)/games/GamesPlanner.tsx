@@ -10,6 +10,7 @@ import {
   isBundleGame,
   itemKey,
   objKey,
+  questKey,
   saveKey,
   seasonKey,
   type Bundle,
@@ -19,6 +20,8 @@ import {
   type GamePhase,
   type GameProgress,
   type GameProgressPatch,
+  type GameQuestStep,
+  type GameStoryline,
   type Season,
 } from "@/lib/games-data";
 
