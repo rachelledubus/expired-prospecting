@@ -11,7 +11,17 @@ the top of the page.
 - Only the first phase with unchecked boxes is open. When it is finished, the next phase opens and the finished one collapses.
 - Each phase has a **Copy what's left** button that copies its unchecked boxes as text.
 - Progress is saved in Netlify Blobs (store name `game-progress`), so every device shows the same boxes.
-  Changes are merged on save, so two devices do not overwrite each other. Nothing is saved to Notion.
+  Nothing is saved to Notion.
+- It is one site-wide store with strong consistency, shared by every deploy, so deploying never resets progress.
+  Do **not** pick the store from `process.env.CONTEXT`: Netlify only sets that while building, not while the site runs.
+  An earlier version did, which silently used a per-deploy store and lost progress on every deploy.
+- Each save merges into what is stored and only goes through if nothing else saved first (a version-tag check).
+  If something did, it re-reads and redoes the merge, so two devices or two quick taps never overwrite each other.
+- A box that no longer exists (for example after you rename an item) is skipped on save instead of rejecting the save.
+- The page checks that the server really confirmed each save, retries on its own after a failure, sends anything
+  waiting when you leave the page, and says so if your login has lapsed.
+- `LEGACY_DEPLOY_IDS` in `lib/games-store.ts` lists old per-deploy stores whose boxes are copied into the permanent
+  store the first time a game is saved after the fix. Deploy stores cannot be listed, so only named deploys recover.
 - The page and its save route sit behind the same portal login as every other page.
 
 ## Event triggers and "Done early?" (Stardew checklist)

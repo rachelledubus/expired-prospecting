@@ -25,7 +25,7 @@ import {
   type Season,
 } from "@/lib/games-data";
 
-type Status = "idle" | "saving" | "saved" | "error";
+type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
 
 // A later change wins over an earlier one. A reset drops everything queued before it.
 function mergePatch(older: GameProgressPatch | undefined, newer: GameProgressPatch): GameProgressPatch {
@@ -740,7 +740,7 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
 export default function GamesPlanner({ initial, loaded }: { initial: Record<string, GameProgress>; loaded: boolean }) {
   const [gameId, setGameId] = useState(GAMES[0].id);
   const [progress, setProgress] = useState<Record<string, GameProgress>>(initial);
-  const [status, setStatus] = useState<Status>(loaded ? "idle" : "error");
+  const [status, setStatus] = useState<Status>(loaded ? "idle" : "loadfail");
   const [armed, setArmed] = useState(false);
 
   const game = GAMES.find((g) => g.id === gameId) ?? GAMES[0];
@@ -751,6 +751,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const inflight = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const armTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failures = useRef(0);
 
   const send = async () => {
     timer.current = null;
@@ -765,14 +766,22 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
     inflight.current = true;
     setStatus("saving");
     let ok = true;
+    let signedOut = false;
     for (const id of ids) {
       try {
         const res = await fetch("/api/games/progress", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ game: id, patch: batch[id] }),
+          keepalive: true,
         });
-        if (!res.ok) throw new Error(`save failed: ${res.status}`);
+        // An expired login is answered with a redirect to the login page, which looks like a normal 200.
+        if (res.redirected && new URL(res.url).pathname.startsWith("/login")) {
+          signedOut = true;
+          throw new Error("signed out");
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) throw new Error(`save failed: ${res.status}`);
       } catch {
         ok = false;
         const newer = pending.current[id];
@@ -780,7 +789,17 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
       }
     }
     inflight.current = false;
-    setStatus(ok ? "saved" : "error");
+    if (ok) {
+      failures.current = 0;
+      setStatus("saved");
+      return;
+    }
+    setStatus(signedOut ? "signedout" : "error");
+    // Keep trying on its own, a little slower each time. Signing in again is the only fix for a lapsed login.
+    if (!signedOut && !timer.current) {
+      failures.current += 1;
+      timer.current = setTimeout(send, Math.min(30000, 2000 * 2 ** (failures.current - 1)));
+    }
   };
 
   const queue = (id: string, patch: GameProgressPatch) => {
@@ -795,10 +814,10 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
     const idle = () => !inflight.current && Object.keys(pending.current).length === 0;
     const onVisibility = async () => {
       if (document.visibilityState === "hidden") {
-        if (timer.current) {
-          clearTimeout(timer.current);
-          void send();
-        }
+        // Leaving the page: send anything still waiting now, including a batch that failed earlier.
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = null;
+        void send();
         return;
       }
       if (!idle()) return;
@@ -857,9 +876,13 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const statusText =
     status === "saving"
       ? "Saving..."
-      : status === "error"
-        ? "Not saved yet. It will try again on your next change."
-        : "Saved to your portal, so it matches on every device.";
+      : status === "loadfail"
+        ? "Could not load your saved progress. Reload the page to try again."
+        : status === "signedout"
+          ? "You were signed out, so your last change did not save. Log in again and redo it."
+          : status === "error"
+            ? "Not saved yet. Trying again."
+            : "Saved to your portal, so it matches on every device.";
 
   return (
     <div className="tp gm">
