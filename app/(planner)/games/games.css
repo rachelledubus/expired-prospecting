@@ -91,6 +91,45 @@
 .tp.gm .gm-details summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; border-radius: 6px; }
 .tp.gm .gm-details[open] summary { margin-bottom: 8px; }
 
+/* Availability-driven Stardew quest board */
+.tp.gm .gm-quest-board { position: relative; }
+.tp.gm .gm-date-chip { display: inline-flex; align-items: center; background: #EDE7DB; color: var(--navy); border-radius: 999px;
+  padding: 4px 10px; margin: 0 0 10px; font: 700 12px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-play-next { display: grid; gap: 8px; }
+.tp.gm .gm-status-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.tp.gm .gm-status-card { padding-top: 14px; }
+.tp.gm .gm-status-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.tp.gm .gm-status-title b { font: 700 17px "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-quest-row { border-top: 1px solid #F0EBE1; padding: 10px 0 2px; }
+.tp.gm .gm-quest-row:first-of-type { border-top: 0; }
+.tp.gm .gm-quest-row.compact { background: #F8F5EE; border: 0; border-radius: 12px; padding: 10px 12px 2px; }
+.tp.gm .gm-quest-row.deadline { box-shadow: inset 3px 0 0 var(--accent); }
+.tp.gm .gm-quest-row.now { box-shadow: inset 3px 0 0 var(--sage); }
+.tp.gm .gm-quest-row.toward { box-shadow: inset 3px 0 0 #C8A75A; }
+.tp.gm .gm-quest-row.waiting { opacity: .74; }
+.tp.gm .gm-quest-context { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; padding-left: 12px; }
+.tp.gm .gm-quest-context b { font: 650 14px "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-quest-mod { font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
+.tp.gm .gm-quest-row .gm-item { padding-left: 12px; }
+.tp.gm .gm-story { margin: 0 0 10px; }
+.tp.gm .gm-story summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+.tp.gm .gm-story summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-story summary > span { min-width: 0; display: flex; flex-direction: column; }
+.tp.gm .gm-story summary small { font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
+.tp.gm .gm-story summary b { font: 700 17px/1.25 "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-story summary em { flex: none; font: 700 12px "DM Sans", system-ui, sans-serif; font-style: normal; color: var(--muted);
+  background: #EDE7DB; border-radius: 999px; padding: 3px 9px; }
+.tp.gm .gm-story[open] summary { margin-bottom: 10px; }
+.tp.gm .gm-story-step { position: relative; }
+.tp.gm .gm-story-step.current { background: #F3F6F1; margin: 0 -8px; padding: 0 8px; border-radius: 10px; }
+.tp.gm .gm-current-tag { position: absolute; z-index: 1; top: 1px; right: 4px; background: var(--sage); color: #fff; border-radius: 999px;
+  padding: 2px 7px; font: 700 9px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.tp.gm .gm-story-steps .gm-item { padding-right: 44px; }
+
+@media (min-width: 820px) {
+  .tp.gm .gm-status-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
+}
+
 /* Community Center: room progress, season tabs, bundle cards */
 .tp.gm .gm-rooms { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }
 .tp.gm .gm-room { background: #EDE7DB; color: var(--muted); border-radius: 999px; padding: 4px 11px; font: 600 13px "DM Sans", system-ui, sans-serif; }
