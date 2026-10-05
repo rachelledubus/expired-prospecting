@@ -470,10 +470,10 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Only work on the first section that still has unchecked boxes.",
+      text: "Start with Play This Next. Calendar phases are a roadmap, not a rule; follow whichever storyline is actually available.",
       notLabel: "You do NOT need to:",
       not: [
-        "Complete every quest immediately",
+        "Treat the calendar roadmap like a hard gate",
         "Befriend everyone",
         "Visit every region every week",
         "Clear your entire quest journal",
