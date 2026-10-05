@@ -24,7 +24,43 @@ export type GamePhase = {
   early?: { safe: string[]; wait: string[] };
 };
 
-/** A phase-by-phase checklist: only the first unfinished phase is open. */
+export type GameQuestBucket = "deadline" | "now" | "toward" | "waiting";
+
+export type GameQuestStep = {
+  id: string;
+  label: string;
+  how?: string;
+  bucket: GameQuestBucket;
+  priority?: number;
+  /** Calendar-only gate. Story prerequisites belong in requires. */
+  gate?: {
+    year?: number;
+    seasons?: string[];
+    minDay?: number;
+    maxDay?: number;
+    minTotalDay?: number;
+  };
+  /** Other quest-board steps that must be checked first, formatted as storylineId:stepId. */
+  requires?: string[];
+  unlock?: string;
+  /** Reuse an existing phase checkbox so old progress is preserved. */
+  legacy?: { phaseId: string; groupLabel: string; text: string };
+};
+
+export type GameStoryline = {
+  id: string;
+  title: string;
+  mod: string;
+  note?: string;
+  steps: GameQuestStep[];
+};
+
+export type GameQuestBoard = {
+  intro: string;
+  storylines: GameStoryline[];
+};
+
+/** A checklist with a live quest board plus a long-term roadmap. */
 export type ChecklistGame = {
   kind: "checklist";
   id: string;
@@ -35,6 +71,8 @@ export type ChecklistGame = {
   saveDefault: string;
   rule: { text: string; notLabel: string; not: string[] };
   objectives: { next: string[]; after: string[]; closing: string };
+  /** Live, non-linear quest board. When present, this replaces calendar phases as the primary play direction. */
+  questBoard?: GameQuestBoard;
   /** General how-tos shown on the page: how events trigger, and what to do with a finished day. */
   guide: { events: string[]; early: string[] };
   phases: GamePhase[];
@@ -95,6 +133,8 @@ export const emptyProgress = (): GameProgress => ({ checks: {}, fields: {} });
 export const itemKey = (gameId: string, phaseId: string, groupLabel: string, text: string) =>
   [gameId, phaseId, groupLabel, text].join("|");
 export const objKey = (gameId: string, text: string) => `${gameId}|obj|${text}`;
+export const questKey = (gameId: string, storylineId: string, stepId: string) =>
+  [gameId, "quest", storylineId, stepId].join("|");
 export const fieldKey = (gameId: string, phaseId: string, name: string) => `${gameId}|${phaseId}|field|${name}`;
 export const saveKey = (gameId: string) => `${gameId}|save`;
 
@@ -112,6 +152,11 @@ export function knownCheckKeys(game: Game): Set<string> {
     return keys;
   }
   game.objectives.next.forEach((t) => keys.add(objKey(game.id, t)));
+  game.questBoard?.storylines.forEach((story) =>
+    story.steps.forEach((step) => {
+      if (!step.legacy) keys.add(questKey(game.id, story.id, step.id));
+    }),
+  );
   game.phases.forEach((p) =>
     p.groups.forEach((g) => g.items.forEach((t) => keys.add(itemKey(game.id, p.id, g.label, t)))),
   );
@@ -446,6 +491,428 @@ export const GAMES: Game[] = [
       after: ["Keep mining.", "Keep befriending Marlon.", "Wait for Spring 20."],
       closing: "I do not need to worry about anything else yet.",
     },
+    questBoard: {
+      intro: "Calendar phases are pacing suggestions, not locks. This board follows the first unfinished step in each storyline and surfaces what is actually actionable now.",
+      storylines: [
+        {
+          id: "andy-spring",
+          title: "Andy — Spring Year 1",
+          mod: "Stardew Valley Expanded",
+          note: "Time-sensitive early SVE content. Do this before Spring ends.",
+          steps: [
+            {
+              id: "meet",
+              label: "Talk to Andy at least once",
+              how: "Needed for his early Year 1 Spring event.",
+              bucket: "deadline",
+              priority: 100,
+              gate: { year: 1, seasons: ["Spring"], minDay: 4 },
+            },
+            {
+              id: "strawberries",
+              label: "Trigger Andy's Year 1 Spring event",
+              how: "Enter Cindersap Forest 7 AM–5 PM on a sunny Spring day. It only occurs in Year 1 after day 3, once you have spoken to Andy.",
+              bucket: "deadline",
+              priority: 100,
+              gate: { year: 1, seasons: ["Spring"], minDay: 4 },
+              unlock: "Year 1 Spring only",
+            },
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with Andy and see his Town event",
+              how: "The 2-heart event can play in Spring, Summer, or Fall on a sunny day from 10 AM–4 PM.",
+              bucket: "now",
+              priority: 52,
+              gate: { seasons: ["Spring", "Summer", "Fall"] },
+            },
+          ],
+        },
+        {
+          id: "sophia-year1",
+          title: "Sophia — Early Year 1",
+          mod: "Stardew Valley Expanded",
+          note: "Her earliest vineyard event gives a Quality Sprinkler and is exclusive to Year 1.",
+          steps: [
+            {
+              id: "sprinkler",
+              label: "Trigger Sophia's vineyard introduction and get the Quality Sprinkler",
+              how: "Enter Blue Moon Vineyard 6 AM–3 PM in Spring or Summer, Year 1, with one empty inventory slot.",
+              bucket: "deadline",
+              priority: 98,
+              gate: { year: 1, seasons: ["Spring", "Summer"] },
+              unlock: "Year 1 Spring or Summer",
+            },
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with Sophia and see her vineyard event",
+              how: "Blue Moon Vineyard, 8 AM–4 PM, Spring/Summer/Fall, any weather, with one empty inventory slot.",
+              bucket: "now",
+              priority: 58,
+              gate: { seasons: ["Spring", "Summer", "Fall"] },
+            },
+            {
+              id: "four-hearts",
+              label: "Reach 4 hearts with Sophia and continue her story",
+              how: "Enter Pelican Town 8 AM–4 PM on a sunny Spring/Summer/Fall day after her 2-heart event.",
+              bucket: "now",
+              priority: 56,
+              gate: { seasons: ["Spring", "Summer", "Fall"] },
+            },
+          ],
+        },
+        {
+          id: "mateo",
+          title: "Mateo — Sword & Sorcery",
+          mod: "Sword & Sorcery / East Scarp",
+          note: "This is your main active mod storyline. Most early events are any season; the real early wall is Krobus at 7 hearts.",
+          steps: [
+            {
+              id: "meet",
+              label: "Meet Mateo",
+              bucket: "now",
+              priority: 96,
+              legacy: { phaseId: "p1", groupLabel: "East Scarp + Sword & Sorcery", text: "Meet Mateo" },
+            },
+            {
+              id: "intro1",
+              label: "Watch Mateo Intro Part I at the Museum",
+              how: "Museum, any time, any season, any weather.",
+              bucket: "now",
+              priority: 96,
+            },
+            {
+              id: "intro2",
+              label: "Watch Mateo Intro Part II in the Mines",
+              how: "Any time after Intro Part I once Marlon has given you the sword. There is no wait after Part I.",
+              bucket: "now",
+              priority: 96,
+            },
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with Mateo and see the Town event",
+              how: "Town, 8 PM–midnight, sunny, any season. Mateo events are normally three days apart unless noted.",
+              bucket: "now",
+              priority: 92,
+            },
+            {
+              id: "four-hearts",
+              label: "Reach 4 hearts with Mateo and see the Beach event",
+              how: "Beach, 6 PM–midnight, sunny, any season.",
+              bucket: "now",
+              priority: 90,
+            },
+            {
+              id: "five-1",
+              label: "See Mateo's 5-heart Part I",
+              how: "Mines, 6 PM–midnight, any weather, any season.",
+              bucket: "now",
+              priority: 90,
+            },
+            {
+              id: "five-2",
+              label: "See Mateo's 5-heart Part II within 3 days",
+              how: "Saloon, noon–midnight. This event is missable and only triggers within 3 in-game days of Part I.",
+              bucket: "deadline",
+              priority: 110,
+            },
+            {
+              id: "five-3",
+              label: "See Mateo's 5-heart Part III",
+              how: "Adventurer's Guild, 2–10 PM. Requires 5-heart Part I.",
+              bucket: "now",
+              priority: 89,
+            },
+            {
+              id: "six-1",
+              label: "See Mateo's 6-heart Part I",
+              how: "Town, 10 AM–6 PM, sunny, any season.",
+              bucket: "now",
+              priority: 88,
+            },
+            {
+              id: "six-2",
+              label: "See Mateo's 6-heart Part II",
+              how: "Cindersap Forest, 6 PM–midnight, rain, any season.",
+              bucket: "now",
+              priority: 88,
+            },
+            {
+              id: "seven",
+              label: "Continue Mateo's 7-heart story after meeting Krobus",
+              how: "Hospital, 9 AM–3 PM, any day except Friday. Requires the previous event and having met Krobus.",
+              bucket: "now",
+              priority: 87,
+              requires: ["marlon-krobus:meet-krobus"],
+              unlock: "Meet Krobus first",
+            },
+            {
+              id: "eight",
+              label: "Continue Mateo's 8-heart story",
+              how: "East Scarp, 10 AM–6 PM, sunny. The first part requires two weeks after the previous event; follow the quest it gives before the next part.",
+              bucket: "now",
+              priority: 84,
+            },
+            {
+              id: "ten",
+              label: "Continue Mateo's 10-heart story",
+              how: "Railroad at night on a sunny day, then the Deep Mountains. This is where the romance/platonic choice appears.",
+              bucket: "now",
+              priority: 82,
+            },
+          ],
+        },
+        {
+          id: "marlon-krobus",
+          title: "Marlon → Krobus",
+          mod: "Stardew Valley Expanded",
+          note: "This is a progression gate for Sword & Sorcery, not a seasonal storyline.",
+          steps: [
+            {
+              id: "start",
+              label: "Start talking to and gifting Marlon",
+              bucket: "toward",
+              priority: 90,
+              legacy: { phaseId: "p1", groupLabel: "Stardew Valley Expanded", text: "Begin giving Marlon gifts" },
+            },
+            {
+              id: "five-hearts",
+              label: "Reach 5 hearts with Marlon",
+              how: "In Year 1, 5 hearts is the key SVE requirement for Marlon's Rusty Key event.",
+              bucket: "toward",
+              priority: 90,
+              legacy: { phaseId: "p3", groupLabel: "SVE / Marlon", text: "Reach 5 hearts with Marlon" },
+            },
+            {
+              id: "rusty-key",
+              label: "Trigger Marlon's Rusty Key event",
+              how: "Adventurer Summit, any season/weather once the Year 1 friendship requirement is met.",
+              bucket: "now",
+              priority: 90,
+              legacy: { phaseId: "p3", groupLabel: "SVE / Marlon", text: "Trigger Marlon’s sewer-key event" },
+            },
+            {
+              id: "meet-krobus",
+              label: "Meet Krobus",
+              bucket: "now",
+              priority: 90,
+              legacy: { phaseId: "p3", groupLabel: "SVE / Marlon", text: "Meet Krobus" },
+            },
+          ],
+        },
+        {
+          id: "ridgeside-minecart",
+          title: "Ridgeside Minecarts",
+          mod: "Ridgeside Village",
+          note: "Talk to Yuuma now; the actual restoration quest waits for the 20-day gate.",
+          steps: [
+            {
+              id: "talk-yuuma",
+              label: "Talk to Yuuma at least once",
+              bucket: "now",
+              priority: 88,
+              legacy: { phaseId: "p1", groupLabel: "Ridgeside Village", text: "Talk to Yuuma at least once" },
+            },
+            {
+              id: "trigger",
+              label: "Trigger the Ridgeside minecart restoration quest",
+              how: "After at least 20 in-game days with Ridgeside installed and after speaking to Yuuma, leave the farmhouse on a sunny morning.",
+              bucket: "now",
+              priority: 80,
+              gate: { minTotalDay: 20 },
+              unlock: "20 in-game days played + sunny morning",
+              legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Trigger the Ridgeside minecart restoration quest" },
+            },
+            {
+              id: "materials",
+              label: "Gather 300 Wood, 10 Iron Bars, and 5 Gold Bars",
+              bucket: "toward",
+              priority: 72,
+            },
+            {
+              id: "repair",
+              label: "Deposit the minecart materials and return the next day",
+              bucket: "now",
+              priority: 72,
+              legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Deposit the materials" },
+            },
+          ],
+        },
+        {
+          id: "ridgeside-main",
+          title: "Ridge Forest → Ninja Story",
+          mod: "Ridgeside Village",
+          note: "This storyline is tool-gated, not Late-Summer-gated.",
+          steps: [
+            {
+              id: "steel-axe",
+              label: "Upgrade the Axe to Steel",
+              how: "A Steel Axe is the real requirement for opening the Ridge Forest.",
+              bucket: "toward",
+              priority: 84,
+              legacy: { phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
+            },
+            {
+              id: "clear-log",
+              label: "Clear the large log and enter the Ridge Forest",
+              how: "The Ridge Forest is north of The Ridge. Clear its blocking log with the Steel Axe.",
+              bucket: "now",
+              priority: 84,
+            },
+            {
+              id: "meet-daia",
+              label: "Meet Daia while beginning the Ridge Forest storyline",
+              bucket: "now",
+              priority: 82,
+            },
+            {
+              id: "preparations",
+              label: "Start The Preparations",
+              how: "The quest becomes available after meeting Daia. Use the Ninja House books for its relic clues.",
+              bucket: "now",
+              priority: 82,
+              legacy: { phaseId: "p4", groupLabel: "Ridgeside Main Story Begins", text: "Begin The Preparations when it becomes available" },
+            },
+            {
+              id: "mistbloom",
+              label: "Collect 50 Mountain Mistbloom and the four required relics",
+              how: "Current Ridgeside quest requirement: 50 Mountain Mistbloom plus Silver Fish Bones, Hollowed Bear, Entombed Ring, and Shell Bracelet.",
+              bucket: "toward",
+              priority: 80,
+            },
+            {
+              id: "turn-in",
+              label: "Turn in The Preparations",
+              bucket: "now",
+              priority: 80,
+              legacy: { phaseId: "p4", groupLabel: "The Preparations", text: "Turn in The Preparations" },
+            },
+          ],
+        },
+        {
+          id: "magnus",
+          title: "Magnus — Magic",
+          mod: "Stardew Valley Expanded",
+          note: "A season-independent SVE side story that unlocks mana/minor magic at 4 hearts.",
+          steps: [
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with Magnus and see The Barrier",
+              how: "Cindersap Forest, 6 AM–6 PM, sunny, any season.",
+              bucket: "now",
+              priority: 66,
+            },
+            {
+              id: "four-hearts",
+              label: "Reach 4 hearts with Magnus and unlock minor magic",
+              how: "After his Shrine of Illusions letter, enter the Wizard's Tower. Any season, any weather.",
+              bucket: "now",
+              priority: 66,
+            },
+          ],
+        },
+        {
+          id: "rosa",
+          title: "Rosa — East Scarp Side Story",
+          mod: "East Scarp",
+          note: "Use Rosa as your one active East Scarp side story instead of trying to befriend the whole town.",
+          steps: [
+            {
+              id: "intro",
+              label: "Meet Rosa at the East Scarp Inn",
+              how: "Inn, any time, any season, any weather.",
+              bucket: "now",
+              priority: 64,
+            },
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with Rosa and see her Inn event",
+              how: "Scarp Inn, 4–8 PM, any season/weather.",
+              bucket: "now",
+              priority: 64,
+            },
+            {
+              id: "three-hearts",
+              label: "See Rosa's 3-heart event",
+              how: "East Scarp, 10 AM–4 PM, sunny, on Monday/Thursday/Saturday/Sunday.",
+              bucket: "now",
+              priority: 63,
+            },
+            {
+              id: "four-hearts",
+              label: "See Rosa's 4-heart event",
+              how: "Saloon, noon–6 PM, any season/weather, after her 2-heart event.",
+              bucket: "now",
+              priority: 63,
+            },
+            {
+              id: "six-hearts",
+              label: "See Rosa's 6-heart event",
+              how: "Scarp Inn, any time/season/weather, after her 3-heart event.",
+              bucket: "now",
+              priority: 62,
+            },
+            {
+              id: "seven-hearts",
+              label: "See Rosa's rainy 7-heart event",
+              how: "Scarp Inn, 5–8 PM, rain, any season.",
+              bucket: "now",
+              priority: 62,
+            },
+            {
+              id: "eight-hearts",
+              label: "See Rosa's 8-heart event",
+              how: "Museum, 10 AM–4 PM, sunny, any season.",
+              bucket: "now",
+              priority: 61,
+            },
+          ],
+        },
+        {
+          id: "ridgeside-side",
+          title: "One Ridgeside Side Story",
+          mod: "Ridgeside Village",
+          note: "Pick only one resident at a time. Ian, Jeric, Philip, and Ysabelle all have early friendship events that are not locked to a future season.",
+          steps: [
+            {
+              id: "pick",
+              label: "Pick one Ridgeside resident: Ian, Jeric, Philip, or Ysabelle",
+              bucket: "now",
+              priority: 48,
+            },
+            {
+              id: "two-hearts",
+              label: "Reach 2 hearts with that resident and see their event",
+              how: "Most of these 2-heart events work in any season; Ian's requires a sunny non-Winter morning.",
+              bucket: "now",
+              priority: 48,
+            },
+            {
+              id: "continue",
+              label: "Continue that resident's next heart event when convenient",
+              bucket: "now",
+              priority: 46,
+            },
+          ],
+        },
+        {
+          id: "eyvind",
+          title: "Eyvind Introduction",
+          mod: "East Scarp",
+          note: "This one really is date-gated.",
+          steps: [
+            {
+              id: "intro",
+              label: "Trigger Eyvind's late-night introduction",
+              how: "East Scarp, 11:50 PM–2 AM, not Winter, after 22 days in game.",
+              bucket: "now",
+              priority: 44,
+              gate: { minTotalDay: 23, seasons: ["Spring", "Summer", "Fall"] },
+              unlock: "After 22 days in game",
+            },
+          ],
+        },
+      ],
+    },
     guide: {
       events: [
         "A heart event plays when you walk into its location during its time window, on a day that fits its weather, with enough hearts and the earlier event already seen.",
@@ -665,7 +1132,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "The Preparations",
-            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 25 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
+            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 50 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
             note: "Do these naturally instead of trying to finish everything in one day.",
             items: [
               "Find the quest’s required cursed artifacts",
