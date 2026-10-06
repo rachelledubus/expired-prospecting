@@ -30,7 +30,7 @@ export function lookupLinks(query: string): LookupLink[] {
   return [
     { label: "Ridgeside wiki", url: `https://ridgesidevillage.wiki.gg/wiki/Special:Search?search=${q}` },
     { label: "East Scarp wiki", url: `https://eastscarp.wiki.gg/wiki/Special:Search?search=${q}` },
-    { label: "Stardew Valley Expanded wiki", url: `https://stardewvalleyexpanded.fandom.com/wiki/Special:Search?query=${q}` },
+    { label: "Stardew Valley Expanded wiki", url: `https://stardew-valley-expanded.fandom.com/wiki/Special:Search?query=${q}` },
     { label: "Search the web", url: `https://duckduckgo.com/?q=${encodeURIComponent(`stardew valley ${query}`)}` },
   ];
 }
