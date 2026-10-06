@@ -49,6 +49,10 @@ the top of the page.
   That choice is saved with the rest of the progress.
 - **Copy what's left** copies the unchecked items on the open tab, grouped by room and bundle.
 - Standard bundles only. Remixed bundles use different items.
+- Every item except the Vault payments has a grey line saying where to get it: forage locations and seasons, fish
+  location, weather and time, crab pot water type, Mines floors for ores and monster drops, seed prices at Pierre's, and
+  the machine, skill level or building that makes it. It is the `note` on the item in `lib/games-data.ts`. The facts come
+  from the Stardew Valley wiki (base game, 1.6). A mod can change a spot, so check in game if one does not match.
 
 ## How the Stardew page is laid out
 
