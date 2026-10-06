@@ -56,7 +56,10 @@ the top of the page.
   step to do. The rest of that storyline sits behind a "Rest of this storyline" fold. Rows are grouped by what the next
   step needs: do before a window closes, available now, work toward, and waiting on (folded). Finished storylines are
   folded at the bottom. Which group a row lands in comes from the "Current save" date.
-- The **Long-term roadmap** is folded and labelled "not a gate". It repeats nothing that is tracked in the storylines:
+- The **Long-term roadmap** is one list of nine stages named for what you are doing (Getting started, Mines and farm
+  basics, and so on), not for a season or year. A stage's `when` is a readiness cue, never a date. Season or date limits
+  go on the one item that needs them, as a `how` line. Community Center items are not part of it: the Community
+  Center tab is the guide for those. The roadmap is folded and labelled "not a gate". It repeats nothing that is tracked in the storylines:
   `hidden: [...]` on a roadmap group lists items that stay in the data and in saved progress (so no keys change) but are
   not shown there, and the phase notes how many are hidden. If you add a storyline step that duplicates a roadmap item,
   add that item to `hidden` instead of deleting it.

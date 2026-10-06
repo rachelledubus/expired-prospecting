@@ -469,10 +469,10 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Follow whichever storyline is actually available. The calendar roadmap is a guide, not a rule.",
+      text: "Follow whichever storyline is actually available. The roadmap is a guide, not a rule.",
       notLabel: "You do NOT need to:",
       not: [
-        "Treat the calendar roadmap like a hard gate",
+        "Treat the roadmap like a hard gate",
         "Befriend everyone",
         "Visit every region every week",
         "Clear your entire quest journal",
@@ -928,11 +928,12 @@ export const GAMES: Game[] = [
     phases: [
       {
         id: "p1",
-        title: "Right Now",
-        when: "Spring 10 to 19, Year 1",
+        title: "Getting started",
+        when: "Start here",
         groups: [
           {
             label: "Main Progression",
+            hidden: ["Check which Spring bundle items I still need"],
             how: {"Unlock the Community Center": "Walk into Pelican Town from the Bus Stop on a day it is not raining, from Spring 5, between 8 AM and 1 PM. Lewis opens it in a cutscene."},
             items: [
               "Unlock the Community Center",
@@ -960,7 +961,7 @@ export const GAMES: Game[] = [
           {
             label: "Ridgeside Village",
             hidden: ["Find Yuuma"],
-            how: {"Take the cable car to Ridgeside": "The cable car is northeast of the Bus Stop and is always open.", "Talk to Yuuma at least once": "The minecart quest in Late Spring will not start until you have done this."},
+            how: {"Take the cable car to Ridgeside": "The cable car is northeast of the Bus Stop and is always open.", "Talk to Yuuma at least once": "The minecart quest will not start until you have done this."},
             items: [
               "Take the cable car to Ridgeside",
               "Find Yuuma",
@@ -992,9 +993,8 @@ export const GAMES: Game[] = [
       },
       {
         id: "p2",
-        title: "Late Spring",
-        when: "Spring 20 to 28",
-        callout: { lead: "", text: "Unlock this section after reaching Spring 20." },
+        title: "Mines and farm basics",
+        when: "After the intro visits",
         groups: [
           {
             label: "Ridgeside Transportation Quest",
@@ -1048,8 +1048,8 @@ export const GAMES: Game[] = [
       },
       {
         id: "p3",
-        title: "Early Summer",
-        when: "Summer 1 to 14",
+        title: "Finish the regular Mines",
+        when: "After Floor 80",
         callout: { lead: "Main goal:", text: "Finish the regular Mines." },
         groups: [
           {
@@ -1105,8 +1105,8 @@ export const GAMES: Game[] = [
       },
       {
         id: "p4",
-        title: "Late Summer",
-        when: "Summer 15 to 28",
+        title: "Ridgeside main story opens",
+        when: "After the regular Mines",
         groups: [
           {
             label: "Farm Infrastructure",
@@ -1162,8 +1162,8 @@ export const GAMES: Game[] = [
       },
       {
         id: "p5",
-        title: "Fall, Year 1",
-        when: "Adventure Season",
+        title: "Adventure and campaigns",
+        when: "Once the farm runs without daily upkeep",
         callout: {
           lead: "",
           text: "Your farm should now be stable enough that you don’t have to spend every day maintaining it.",
@@ -1226,9 +1226,9 @@ export const GAMES: Game[] = [
       },
       {
         id: "p6",
-        title: "Winter, Year 1",
-        when: "Quest Season",
-        callout: { lead: "", text: "Winter is for story content." },
+        title: "Story content",
+        when: "Once the campaigns are underway",
+        callout: { lead: "", text: "This stage is for story content." },
         groups: [
           {
             label: "Ridgeside",
@@ -1293,8 +1293,8 @@ export const GAMES: Game[] = [
       },
       {
         id: "p7",
-        title: "Year 2",
-        when: "Expansion Era",
+        title: "Big mod projects",
+        when: "Once the story content is done",
         callout: { lead: "", text: "Now you’re allowed to start chasing the giant mod projects." },
         groups: [
           {
@@ -1385,7 +1385,7 @@ export const GAMES: Game[] = [
       },
       {
         id: "p9",
-        title: "Completionist Era",
+        title: "Completionist",
         when: "Only when I actually want completionism",
         groups: [
           {
