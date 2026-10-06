@@ -166,7 +166,7 @@
 }
 
 /* Wiki lookup */
-.tp.gm .gm-lookup { margin: 0 0 16px; }
+.tp.gm .gm-lookup { margin: 16px 0 16px; }
 .tp.gm .gm-lookup-form { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
 .tp.gm .gm-lookup-form .gm-input { flex: 1 1 auto; }
 .tp.gm .gm-lookup-form .gm-pill:disabled { opacity: .5; cursor: default; }
