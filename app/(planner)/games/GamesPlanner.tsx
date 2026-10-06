@@ -9,7 +9,6 @@ import {
   fieldKey,
   isBundleGame,
   itemKey,
-  objKey,
   questKey,
   saveKey,
   seasonKey,
@@ -172,6 +171,16 @@ function parseGameDate(value: string): ParsedGameDate | null {
   return { season, day, year, totalDay: (year - 1) * 112 + seasonIndex * 28 + day };
 }
 
+const SEASON_NAMES = ["Spring", "Summer", "Fall", "Winter"] as const;
+
+const formatGameDate = (season: string, day: number, year: number) => `${season} ${day}, Year ${year}`;
+
+/** The date a number of days later (or earlier). Never goes before Spring 1, Year 1. */
+function shiftGameDate(d: ParsedGameDate, days: number): string {
+  const t = Math.max(0, d.totalDay - 1 + days);
+  return formatGameDate(SEASON_NAMES[Math.floor((t % 112) / 28)], (t % 28) + 1, Math.floor(t / 112) + 1);
+}
+
 function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
   if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
   return questKey(game.id, story.id, step.id);
@@ -184,9 +193,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     () => game.phases.map((p) => ({ phase: p, ...phaseCounts(game, p, prog) })),
     [game, prog],
   );
-  const current = game.questBoard ? null : (stats.find((s) => s.done < s.total)?.phase ?? null);
   const questStats = useMemo(() => {
-    if (!game.questBoard) return { done: 0, total: 0 };
     let qDone = 0;
     let qTotal = 0;
     for (const story of game.questBoard.storylines) {
@@ -197,44 +204,20 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     }
     return { done: qDone, total: qTotal };
   }, [game, prog]);
-  const phaseTotal = stats.reduce((n, s) => n + s.total, 0);
-  const phaseDone = stats.reduce((n, s) => n + s.done, 0);
-  const total = game.questBoard ? questStats.total : phaseTotal;
-  const done = game.questBoard ? questStats.done : phaseDone;
+  const total = questStats.total;
+  const done = questStats.done;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  // When the current phase changes, drop manual open/close choices so the new current one opens and the finished one closes.
-  const curKey = `${game.id}:${current?.id ?? ""}`;
-  const prevCur = useRef(curKey);
-  useEffect(() => {
-    if (prevCur.current === curKey) return;
-    const before = prevCur.current;
-    prevCur.current = curKey;
-    setOpen((o) => {
-      const n = { ...o };
-      delete n[before];
-      delete n[curKey];
-      return n;
-    });
-  }, [curKey]);
-
-  const isOpen = (p: GamePhase) => {
-    const key = `${game.id}:${p.id}`;
-    return key in open ? open[key] : current?.id === p.id;
-  };
+  // Roadmap stages start folded; tapping one opens it.
+  const isOpen = (p: GamePhase) => !!open[`${game.id}:${p.id}`];
   const toggle = (p: GamePhase) => setOpen((o) => ({ ...o, [`${game.id}:${p.id}`]: !isOpen(p) }));
-
-  const jumpToCurrent = () => {
-    if (!current) return;
-    setOpen((o) => ({ ...o, [`${game.id}:${current.id}`]: true }));
-    document.getElementById(`gm-${game.id}-${current.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
+  // The pickers show the saved date, or the starting date when the saved text is not a date they understand.
+  const shownDate = gameDate ?? parseGameDate(game.saveDefault) ?? { season: "Spring", day: 1, year: 1, totalDay: 1 };
 
   const questRows = useMemo(() => {
-    if (!game.questBoard) return [];
     const storyById = new Map(game.questBoard.storylines.map((story) => [story.id, story]));
     const isRefDone = (ref: string) => {
       const split = ref.indexOf(":");
@@ -323,13 +306,12 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
 
   const roadmapCards = stats.map(({ phase, done: d, total: t, hidden: hiddenN }, idx) => {
         const isDone = d === t;
-        const isCur = !game.questBoard && current?.id === phase.id;
         const expanded = isOpen(phase);
         return (
           <section
             key={phase.id}
             id={`gm-${game.id}-${phase.id}`}
-            className={"gm-phase" + (isDone ? " done" : isCur ? " current" : " later") + (expanded ? " open" : "")}
+            className={"gm-phase" + (isDone ? " done" : " later") + (expanded ? " open" : "")}
           >
             <button type="button" className="gm-head" aria-expanded={expanded} onClick={() => toggle(phase)}>
               <span className="gm-badge">{isDone ? "✓" : idx + 1}</span>
@@ -341,7 +323,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
                 <b>
                   {d}/{t}
                 </b>
-                {(isDone || !game.questBoard) && <em>{isDone ? "Done" : isCur ? "Current" : "Later"}</em>}
+                {isDone && <em>Done</em>}
               </span>
               <i className="gm-chev" aria-hidden="true" />
             </button>
@@ -415,17 +397,46 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     <>
       <p className="gm-mods">{game.mods}</p>
       <div className="gm-field-row">
-        <label className="gm-lbl" htmlFor="gm-save">
+        <span className="gm-lbl" id="gm-save-lbl">
           {game.saveLabel}
-        </label>
-        <input
-          id="gm-save"
-          className="gm-input"
-          type="text"
-          maxLength={200}
-          value={saveVal}
-          onChange={(e) => setField(saveKey(game.id), e.target.value)}
-        />
+        </span>
+        <div className="gm-date" role="group" aria-labelledby="gm-save-lbl">
+          <select
+            aria-label="Season"
+            className="gm-input gm-sel"
+            value={shownDate.season}
+            onChange={(e) => setField(saveKey(game.id), formatGameDate(e.target.value, shownDate.day, shownDate.year))}
+          >
+            {SEASON_NAMES.map((n) => (
+              <option key={n}>{n}</option>
+            ))}
+          </select>
+          <select
+            aria-label="Day"
+            className="gm-input gm-sel"
+            value={shownDate.day}
+            onChange={(e) => setField(saveKey(game.id), formatGameDate(shownDate.season, Number(e.target.value), shownDate.year))}
+          >
+            {Array.from({ length: 28 }, (_, i) => i + 1).map((n) => (
+              <option key={n}>{n}</option>
+            ))}
+          </select>
+          <select
+            aria-label="Year"
+            className="gm-input gm-sel"
+            value={shownDate.year}
+            onChange={(e) => setField(saveKey(game.id), formatGameDate(shownDate.season, shownDate.day, Number(e.target.value)))}
+          >
+            {Array.from({ length: Math.max(6, shownDate.year + 1) }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                Year {n}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="gm-pill" onClick={() => setField(saveKey(game.id), shiftGameDate(shownDate, 1))}>
+            Next day
+          </button>
+        </div>
       </div>
       <div className="gm-bar" aria-hidden="true">
         <i style={{ width: `${pct}%` }} />
@@ -450,11 +461,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </details>
       </div>
 
-      {game.questBoard ? (
-        <>
+      <>
           {!gameDate && (
             <div className="gm-callout warn">
-              <b>Date not recognized.</b> Use a format like “Spring 10, Year 1” in Current save so calendar gates can update automatically.
+              <b>Date not recognized.</b> Pick a season, day and year above so the board knows what is available.
             </div>
           )}
           {questRows.length === 0 && <p className="gm-note">No storyline steps are left right now.</p>}
@@ -486,36 +496,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
               </ul>
             </details>
           )}
-        </>
-      ) : (
-        <>
-          <div className="label">My current objectives</div>
-          <div className="gm-card">
-            <p className="gm-small">Whenever I load the game, I start with this card.</p>
-            <div className="gm-cur">
-              <span className="gm-small">Current phase:</span>
-              <b>{current ? `${current.title} (${current.when})` : "All phases done"}</b>
-              {current && (
-                <button type="button" className="gm-pill" onClick={jumpToCurrent}>
-                  Open it
-                </button>
-              )}
-            </div>
-            <div className="gm-sublabel">Next 5 things</div>
-            {game.objectives.next.map((t) => {
-              const key = objKey(game.id, t);
-              return <Check key={t} label={t} checked={!!prog.checks[key]} onChange={(v) => setCheck(key, v)} />;
-            })}
-            <div className="gm-after">
-              <div className="gm-sublabel">After those are done</div>
-              <ul className="gm-ul">
-                {game.objectives.after.map((t) => <li key={t}>{t}</li>)}
-              </ul>
-              <p className="gm-small">{game.objectives.closing}</p>
-            </div>
-          </div>
-        </>
-      )}
+      </>
 
       <details className="gm-card gm-fold-card">
         <summary>How events trigger, and what to do with a finished day</summary>
@@ -532,17 +513,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </ul>
       </details>
 
-      {game.questBoard ? (
-        <details className="gm-roadmap">
-          <summary>Long-term roadmap · not a gate</summary>
-          {roadmapCards}
-        </details>
-      ) : (
-        <>
-          <div className="label">Phases</div>
-          {roadmapCards}
-        </>
-      )}
+      <details className="gm-roadmap">
+        <summary>Long-term roadmap · not a gate</summary>
+        {roadmapCards}
+      </details>
     </>
   );
 }
@@ -600,6 +574,62 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
     return lines.join("\n");
   };
 
+  const openBundles = visible.filter((b) => !complete(b));
+  const doneBundles = visible.filter(complete);
+
+  const renderBundle = (b: Bundle) => {
+    const d = doneCount(b);
+    const isDone = d >= b.need;
+    const expanded = !isDone || !!shown[b.id];
+    const needText = b.need === b.items.length ? `All ${b.need} needed` : `Any ${b.need} of ${b.items.length}`;
+    const head = (
+      <>
+        <span className="gm-bh-top">
+          <span className="gm-room-label">{b.room}</span>
+          <span className={"gm-bcount" + (isDone ? " done" : "")}>{isDone ? "Complete" : `${d} of ${b.need}`}</span>
+        </span>
+        <span className="gm-bname">{b.name}</span>
+        <span className="gm-bneed">{needText}</span>
+      </>
+    );
+    return (
+      <section key={b.id} className={"gm-bundle" + (isDone ? " done" : "")}>
+        {isDone ? (
+          <button
+            type="button"
+            className="gm-bh"
+            aria-expanded={expanded}
+            onClick={() => setShown((s) => ({ ...s, [b.id]: !s[b.id] }))}
+          >
+            {head}
+          </button>
+        ) : (
+          <div className="gm-bh static">{head}</div>
+        )}
+        {expanded && (
+          <div className="gm-bitems">
+            {b.items
+              .filter((i) => inView(i, view))
+              .map((i) => {
+                const others = i.seasons === "any" ? [] : i.seasons.filter((s) => s !== view);
+                const sub = [others.length ? `Also in ${others.join(", ")}` : "", i.note ?? ""].filter(Boolean).join(". ");
+                return (
+                  <Check
+                    key={i.id ?? i.name}
+                    label={itemLabel(i)}
+                    sub={sub || undefined}
+                    checked={!!prog.checks[key(b, i)]}
+                    onChange={(v) => setCheck(key(b, i), v)}
+                  />
+                );
+              })}
+          </div>
+        )}
+      </section>
+    );
+  };
+
+
   return (
     <>
       <p className="gm-mods">{game.mods}</p>
@@ -651,57 +681,13 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
       </div>
 
       {visible.length === 0 && <p className="gm-note">Nothing to gather here.</p>}
-      {visible.map((b) => {
-        const d = doneCount(b);
-        const isDone = d >= b.need;
-        const expanded = !isDone || !!shown[b.id];
-        const needText = b.need === b.items.length ? `All ${b.need} needed` : `Any ${b.need} of ${b.items.length}`;
-        const head = (
-          <>
-            <span className="gm-bh-top">
-              <span className="gm-room-label">{b.room}</span>
-              <span className={"gm-bcount" + (isDone ? " done" : "")}>{isDone ? "Complete" : `${d} of ${b.need}`}</span>
-            </span>
-            <span className="gm-bname">{b.name}</span>
-            <span className="gm-bneed">{needText}</span>
-          </>
-        );
-        return (
-          <section key={b.id} className={"gm-bundle" + (isDone ? " done" : "")}>
-            {isDone ? (
-              <button
-                type="button"
-                className="gm-bh"
-                aria-expanded={expanded}
-                onClick={() => setShown((s) => ({ ...s, [b.id]: !s[b.id] }))}
-              >
-                {head}
-              </button>
-            ) : (
-              <div className="gm-bh static">{head}</div>
-            )}
-            {expanded && (
-              <div className="gm-bitems">
-                {b.items
-                  .filter((i) => inView(i, view))
-                  .map((i) => {
-                    const others = i.seasons === "any" ? [] : i.seasons.filter((s) => s !== view);
-                    const sub = [others.length ? `Also in ${others.join(", ")}` : "", i.note ?? ""].filter(Boolean).join(". ");
-                    return (
-                      <Check
-                        key={i.id ?? i.name}
-                        label={itemLabel(i)}
-                        sub={sub || undefined}
-                        checked={!!prog.checks[key(b, i)]}
-                        onChange={(v) => setCheck(key(b, i), v)}
-                      />
-                    );
-                  })}
-              </div>
-            )}
-          </section>
-        );
-      })}
+      {openBundles.map(renderBundle)}
+      {doneBundles.length > 0 && (
+        <details className="gm-fold gm-done-bundles">
+          <summary>Completed bundles · {doneBundles.length}</summary>
+          {doneBundles.map(renderBundle)}
+        </details>
+      )}
 
       <div className="gm-foot-actions">
         <CopyButton getText={remainingText} />

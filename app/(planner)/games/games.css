@@ -17,6 +17,8 @@
 .tp.gm .gm-input { flex: 1 1 180px; min-width: 0; font: 500 16px "Source Sans 3", system-ui, sans-serif; color: var(--ink);
   background: var(--sand); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 44px; }
 .tp.gm .gm-input:focus { outline: 2px solid var(--sage); outline-offset: 1px; }
+.tp.gm .gm-date { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 260px; }
+.tp.gm .gm-sel { flex: 0 1 auto; min-width: 0; padding-right: 8px; }
 
 .tp.gm .gm-bar { height: 10px; background: #EDE7DB; border-radius: 99px; overflow: hidden; }
 .tp.gm .gm-bar.thin { height: 6px; margin: 0 0 14px; }
@@ -116,6 +118,8 @@
 .tp.gm .gm-fold { margin-top: 4px; }
 .tp.gm .gm-fold-card { margin: 0 0 12px; padding-top: 10px; padding-bottom: 10px; }
 .tp.gm .gm-fold-card[open] summary { margin-bottom: 4px; }
+.tp.gm .gm-done-bundles { margin: 14px 0 8px; }
+.tp.gm .gm-done-bundles > summary { margin-bottom: 8px; }
 .tp.gm .gm-roadmap { margin: 18px 0 12px; }
 .tp.gm .gm-roadmap > summary { margin-bottom: 10px; }
 

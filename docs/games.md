@@ -8,8 +8,8 @@ the top of the page.
 
 ## How it behaves
 
-- Only the first phase with unchecked boxes is open. When it is finished, the next phase opens and the finished one collapses.
-- Each phase has a **Copy what's left** button that copies its unchecked boxes as text.
+- On the Stardew page the quest board is the main view. The roadmap stages are folded, and each has a **Copy what's left**
+  button that copies its unchecked boxes as text.
 - Progress is saved in Netlify Blobs (store name `game-progress`), so every device shows the same boxes.
   Nothing is saved to Notion.
 - It is one site-wide store with strong consistency, shared by every deploy, so deploying never resets progress.
@@ -28,7 +28,7 @@ the top of the page.
 
 - Under many items there is a short grey line saying how to trigger it: hearts, place, time, weather, and what has to
   happen first. It hides once you tick the box. Add one by putting `how: { "exact item text": "line" }` on the group.
-- A collapsed **How events trigger, and what to do with a finished day** card sits under the objectives. It holds the
+- A collapsed **How events trigger, and what to do with a finished day** card sits under the quest board. It holds the
   event-trigger rules and the safe-to-do-early list (gifting, bed, what to leave alone). The text lives in `guide` on
   the game (`guide.events`, `guide.early`). There is no per-phase "Done early" block any more.
 - The lines come from the Stardew Valley wiki, the Ridgeside Village wiki, and the East Scarp wiki (which also covers
@@ -43,8 +43,9 @@ the top of the page.
   with the room and bundle shown on every item. A badge on the tab shows how many items are left to gather there.
 - An item that works in several seasons appears under each one, with an "Also in..." line. Ticking it in one place ticks
   it everywhere, because it is one box.
-- A bundle shows how many you need ("Any 5 of 9"). Once you have enough, it shows Complete and collapses, and its
-  leftover items stop counting toward the tab numbers.
+- A bundle shows how many you need ("Any 5 of 9"). Once you have enough, it moves into a folded **Completed bundles**
+  section at the bottom of the tab, and its leftover items stop counting toward the tab numbers. Untick an item and
+  the bundle comes back out.
 - The **NOW** badge marks the season it is in game. Open another season and tap "It is ... in game now" to move it.
   That choice is saved with the rest of the progress.
 - **Copy what's left** copies the unchecked items on the open tab, grouped by room and bundle.
@@ -59,7 +60,8 @@ the top of the page.
 - **My Current Objectives** shows each storyline once, as one row: its name, a count (for example 2/4), and the next
   step to do. The rest of that storyline sits behind a "Rest of this storyline" fold. Rows are grouped by what the next
   step needs: do before a window closes, available now, work toward, and waiting on (folded). Finished storylines are
-  folded at the bottom. Which group a row lands in comes from the "Current save" date.
+  folded at the bottom. Which group a row lands in comes from the "Current save" date, which you set with the season, day and year pickers.
+  **Next day** moves it forward one day (rolling over seasons and years). The date is saved as text like "Spring 10, Year 1".
 - The **Long-term roadmap** is one list of nine stages named for what you are doing (Getting started, Mines and farm
   basics, and so on), not for a season or year. A stage's `when` is a readiness cue, never a date. Season or date limits
   go on the one item that needs them, as a `how` line. Community Center items are not part of it: the Community

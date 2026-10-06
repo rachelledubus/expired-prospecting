@@ -69,9 +69,8 @@ export type ChecklistGame = {
   saveLabel: string;
   saveDefault: string;
   rule: { text: string; notLabel: string; not: string[] };
-  objectives: { next: string[]; after: string[]; closing: string };
-  /** Live, non-linear quest board. When present, this replaces calendar phases as the primary play direction. */
-  questBoard?: GameQuestBoard;
+  /** Live, non-linear quest board: the main play direction. The phases below are only a folded long-term roadmap. */
+  questBoard: GameQuestBoard;
   /** General how-tos shown on the page: how events trigger, and what to do with a finished day. */
   guide: { events: string[]; early: string[] };
   phases: GamePhase[];
@@ -131,7 +130,6 @@ export const emptyProgress = (): GameProgress => ({ checks: {}, fields: {} });
 
 export const itemKey = (gameId: string, phaseId: string, groupLabel: string, text: string) =>
   [gameId, phaseId, groupLabel, text].join("|");
-export const objKey = (gameId: string, text: string) => `${gameId}|obj|${text}`;
 export const questKey = (gameId: string, storylineId: string, stepId: string) =>
   [gameId, "quest", storylineId, stepId].join("|");
 export const fieldKey = (gameId: string, phaseId: string, name: string) => `${gameId}|${phaseId}|field|${name}`;
@@ -150,8 +148,7 @@ export function knownCheckKeys(game: Game): Set<string> {
     game.bundles.forEach((b) => b.items.forEach((i) => keys.add(bundleItemKey(game.id, b.id, i))));
     return keys;
   }
-  game.objectives.next.forEach((t) => keys.add(objKey(game.id, t)));
-  game.questBoard?.storylines.forEach((story) =>
+  game.questBoard.storylines.forEach((story) =>
     story.steps.forEach((step) => {
       if (!step.legacy) keys.add(questKey(game.id, story.id, step.id));
     }),
@@ -481,17 +478,6 @@ export const GAMES: Game[] = [
         "Optimize every day",
       ],
     },
-    objectives: {
-      next: [
-        "Talk to Yuuma",
-        "Meet Mateo",
-        "Talk to/gift Marlon",
-        "Reach Mine Floor 40",
-        "Work on Spring Community Center items",
-      ],
-      after: ["Keep mining.", "Keep befriending Marlon.", "Wait for Spring 20."],
-      closing: "I do not need to worry about anything else yet.",
-    },
     questBoard: {
       storylines: [
         {
@@ -774,8 +760,8 @@ export const GAMES: Game[] = [
             },
             {
               id: "mistbloom",
-              label: "Collect 50 Mountain Mistbloom and the four required relics",
-              how: "Current Ridgeside quest requirement: 50 Mountain Mistbloom plus Silver Fish Bones, Hollowed Bear, Entombed Ring, and Shell Bracelet.",
+              label: "Collect 25 Mountain Mistbloom and the nine required relics",
+              how: "The Preparations asks for 25 Mountain Mistbloom plus nine relics. The red book in the Ninja House describes the relics.",
               bucket: "toward",
               priority: 80,
             },
@@ -935,11 +921,9 @@ export const GAMES: Game[] = [
         groups: [
           {
             label: "Main Progression",
-            hidden: ["Check which Spring bundle items I still need"],
             how: {"Unlock the Community Center": "Walk into Pelican Town from the Bus Stop on a day it is not raining, from Spring 5, between 8 AM and 1 PM. Lewis opens it in a cutscene."},
             items: [
               "Unlock the Community Center",
-              "Check which Spring bundle items I still need",
               "Buy the first backpack upgrade",
               "Reach Mine Floor 20",
               "Reach Mine Floor 40",
@@ -1091,18 +1075,6 @@ export const GAMES: Game[] = [
             ],
             after: "Do not look up every future S&S character. Let the storyline introduce them.",
           },
-          {
-            label: "Community Center",
-            hidden: ["Complete Spring Crops Bundle", "Complete Summer Crops Bundle", "Complete Spring Foraging Bundle", "Complete Summer Foraging Bundle", "Complete Construction Bundle", "Make progress on Boiler Room bundles"],
-            items: [
-              "Complete Spring Crops Bundle",
-              "Complete Summer Crops Bundle",
-              "Complete Spring Foraging Bundle",
-              "Complete Summer Foraging Bundle",
-              "Complete Construction Bundle",
-              "Make progress on Boiler Room bundles",
-            ],
-          },
         ],
       },
       {
@@ -1138,7 +1110,7 @@ export const GAMES: Game[] = [
           {
             label: "The Preparations",
             hidden: ["Find the quest’s required cursed artifacts", "Collect required special forage/items"],
-            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 50 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
+            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 25 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
             note: "Do these naturally instead of trying to finish everything in one day.",
             items: [
               "Find the quest’s required cursed artifacts",
@@ -1209,19 +1181,6 @@ export const GAMES: Game[] = [
               "Obtain an Iridium Bar",
               "Begin collecting Iridium",
               "Work toward the Galaxy Sword",
-            ],
-          },
-          {
-            label: "Community Center",
-            hidden: ["Finish Fall Crops", "Finish Fall Foraging", "Finish Boiler Room", "Finish Vault", "Finish Pantry or get very close", "Check remaining Fish Tank items", "Check remaining Bulletin Board items"],
-            items: [
-              "Finish Fall Crops",
-              "Finish Fall Foraging",
-              "Finish Boiler Room",
-              "Finish Vault",
-              "Finish Pantry or get very close",
-              "Check remaining Fish Tank items",
-              "Check remaining Bulletin Board items",
             ],
           },
         ],
