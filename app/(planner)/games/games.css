@@ -164,3 +164,19 @@
 @media (prefers-reduced-motion: reduce) {
   .tp.gm .gm-bar > i, .tp.gm .gm-chev, .tp.gm .gm-box, .tp.gm .gm-box::after { transition: none; }
 }
+
+/* Wiki lookup */
+.tp.gm .gm-lookup { margin: 0 0 16px; }
+.tp.gm .gm-lookup-form { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
+.tp.gm .gm-lookup-form .gm-input { flex: 1 1 auto; }
+.tp.gm .gm-lookup-form .gm-pill:disabled { opacity: .5; cursor: default; }
+.tp.gm .gm-results { margin: 0 0 8px; }
+.tp.gm .gm-hit { margin: 0 0 12px; }
+.tp.gm .gm-hit-title { margin: 0 0 8px; font: 700 18px "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-facts { margin: 0 0 10px; display: grid; gap: 8px; }
+.tp.gm .gm-facts div { display: grid; grid-template-columns: 72px 1fr; gap: 10px; align-items: baseline; }
+.tp.gm .gm-facts dt { font: 700 11px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
+.tp.gm .gm-facts dd { margin: 0; font-weight: 600; color: var(--ink); }
+.tp.gm .gm-hit-text { margin: 0 0 8px; color: var(--muted); }
+.tp.gm .gm-hit-link, .tp.gm .gm-lookup-links a { color: var(--navy); font-weight: 600; text-underline-offset: 3px; }
+.tp.gm .gm-lookup-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0 0; font-size: 14px; }

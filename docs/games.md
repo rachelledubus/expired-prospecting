@@ -72,6 +72,20 @@ the top of the page.
 - Storylines are in `questBoard.storylines` in `lib/games-data.ts`. A step with `legacy` shares its box with the roadmap
   item of that text, so ticking it in either place stays in sync.
 
+## Item lookup (search box on the Games page)
+
+- Type an item, fish or crop and it shows where to get it, the season, the time and the weather, with a link to the page.
+  It is at the top of both trackers and works the same on each.
+- It reads the **Stardew Valley wiki** (base game) live when you press Look up: `GET /api/games/lookup?q=...`, in
+  `lib/wiki-lookup.ts`. The route sits behind the portal login. It uses the wiki's own search, then takes the infobox
+  (Where, Season, Time, Weather, Seeds, Grows in) and the first lines of the page, with the wiki markup stripped. It does
+  not summarize or guess, so every line is the wiki's own words.
+- The server only ever fetches `stardewvalleywiki.com`. The mod wikis (Ridgeside, East Scarp, Stardew Valley Expanded) do
+  not allow automated reading, so the page shows links that open each wiki's own search instead. Add a new mod wiki link
+  in `lookupLinks`.
+- Results are cached for a day. If the wiki is down or slow, the page says so and shows the links.
+- Mods can change a spot, so treat it as the base game answer.
+
 ## Add another game
 
 1. Open `lib/games-data.ts`.

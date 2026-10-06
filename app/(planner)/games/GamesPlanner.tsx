@@ -24,6 +24,7 @@ import {
   type GameStoryline,
   type Season,
 } from "@/lib/games-data";
+import Lookup from "./Lookup";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
 
@@ -880,6 +881,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               ))}
             </div>
           )}
+
+          <Lookup />
 
           {isBundleGame(game) ? (
             <BundleView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
