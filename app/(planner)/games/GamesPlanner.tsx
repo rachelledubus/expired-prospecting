@@ -20,6 +20,7 @@ import {
   type GamePhase,
   type GameProgress,
   type GameProgressPatch,
+  type GameQuestBucket,
   type GameQuestStep,
   type GameStoryline,
   type Season,
@@ -108,22 +109,49 @@ type ViewProps<G> = {
 
 /* ---------- Phase checklist (Stardew Mega-Mod) ---------- */
 
+const boardKeyCache = new WeakMap<ChecklistGame, Set<string>>();
+
+/** Roadmap boxes that a quest board step already uses. They live on the board, so the roadmap does not repeat them. */
+function boardKeys(game: ChecklistGame): Set<string> {
+  let keys = boardKeyCache.get(game);
+  if (!keys) {
+    const found = new Set<string>();
+    game.questBoard?.storylines.forEach((story) =>
+      story.steps.forEach((step) => {
+        if (step.legacy) found.add(itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text));
+      }),
+    );
+    keys = found;
+    boardKeyCache.set(game, found);
+  }
+  return keys;
+}
+
+/** The items of a roadmap group that are shown there. */
+function roadmapItems(game: ChecklistGame, phase: GamePhase, g: GamePhase["groups"][number]): string[] {
+  const onBoard = boardKeys(game);
+  return g.items.filter((t) => !g.hidden?.includes(t) && !onBoard.has(itemKey(game.id, phase.id, g.label, t)));
+}
+
 function phaseCounts(game: ChecklistGame, phase: GamePhase, progress: GameProgress) {
   let total = 0;
   let done = 0;
+  let hidden = 0;
   for (const g of phase.groups) {
-    for (const t of g.items) {
+    const shown = roadmapItems(game, phase, g);
+    hidden += g.items.length - shown.length;
+    for (const t of shown) {
       total += 1;
       if (progress.checks[itemKey(game.id, phase.id, g.label, t)]) done += 1;
     }
   }
-  return { done, total };
+  return { done, total, hidden };
 }
 
 function phaseRemainingText(game: ChecklistGame, phase: GamePhase, progress: GameProgress): string {
   const lines = [`Phase: ${phase.title} (${phase.when})`];
   for (const g of phase.groups) {
-    const left = g.items.filter((t) => !progress.checks[itemKey(game.id, phase.id, g.label, t)]);
+    const left = roadmapItems(game, phase, g).filter((t) => !progress.checks[itemKey(game.id, phase.id, g.label, t)]);
     if (!left.length) continue;
     lines.push("", g.label);
     left.forEach((t) => lines.push(`- [ ] ${t}`));
@@ -251,47 +279,137 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       .filter((row) => row.step !== null);
   }, [game, prog, gameDate]);
 
-  const playNext = useMemo(() => {
-    const actionable = questRows
-      .filter((r) => r.bucket === "deadline" || r.bucket === "now")
-      .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0));
-    if (actionable.length >= 5) return actionable.slice(0, 5);
-    const toward = questRows
-      .filter((r) => r.bucket === "toward")
-      .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0));
-    return [...actionable, ...toward].slice(0, 5);
-  }, [questRows]);
+  const rowsFor = (bucket: GameQuestBucket) =>
+    questRows.filter((r) => r.bucket === bucket).sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0));
 
-  const renderQuestRow = (
-    row: (typeof questRows)[number],
-    compact = false,
-  ) => {
+  // One row per storyline: its next step up front, everything else in the storyline tucked underneath.
+  const renderStory = (row: (typeof questRows)[number]) => {
     if (!row.step) return null;
-    const key = questStepKey(game, row.story, row.step);
-    const status =
-      row.bucket === "deadline"
-        ? "Do before the window closes"
-        : row.bucket === "now"
-          ? "Available now"
-          : row.bucket === "toward"
-            ? "Work toward"
-            : row.reason || row.step.unlock || "Waiting";
-    const details = [row.story.mod, status, row.step.how].filter(Boolean).join(" · ");
+    const { story, step } = row;
+    const key = questStepKey(game, story, step);
+    const rest = story.steps.filter((s) => s !== step);
+    const doneInStory = story.steps.filter((s) => !!prog.checks[questStepKey(game, story, s)]).length;
+    const sub = [row.bucket === "waiting" ? row.reason : "", step.how].filter(Boolean).join(" · ");
     return (
-      <div className={"gm-quest-row " + row.bucket + (compact ? " compact" : "")} key={`${row.story.id}:${row.step.id}`}>
+      <div className={"gm-quest-row " + row.bucket} key={story.id}>
         <div className="gm-quest-context">
-          <span className="gm-quest-mod">{row.story.mod}</span>
-          <b>{row.story.title}</b>
+          <span className="gm-quest-mod">{story.mod}</span>
+          <b>{story.title}</b>
+          <em className="gm-quest-count">
+            {doneInStory}/{story.steps.length}
+          </em>
         </div>
-        <Check
-          label={row.step.label}
-          sub={details}
-          checked={!!prog.checks[key]}
-          onChange={(v) => setCheck(key, v)}
-        />
+        <Check label={step.label} sub={sub || undefined} checked={!!prog.checks[key]} onChange={(v) => setCheck(key, v)} />
+        {rest.length > 0 && (
+          <details className="gm-rest">
+            <summary>{story.steps.length > 3 ? `Rest of this storyline (${rest.length})` : `Other steps (${rest.length})`}</summary>
+            {story.note && <p className="gm-note">{story.note}</p>}
+            {rest.map((s) => {
+              const k = questStepKey(game, story, s);
+              return <Check key={s.id} label={s.label} sub={s.how || s.unlock} checked={!!prog.checks[k]} onChange={(v) => setCheck(k, v)} />;
+            })}
+          </details>
+        )}
       </div>
     );
   };
+
+  const boardGroups: { bucket: GameQuestBucket; icon: string; title: string }[] = [
+    { bucket: "deadline", icon: "⏰", title: "Do before the window closes" },
+    { bucket: "now", icon: "🟢", title: "Available now" },
+    { bucket: "toward", icon: "🟡", title: "Work toward" },
+    { bucket: "waiting", icon: "🔒", title: "Waiting on" },
+  ];
+
+  const roadmapCards = stats.map(({ phase, done: d, total: t, hidden: hiddenN }, idx) => {
+        const isDone = d === t;
+        const isCur = !game.questBoard && current?.id === phase.id;
+        const expanded = isOpen(phase);
+        return (
+          <section
+            key={phase.id}
+            id={`gm-${game.id}-${phase.id}`}
+            className={"gm-phase" + (isDone ? " done" : isCur ? " current" : " later") + (expanded ? " open" : "")}
+          >
+            <button type="button" className="gm-head" aria-expanded={expanded} onClick={() => toggle(phase)}>
+              <span className="gm-badge">{isDone ? "✓" : idx + 1}</span>
+              <span className="gm-title">
+                <b>{phase.title}</b>
+                <span>{phase.when}</span>
+              </span>
+              <span className="gm-meta">
+                <b>
+                  {d}/{t}
+                </b>
+                {(isDone || !game.questBoard) && <em>{isDone ? "Done" : isCur ? "Current" : "Later"}</em>}
+              </span>
+              <i className="gm-chev" aria-hidden="true" />
+            </button>
+
+            {expanded && (
+              <div className="gm-body">
+                <div className="gm-bar thin" aria-hidden="true">
+                  <i style={{ width: `${t ? Math.round((d / t) * 100) : 0}%` }} />
+                </div>
+                {phase.callout && (
+                  <div className="gm-callout">
+                    {phase.callout.lead && <b>{phase.callout.lead} </b>}
+                    {phase.callout.text}
+                  </div>
+                )}
+                {phase.groups.filter((g) => roadmapItems(game, phase, g).length > 0).map((g) => (
+                  <div className="gm-group" key={g.label}>
+                    <div className="gm-sublabel">{g.label}</div>
+                    {g.note && <p className="gm-note">{g.note}</p>}
+                    {g.field && (
+                      <div className="gm-field-row">
+                        <label className="gm-lbl" htmlFor={`gm-f-${phase.id}-${g.field}`}>
+                          {g.field}:
+                        </label>
+                        <input
+                          id={`gm-f-${phase.id}-${g.field}`}
+                          className="gm-input"
+                          type="text"
+                          maxLength={200}
+                          placeholder="Who did I pick?"
+                          value={prog.fields[fieldKey(game.id, phase.id, g.field)] ?? ""}
+                          onChange={(e) => setField(fieldKey(game.id, phase.id, g.field!), e.target.value)}
+                        />
+                      </div>
+                    )}
+                    {roadmapItems(game, phase, g).map((text) => {
+                      const key = itemKey(game.id, phase.id, g.label, text);
+                      const done = !!prog.checks[key];
+                      return (
+                        <Check
+                          key={text}
+                          label={text}
+                          sub={done ? undefined : g.how?.[text]}
+                          checked={done}
+                          onChange={(v) => setCheck(key, v)}
+                        />
+                      );
+                    })}
+                    {g.after && <p className="gm-note end">{g.after}</p>}
+                  </div>
+                ))}
+                {hiddenN > 0 && (
+                  <p className="gm-note">
+                    {hiddenN} more {hiddenN === 1 ? "item is" : "items are"} tracked on the quest board or the Community Center tab, so {hiddenN === 1 ? "it is" : "they are"} not repeated here.
+                  </p>
+                )}
+                {phase.footer && (
+                  <div className={"gm-callout" + (phase.footer.warn ? " warn" : "")}>
+                    <b>{phase.footer.lead} </b>
+                    {phase.footer.text}
+                  </div>
+                )}
+                <CopyButton getText={() => phaseRemainingText(game, phase, prog)} />
+              </div>
+            )}
+          </section>
+        );
+  });
 
   return (
     <>
@@ -322,114 +440,44 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       <div className="label">The rule</div>
       <div className="gm-card">
         <h2 className="gm-h2">{game.rule.text}</h2>
-        <p className="gm-small">{game.rule.notLabel}</p>
-        <ul className="gm-ul">
-          {game.rule.not.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
+        <details className="gm-fold">
+          <summary>{game.rule.notLabel}</summary>
+          <ul className="gm-ul">
+            {game.rule.not.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </details>
       </div>
 
       {game.questBoard ? (
         <>
-          <div className="label">Play this next</div>
-          <div className="gm-card gm-quest-board">
-            <p className="gm-small">{game.questBoard.intro}</p>
-            {gameDate ? (
-              <div className="gm-date-chip">{gameDate.season} {gameDate.day}, Year {gameDate.year}</div>
-            ) : (
-              <div className="gm-callout warn"><b>Date not recognized.</b> Use a format like “Spring 10, Year 1” so calendar gates can update automatically.</div>
-            )}
-            <div className="gm-play-next">
-              {playNext.length ? playNext.map((row) => renderQuestRow(row, true)) : <p className="gm-note">No actionable storyline steps are left right now.</p>}
+          {!gameDate && (
+            <div className="gm-callout warn">
+              <b>Date not recognized.</b> Use a format like “Spring 10, Year 1” in Current save so calendar gates can update automatically.
             </div>
-          </div>
-
-          {questRows.some((r) => r.bucket === "deadline") && (
-            <>
-              <div className="label">Do before the window closes</div>
-              <section className="gm-card gm-status-card gm-deadline-card">
-                <div className="gm-status-title"><span>⏰</span><b>Time-sensitive</b></div>
-                {questRows
-                  .filter((r) => r.bucket === "deadline")
-                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
-                  .map((row) => renderQuestRow(row))}
-              </section>
-            </>
           )}
-
-          <div className="label">What can I do?</div>
-          <div className="gm-status-grid">
-            <section className="gm-card gm-status-card">
-              <div className="gm-status-title"><span>🟢</span><b>Available now</b></div>
-              {questRows.filter((r) => r.bucket === "now").length ? (
-                questRows
-                  .filter((r) => r.bucket === "now")
-                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
-                  .map((row) => renderQuestRow(row))
-              ) : <p className="gm-note">Nothing currently actionable.</p>}
-            </section>
-
-            <section className="gm-card gm-status-card">
-              <div className="gm-status-title"><span>🟡</span><b>Work toward</b></div>
-              {questRows.filter((r) => r.bucket === "toward").length ? (
-                questRows
-                  .filter((r) => r.bucket === "toward")
-                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
-                  .map((row) => renderQuestRow(row))
-              ) : <p className="gm-note">No prep goals right now.</p>}
-            </section>
-
-            <section className="gm-card gm-status-card">
-              <div className="gm-status-title"><span>🔒</span><b>Waiting on</b></div>
-              {questRows.filter((r) => r.bucket === "waiting").length ? (
-                questRows
-                  .filter((r) => r.bucket === "waiting")
-                  .sort((a, b) => (b.step?.priority ?? 0) - (a.step?.priority ?? 0))
-                  .map((row) => renderQuestRow(row))
-              ) : <p className="gm-note">Nothing is hard-locked right now.</p>}
-            </section>
-          </div>
-
-          <div className="label">Storylines</div>
-          {game.questBoard.storylines
-            .filter((story) => story.steps.some((step) => !prog.checks[questStepKey(game, story, step)]))
-            .map((story) => {
-              const d = story.steps.filter((step) => !!prog.checks[questStepKey(game, story, step)]).length;
-              const currentIndex = story.steps.findIndex((step) => !prog.checks[questStepKey(game, story, step)]);
-              return (
-                <details className="gm-card gm-story" key={story.id}>
-                  <summary>
-                    <span>
-                      <small>{story.mod}</small>
-                      <b>{story.title}</b>
-                    </span>
-                    <em>{d}/{story.steps.length}</em>
-                  </summary>
-                  {story.note && <p className="gm-note">{story.note}</p>}
-                  <div className="gm-story-steps">
-                    {story.steps.map((step, idx) => {
-                      const key = questStepKey(game, story, step);
-                      const currentStep = idx === currentIndex;
-                      return (
-                        <div className={currentStep ? "gm-story-step current" : "gm-story-step"} key={step.id}>
-                          {currentStep && <span className="gm-current-tag">Next</span>}
-                          <Check
-                            label={step.label}
-                            sub={step.how || step.unlock}
-                            checked={!!prog.checks[key]}
-                            onChange={(v) => setCheck(key, v)}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </details>
-              );
-            })}
+          {questRows.length === 0 && <p className="gm-note">No storyline steps are left right now.</p>}
+          {boardGroups.map(({ bucket, icon, title }) => {
+            const rows = rowsFor(bucket);
+            if (!rows.length) return null;
+            const heading = `${icon} ${title} · ${rows.length}`;
+            // Locked steps are not actionable, so they start folded away.
+            return bucket === "waiting" ? (
+              <details className="gm-card gm-fold-card" key={bucket}>
+                <summary>{heading}</summary>
+                {rows.map(renderStory)}
+              </details>
+            ) : (
+              <section key={bucket}>
+                <div className="label">{heading}</div>
+                <div className="gm-card gm-board-card">{rows.map(renderStory)}</div>
+              </section>
+            );
+          })}
 
           {game.questBoard.storylines.some((story) => story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)])) && (
-            <details className="gm-card gm-details">
+            <details className="gm-card gm-fold-card">
               <summary>Completed storylines</summary>
               <ul className="gm-ul">
                 {game.questBoard.storylines
@@ -469,100 +517,32 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </>
       )}
 
-      <details className="gm-card gm-details">
-        <summary>How events trigger</summary>
+      <details className="gm-card gm-fold-card">
+        <summary>How events trigger, and what to do with a finished day</summary>
         <ul className="gm-ul">
           {game.guide.events.map((t) => (
             <li key={t}>{t}</li>
           ))}
         </ul>
+        <div className="gm-sublabel">Finished the week's friending or the day's list?</div>
+        <ul className="gm-ul">
+          {game.guide.early.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
       </details>
 
-      <div className="label">{game.questBoard ? "Long-term roadmap — not a gate" : "Phases"}</div>
-      {stats.map(({ phase, done: d, total: t }, idx) => {
-        const isDone = d === t;
-        const isCur = !game.questBoard && current?.id === phase.id;
-        const expanded = isOpen(phase);
-        return (
-          <section
-            key={phase.id}
-            id={`gm-${game.id}-${phase.id}`}
-            className={"gm-phase" + (isDone ? " done" : isCur ? " current" : " later") + (expanded ? " open" : "")}
-          >
-            <button type="button" className="gm-head" aria-expanded={expanded} onClick={() => toggle(phase)}>
-              <span className="gm-badge">{isDone ? "✓" : idx + 1}</span>
-              <span className="gm-title">
-                <b>{phase.title}</b>
-                <span>{phase.when}</span>
-              </span>
-              <span className="gm-meta">
-                <b>
-                  {d}/{t}
-                </b>
-                <em>{isDone ? "Done" : game.questBoard ? "Roadmap" : isCur ? "Current" : "Later"}</em>
-              </span>
-              <i className="gm-chev" aria-hidden="true" />
-            </button>
-
-            {expanded && (
-              <div className="gm-body">
-                <div className="gm-bar thin" aria-hidden="true">
-                  <i style={{ width: `${t ? Math.round((d / t) * 100) : 0}%` }} />
-                </div>
-                {phase.callout && (
-                  <div className="gm-callout">
-                    {phase.callout.lead && <b>{phase.callout.lead} </b>}
-                    {phase.callout.text}
-                  </div>
-                )}
-                {phase.groups.map((g) => (
-                  <div className="gm-group" key={g.label}>
-                    <div className="gm-sublabel">{g.label}</div>
-                    {g.note && <p className="gm-note">{g.note}</p>}
-                    {g.field && (
-                      <div className="gm-field-row">
-                        <label className="gm-lbl" htmlFor={`gm-f-${phase.id}-${g.field}`}>
-                          {g.field}:
-                        </label>
-                        <input
-                          id={`gm-f-${phase.id}-${g.field}`}
-                          className="gm-input"
-                          type="text"
-                          maxLength={200}
-                          placeholder="Who did I pick?"
-                          value={prog.fields[fieldKey(game.id, phase.id, g.field)] ?? ""}
-                          onChange={(e) => setField(fieldKey(game.id, phase.id, g.field!), e.target.value)}
-                        />
-                      </div>
-                    )}
-                    {g.items.map((text) => {
-                      const key = itemKey(game.id, phase.id, g.label, text);
-                      const done = !!prog.checks[key];
-                      return (
-                        <Check
-                          key={text}
-                          label={text}
-                          sub={done ? undefined : g.how?.[text]}
-                          checked={done}
-                          onChange={(v) => setCheck(key, v)}
-                        />
-                      );
-                    })}
-                    {g.after && <p className="gm-note end">{g.after}</p>}
-                  </div>
-                ))}
-                {phase.footer && (
-                  <div className={"gm-callout" + (phase.footer.warn ? " warn" : "")}>
-                    <b>{phase.footer.lead} </b>
-                    {phase.footer.text}
-                  </div>
-                )}
-                <CopyButton getText={() => phaseRemainingText(game, phase, prog)} />
-              </div>
-            )}
-          </section>
-        );
-      })}
+      {game.questBoard ? (
+        <details className="gm-roadmap">
+          <summary>Long-term roadmap · not a gate</summary>
+          {roadmapCards}
+        </details>
+      ) : (
+        <>
+          <div className="label">Phases</div>
+          {roadmapCards}
+        </>
+      )}
     </>
   );
 }

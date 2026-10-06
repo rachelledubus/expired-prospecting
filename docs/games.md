@@ -24,14 +24,13 @@ the top of the page.
   store the first time a game is saved after the fix. Deploy stores cannot be listed, so only named deploys recover.
 - The page and its save route sit behind the same portal login as every other page.
 
-## Event triggers and "Done early?" (Stardew checklist)
+## Event triggers and finished-day guide (Stardew checklist)
 
 - Under many items there is a short grey line saying how to trigger it: hearts, place, time, weather, and what has to
   happen first. It hides once you tick the box. Add one by putting `how: { "exact item text": "line" }` on the group.
-- **My Current Objectives** has a "Done early? Safe to start now" block for the current phase. It lists what does not
-  depend on the date or a story event, what should still wait, and the gifting and bed rules for a finished day.
-  Set it with `early: { safe: [...], wait: [...] }` on a phase. Phases 7 to 9 have none.
-- A collapsed **How events trigger** card sits under the objectives. Both texts live in `guide` on the game.
+- A collapsed **How events trigger, and what to do with a finished day** card sits under the objectives. It holds the
+  event-trigger rules and the safe-to-do-early list (gifting, bed, what to leave alone). The text lives in `guide` on
+  the game (`guide.events`, `guide.early`). There is no per-phase "Done early" block any more.
 - The lines come from the Stardew Valley wiki, the Ridgeside Village wiki, and the East Scarp wiki (which also covers
   Sword & Sorcery). They avoid spoilers on purpose: no artifact locations, no placement order, no names of later
   Sword & Sorcery characters. Mod versions change, so spot-check a line in game if it does not work.
@@ -50,6 +49,19 @@ the top of the page.
   That choice is saved with the rest of the progress.
 - **Copy what's left** copies the unchecked items on the open tab, grouped by room and bundle.
 - Standard bundles only. Remixed bundles use different items.
+
+## How the Stardew page is laid out
+
+- **My Current Objectives** shows each storyline once, as one row: its name, a count (for example 2/4), and the next
+  step to do. The rest of that storyline sits behind a "Rest of this storyline" fold. Rows are grouped by what the next
+  step needs: do before a window closes, available now, work toward, and waiting on (folded). Finished storylines are
+  folded at the bottom. Which group a row lands in comes from the "Current save" date.
+- The **Long-term roadmap** is folded and labelled "not a gate". It repeats nothing that is tracked in the storylines:
+  `hidden: [...]` on a roadmap group lists items that stay in the data and in saved progress (so no keys change) but are
+  not shown there, and the phase notes how many are hidden. If you add a storyline step that duplicates a roadmap item,
+  add that item to `hidden` instead of deleting it.
+- Storylines are in `questBoard.storylines` in `lib/games-data.ts`. A step with `legacy` shares its box with the roadmap
+  item of that text, so ticking it in either place stays in sync.
 
 ## Add another game
 

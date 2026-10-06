@@ -81,54 +81,43 @@
 .tp.gm .gm-sub { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
 .tp.gm .gm-item input:checked ~ .gm-txt .gm-sub { text-decoration: none; }
 
-/* Done early block and the how-events-trigger card */
-.tp.gm .gm-early { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.tp.gm .gm-early .gm-sublabel { margin-top: 10px; }
-.tp.gm .gm-early .gm-sublabel:first-child { margin-top: 0; }
-.tp.gm .gm-details { margin-top: 12px; }
-.tp.gm .gm-details summary { cursor: pointer; font: 700 12px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--sage); min-height: 24px; }
-.tp.gm .gm-details summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; border-radius: 6px; }
-.tp.gm .gm-details[open] summary { margin-bottom: 8px; }
-
-/* Availability-driven Stardew quest board */
-.tp.gm .gm-quest-board { position: relative; }
-.tp.gm .gm-date-chip { display: inline-flex; align-items: center; background: #EDE7DB; color: var(--navy); border-radius: 999px;
-  padding: 4px 10px; margin: 0 0 10px; font: 700 12px "DM Sans", system-ui, sans-serif; }
-.tp.gm .gm-play-next { display: grid; gap: 8px; }
-.tp.gm .gm-status-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-.tp.gm .gm-status-card { padding-top: 14px; }
-.tp.gm .gm-status-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
-.tp.gm .gm-status-title b { font: 700 17px "DM Sans", system-ui, sans-serif; color: var(--navy); }
-.tp.gm .gm-quest-row { border-top: 1px solid #F0EBE1; padding: 10px 0 2px; }
-.tp.gm .gm-quest-row:first-of-type { border-top: 0; }
-.tp.gm .gm-quest-row.compact { background: #F8F5EE; border: 0; border-radius: 12px; padding: 10px 12px 2px; }
+/* Stardew quest board: one row per storyline, grouped by what its next step needs */
+.tp.gm .gm-board-card { padding: 4px 16px 6px; }
+.tp.gm .gm-quest-row { padding: 12px 0 6px 12px; border-top: 1px solid #F0EBE1; box-shadow: inset 3px 0 0 transparent; }
+.tp.gm .gm-quest-row:first-child { border-top: 0; }
 .tp.gm .gm-quest-row.deadline { box-shadow: inset 3px 0 0 var(--accent); }
 .tp.gm .gm-quest-row.now { box-shadow: inset 3px 0 0 var(--sage); }
 .tp.gm .gm-quest-row.toward { box-shadow: inset 3px 0 0 #C8A75A; }
-.tp.gm .gm-quest-row.waiting { opacity: .74; }
-.tp.gm .gm-quest-context { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; padding-left: 12px; }
-.tp.gm .gm-quest-context b { font: 650 14px "DM Sans", system-ui, sans-serif; color: var(--navy); }
-.tp.gm .gm-quest-mod { font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
-.tp.gm .gm-quest-row .gm-item { padding-left: 12px; }
-.tp.gm .gm-story { margin: 0 0 10px; }
-.tp.gm .gm-story summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
-.tp.gm .gm-story summary::-webkit-details-marker { display: none; }
-.tp.gm .gm-story summary > span { min-width: 0; display: flex; flex-direction: column; }
-.tp.gm .gm-story summary small { font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
-.tp.gm .gm-story summary b { font: 700 17px/1.25 "DM Sans", system-ui, sans-serif; color: var(--navy); }
-.tp.gm .gm-story summary em { flex: none; font: 700 12px "DM Sans", system-ui, sans-serif; font-style: normal; color: var(--muted);
-  background: #EDE7DB; border-radius: 999px; padding: 3px 9px; }
-.tp.gm .gm-story[open] summary { margin-bottom: 10px; }
-.tp.gm .gm-story-step { position: relative; }
-.tp.gm .gm-story-step.current { background: #F3F6F1; margin: 0 -8px; padding: 0 8px; border-radius: 10px; }
-.tp.gm .gm-current-tag { position: absolute; z-index: 1; top: 1px; right: 4px; background: var(--sage); color: #fff; border-radius: 999px;
-  padding: 2px 7px; font: 700 9px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-.tp.gm .gm-story-steps .gm-item { padding-right: 44px; }
+.tp.gm .gm-quest-row.waiting { box-shadow: inset 3px 0 0 #C9C2B4; }
+.tp.gm .gm-quest-context { display: flex; align-items: baseline; gap: 4px 8px; flex-wrap: wrap; }
+.tp.gm .gm-quest-context b { font: 700 16px/1.25 "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-quest-mod { flex-basis: 100%; font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--sage); }
+.tp.gm .gm-quest-count { margin-left: auto; font: 700 12px "DM Sans", system-ui, sans-serif; font-style: normal; color: var(--muted);
+  background: #EDE7DB; border-radius: 999px; padding: 2px 9px; }
+.tp.gm .gm-rest { margin: 0 0 4px; }
+.tp.gm .gm-rest summary { cursor: pointer; list-style: none; min-height: 36px; display: flex; align-items: center; gap: 8px;
+  font: 600 13px "DM Sans", system-ui, sans-serif; color: var(--muted); }
+.tp.gm .gm-rest summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-rest summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg); transition: transform .15s; margin: 0 2px 0 3px; }
+.tp.gm .gm-rest[open] summary::before { transform: rotate(45deg); }
+.tp.gm .gm-rest summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; border-radius: 6px; }
+.tp.gm .gm-rest .gm-item { opacity: .95; }
 
-@media (min-width: 820px) {
-  .tp.gm .gm-status-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
-}
+/* Folded sections: the rule's "do not need to" list, locked steps, and the roadmap */
+.tp.gm .gm-fold summary, .tp.gm .gm-fold-card summary, .tp.gm .gm-roadmap summary { cursor: pointer; min-height: 32px; display: flex; align-items: center;
+  font: 700 12px "DM Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--sage); }
+.tp.gm .gm-fold summary, .tp.gm .gm-fold-card summary, .tp.gm .gm-roadmap summary { list-style: none; gap: 8px; }
+.tp.gm .gm-fold summary::-webkit-details-marker, .tp.gm .gm-fold-card summary::-webkit-details-marker, .tp.gm .gm-roadmap summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-fold summary::before, .tp.gm .gm-fold-card summary::before, .tp.gm .gm-roadmap summary::before { content: ""; flex: none; width: 7px; height: 7px;
+  border-right: 2px solid var(--sage); border-bottom: 2px solid var(--sage); transform: rotate(-45deg); transition: transform .15s; margin: 0 2px 0 3px; }
+.tp.gm .gm-fold[open] > summary::before, .tp.gm .gm-fold-card[open] > summary::before, .tp.gm .gm-roadmap[open] > summary::before { transform: rotate(45deg); }
+.tp.gm .gm-fold summary:focus-visible, .tp.gm .gm-fold-card summary:focus-visible, .tp.gm .gm-roadmap summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; border-radius: 6px; }
+.tp.gm .gm-fold { margin-top: 4px; }
+.tp.gm .gm-fold-card { margin: 0 0 12px; padding-top: 10px; padding-bottom: 10px; }
+.tp.gm .gm-fold-card[open] summary { margin-bottom: 4px; }
+.tp.gm .gm-roadmap { margin: 18px 0 12px; }
+.tp.gm .gm-roadmap > summary { margin-bottom: 10px; }
 
 /* Community Center: room progress, season tabs, bundle cards */
 .tp.gm .gm-rooms { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }

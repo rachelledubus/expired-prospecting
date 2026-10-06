@@ -11,6 +11,8 @@ export type GameGroup = {
   field?: string;
   /** A short "how to trigger it" line shown under an item, keyed by the exact item text. Hidden once the box is checked. */
   how?: Record<string, string>;
+  /** Items the roadmap does not show because the quest board or the Community Center tab already tracks them. */
+  hidden?: string[];
 };
 
 export type GamePhase = {
@@ -20,8 +22,6 @@ export type GamePhase = {
   callout?: { lead: string; text: string };
   groups: GameGroup[];
   footer?: { warn?: boolean; lead: string; text: string };
-  /** What to do if this phase is finished before its dates run out. Plain lines, not boxes. */
-  early?: { safe: string[]; wait: string[] };
 };
 
 export type GameQuestBucket = "deadline" | "now" | "toward" | "waiting";
@@ -56,7 +56,6 @@ export type GameStoryline = {
 };
 
 export type GameQuestBoard = {
-  intro: string;
   storylines: GameStoryline[];
 };
 
@@ -470,7 +469,7 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Start with Play This Next. Calendar phases are a roadmap, not a rule; follow whichever storyline is actually available.",
+      text: "Follow whichever storyline is actually available. The calendar roadmap is a guide, not a rule.",
       notLabel: "You do NOT need to:",
       not: [
         "Treat the calendar roadmap like a hard gate",
@@ -492,7 +491,6 @@ export const GAMES: Game[] = [
       closing: "I do not need to worry about anything else yet.",
     },
     questBoard: {
-      intro: "Calendar phases are pacing suggestions, not locks. This board follows the first unfinished step in each storyline and surfaces what is actually actionable now.",
       storylines: [
         {
           id: "andy-spring",
@@ -930,7 +928,6 @@ export const GAMES: Game[] = [
     phases: [
       {
         id: "p1",
-        early: {"safe": ["Mine Floors 50 to 80 and the Firewalker Boots (Late Spring list)", "Silo, a Coop or Barn, artisan goods, and food for mining (Late Spring list)", "Steel Pickaxe when you can afford it", "Construction and Boiler Room bundles (Any season tab on the Community Center tracker)"], "wait": ["The minecart quest. It needs 20 days played, a talk with Yuuma, and a sunny morning, so the date is the limit.", "Adding East Scarp or Ridgeside characters. That is your STOP rule.", "Summer bundle items. They cannot be gotten in Spring."]},
         title: "Right Now",
         when: "Spring 10 to 19, Year 1",
         groups: [
@@ -950,6 +947,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Stardew Valley Expanded",
+            hidden: ["Find/talk to Marlon"],
             how: {"Find/talk to Marlon": "Adventurer's Guild, up the Mountain trail. Your first visit plays the Guild Initiation, which needs 10 days played and the sword scene at the Mines entrance already seen. On rainy days he guards the mine ladder.", "Begin giving Marlon gifts": "Loves: Roots Platter, slime eggs, Life Elixir, Void Delight, Haste and Armor Elixirs. Likes: Fried Mushroom, Purple Mushroom, Bomb, Beer. Dislikes most forage and hates all flowers."},
             items: [
               "Find/talk to Marlon",
@@ -961,6 +959,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Ridgeside Village",
+            hidden: ["Find Yuuma"],
             how: {"Take the cable car to Ridgeside": "The cable car is northeast of the Bus Stop and is always open.", "Talk to Yuuma at least once": "The minecart quest in Late Spring will not start until you have done this."},
             items: [
               "Take the cable car to Ridgeside",
@@ -973,6 +972,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "East Scarp + Sword & Sorcery",
+            hidden: ["Find Mateo", "Watch Mateo’s introduction events as they appear"],
             how: {"Visit East Scarp": "Take the path east of the blacksmith in Pelican Town, or cross Shearwater Bridge.", "Find Mateo": "His tent is in the south-east of East Scarp's main area.", "Watch Mateo’s introduction events as they appear": "Part I plays at the Museum, any time or weather. Part II plays in the Mines and needs Part I seen and the sword from Marlon. His daily schedule only starts after Part II.", "Keep the Player’s Handbook": "It is mailed to you when the mod is installed."},
             items: [
               "Visit East Scarp",
@@ -992,13 +992,13 @@ export const GAMES: Game[] = [
       },
       {
         id: "p2",
-        early: {"safe": ["Mine Floors 90 to 120 and the Skull Key. Reaching the bottom also lets Marlon's 4-heart event play.", "Marlon to 5 hearts, then the sewer-key event", "Construction and Boiler Room bundles"], "wait": ["Mateo's 7-heart events. They need you to have met Krobus first.", "Summer Crops and Summer Foraging bundles. Wait for Summer."]},
         title: "Late Spring",
         when: "Spring 20 to 28",
         callout: { lead: "", text: "Unlock this section after reaching Spring 20." },
         groups: [
           {
             label: "Ridgeside Transportation Quest",
+            hidden: ["Collect 300 Wood", "Smelt 10 Iron Bars", "Smelt 5 Gold Bars", "Sleep", "Test the repaired Ridgeside minecarts"],
             how: {"Trigger the Ridgeside minecart restoration quest": "Needs 20 in-game days played with Ridgeside installed and a talk with Yuuma. Then leave the farmhouse on a sunny morning.", "Deposit the materials": "Donation box at the minecarts, next to Heaps.", "Sleep": "The minecarts are fixed the next day."},
             items: [
               "Trigger the Ridgeside minecart restoration quest",
@@ -1026,6 +1026,7 @@ export const GAMES: Game[] = [
             how: {"Reach 4 hearts with Marlon": "The 4-heart event plays at the Railroad on a rainy day, and only after you have reached the bottom of the Mines (Floor 120)."}, items: ["Reach 3 hearts with Marlon", "Reach 4 hearts with Marlon"] },
           {
             label: "Mateo",
+            hidden: ["Continue Mateo’s available events", "Reach 2 hearts with Mateo", "Reach 4 hearts with Mateo"],
             how: {"Reach 2 hearts with Mateo": "The 2-heart event plays in Town, 8 PM to midnight, on a sunny day.", "Reach 4 hearts with Mateo": "The 4-heart event plays on the Beach, 6 PM to midnight, on a sunny day."},
             items: [
               "Check Mateo’s Player’s Handbook",
@@ -1047,7 +1048,6 @@ export const GAMES: Game[] = [
       },
       {
         id: "p3",
-        early: {"safe": ["Gold Pickaxe, sprinklers, and daily income (Late Summer list)", "Food for mining and combat", "Saving toward the Bus. The four Vault bundles total 42,500g, so it is a gold goal, not a date."], "wait": ["The Ridge Forest and the Ninja House. That story starts as soon as you clear the log with a Steel Axe and enter the Ninja House, so upgrade the axe when you want it to begin.", "Fall Crops and Fall Foraging bundles. Wait for Fall.", "Choosing an East Scarp character. Your plan holds that until Late Summer."]},
         title: "Early Summer",
         when: "Summer 1 to 14",
         callout: { lead: "Main goal:", text: "Finish the regular Mines." },
@@ -1065,6 +1065,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "SVE / Marlon",
+            hidden: ["Receive access to the Sewers"],
             how: {"Trigger Marlon’s sewer-key event": "Wiki: 5 hearts in Year 1, with the Guild Initiation already seen. The wiki lists it two ways, at the Adventurer Summit in any weather or in Town on a rainy day, and players also mention 60 Museum donations. If it will not play, check Event Lookup (N).", "Receive access to the Sewers": "Marlon gives you the key in the same scene.", "Meet Krobus": "Marlon introduces him in that scene.", "Enter the Sewers at least once": "The cover in the south of Pelican Town, or the grates in the south of Cindersap Forest."},
             items: [
               "Reach 5 hearts with Marlon",
@@ -1076,6 +1077,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Sword & Sorcery",
+            hidden: ["Continue Mateo’s story", "Watch Mateo events when Event Lookup shows one available", "Complete Mateo quests as they appear", "Continue toward Mateo’s later heart events"],
             how: {"Continue toward Mateo’s later heart events": "5 hearts is three parts: Mines (6 PM to midnight), then the Saloon (you miss it if more than 3 in-game days pass), then the Adventurer's Guild (2 to 10 PM). 6 hearts: Town on a sunny day, then Cindersap Forest on a rainy night. 7 hearts needs Krobus met, on any day but Friday."},
             note: "Now that Krobus is handled:",
             items: [
@@ -1089,6 +1091,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Community Center",
+            hidden: ["Complete Spring Crops Bundle", "Complete Summer Crops Bundle", "Complete Spring Foraging Bundle", "Complete Summer Foraging Bundle", "Complete Construction Bundle", "Make progress on Boiler Room bundles"],
             items: [
               "Complete Spring Crops Bundle",
               "Complete Summer Crops Bundle",
@@ -1102,7 +1105,6 @@ export const GAMES: Game[] = [
       },
       {
         id: "p4",
-        early: {"safe": ["The Bus and the Desert. The bus is fixed by finishing the four Vault bundles (42,500g).", "Skull Cavern, once you have the Skull Key and the bus is fixed", "Iridium Bars and Galaxy Sword work", "Vault and Boiler Room bundles"], "wait": ["Fall bundle items. Wait for Fall.", "A second East Scarp character. Your plan holds that until Winter."]},
         title: "Late Summer",
         when: "Summer 15 to 28",
         groups: [
@@ -1118,6 +1120,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Ridgeside Main Story Begins",
+            hidden: ["Find the entrance to the Ridge Forest", "Clear the large log blocking access", "Enter the Ridge Forest"],
             how: {"Find the entrance to the Ridge Forest": "North of The Ridge, behind a large log.", "Clear the large log blocking access": "Needs a Steel Axe.", "Find the Ninja House": "East side of The Ridge. Open 8 AM to 8 PM, closed on festival days.", "Read available clues/books": "The red book and the Ancient Book are both in the Ninja House.", "Begin The Preparations when it becomes available": "It starts when you enter the Ninja House after visiting the Ridge Forest. The Seer gives it through her subjects."},
             note: "Your Steel Axe gives you a reason to start exploring more seriously.",
             items: [
@@ -1132,6 +1135,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "The Preparations",
+            hidden: ["Find the quest’s required cursed artifacts", "Collect required special forage/items"],
             how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 50 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
             note: "Do these naturally instead of trying to finish everything in one day.",
             items: [
@@ -1158,7 +1162,6 @@ export const GAMES: Game[] = [
       },
       {
         id: "p5",
-        early: {"safe": ["Galaxy Sword, tools toward Iridium, and the bottom of Skull Cavern (Winter list)", "Ginger Island preparation (Winter list)"], "wait": ["Winter Foraging bundle and winter fish. Wait for Winter.", "The Spirit Realm. It opens only after you place all nine relics.", "East Scarp characters #2 and #3, until the first one has progressed."]},
         title: "Fall, Year 1",
         when: "Adventure Season",
         callout: {
@@ -1208,6 +1211,7 @@ export const GAMES: Game[] = [
           },
           {
             label: "Community Center",
+            hidden: ["Finish Fall Crops", "Finish Fall Foraging", "Finish Boiler Room", "Finish Vault", "Finish Pantry or get very close", "Check remaining Fish Tank items", "Check remaining Bulletin Board items"],
             items: [
               "Finish Fall Crops",
               "Finish Fall Foraging",
@@ -1222,7 +1226,6 @@ export const GAMES: Game[] = [
       },
       {
         id: "p6",
-        early: {"safe": ["Finish the Community Center, or get down to seasonal items. Use the Any season tab first.", "Skull Cavern, Galaxy Sword, and tool upgrades toward Iridium", "Ginger Island preparation"], "wait": ["Year 2 projects such as Grandpa's Shed and the Ginger Island farm. Your plan holds those until Year 2.", "Next season's bundle items. Wait for the season to start."]},
         title: "Winter, Year 1",
         when: "Quest Season",
         callout: { lead: "", text: "Winter is for story content." },
