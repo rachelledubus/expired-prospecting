@@ -260,32 +260,36 @@ const communityCenter: BundleGame = {
   ],
   progression: [
     {
-      id: "story-unlocks",
-      title: "Story-relevant unlocks",
-      note: "These only surface because they unlock or materially support a storyline.",
+      id: "core-start",
+      title: "Core progression",
+      note: "These used to live in the old roadmap. They now live here because they are vanilla/farm progression, not storylines.",
       items: [
+        {
+          label: "Unlock the Community Center",
+          why: "Starts the bundle route and eventually unlocks Willy's Ginger Island boat after restoration.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Unlock the Community Center" },
+        },
+        {
+          label: "Buy the first backpack upgrade",
+          why: "Makes mining, questing, and multi-region days much less annoying.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Buy the first backpack upgrade" },
+        },
         {
           label: "Upgrade Axe to Steel",
           why: "Unlocks the north entrance from The Ridge into Ridge Forest.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
         },
-        {
-          label: "Reach Mine Floor 120",
-          why: "Finishes the regular Mines and gives the Skull Key.",
-          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 120" },
-        },
-        {
-          label: "Obtain the Skull Key",
-          why: "Unlocks Skull Cavern once the bus is repaired.",
-          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Obtain the Skull Key" },
-        },
       ],
     },
     {
       id: "tools-mining",
-      title: "Tools & mining",
-      note: "Support goals, not mandatory daily chores.",
+      title: "Mines & tools",
+      note: "This is the full regular-Mines path that used to be split across several roadmap phases.",
       items: [
+        {
+          label: "Reach Mine Floor 20",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Reach Mine Floor 20" },
+        },
         {
           label: "Reach Mine Floor 40",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Reach Mine Floor 40" },
@@ -295,19 +299,73 @@ const communityCenter: BundleGame = {
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Upgrade Pickaxe to Copper" },
         },
         {
+          label: "Save iron ore instead of selling it",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Save iron ore instead of selling it" },
+        },
+        {
+          label: "Save gold ore once you can reach it",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Save gold ore once I can reach it" },
+        },
+        {
+          label: "Reach Mine Floor 50",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 50" },
+        },
+        {
+          label: "Reach Mine Floor 60",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 60" },
+        },
+        {
+          label: "Reach Mine Floor 70",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 70" },
+        },
+        {
           label: "Reach Mine Floor 80",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 80" },
         },
         {
+          label: "Obtain the Firewalker Boots",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Obtain the Firewalker Boots" },
+        },
+        {
           label: "Upgrade Pickaxe to Steel",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Upgrade Pickaxe to Steel when affordable" },
+        },
+        {
+          label: "Reach Mine Floor 90",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 90" },
+        },
+        {
+          label: "Reach Mine Floor 100",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 100" },
+        },
+        {
+          label: "Reach Mine Floor 110",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 110" },
+        },
+        {
+          label: "Reach Mine Floor 120",
+          why: "Finishes the regular Mines and gives the Skull Key.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 120" },
+        },
+        {
+          label: "Obtain the Skull Key",
+          why: "Unlocks Skull Cavern once the bus is repaired and is also used by later SVE progression.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Obtain the Skull Key" },
+        },
+        {
+          label: "Upgrade Pickaxe to Gold",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Pickaxe to Gold" },
+        },
+        {
+          label: "Upgrade important tools toward Iridium",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade important tools toward Iridium" },
         },
       ],
     },
     {
       id: "farm-basics",
       title: "Farm development",
-      note: "Build these because they support your play, not because the guide says the calendar demands them.",
+      note: "Build these because they support your play, not because the calendar demands them.",
       items: [
         {
           label: "Build a Silo",
@@ -328,6 +386,56 @@ const communityCenter: BundleGame = {
         {
           label: "Mostly Quality Sprinklers or better",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have mostly Quality Sprinklers or better" },
+        },
+        {
+          label: "Establish reliable daily income",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have a reliable daily income" },
+        },
+        {
+          label: "Build a reliable combat-food supply",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have a reliable supply of mining/combat food" },
+        },
+      ],
+    },
+    {
+      id: "desert-combat",
+      title: "Desert & combat progression",
+      note: "The Skull Cavern has no bottom. Treat Floor 100 as a milestone, not a finish line.",
+      items: [
+        {
+          label: "Repair the Bus",
+          why: "Complete all four Vault bundles for 42,500g total.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Repair the Bus" },
+        },
+        {
+          label: "Visit the Calico Desert",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Visit the Desert" },
+        },
+        {
+          label: "Enter Skull Cavern",
+          why: "Requires the Skull Key from Mine Floor 120.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Enter Skull Cavern" },
+        },
+        {
+          label: "Obtain an Iridium Bar",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Obtain an Iridium Bar" },
+        },
+        {
+          label: "Begin collecting Iridium",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Begin collecting Iridium" },
+        },
+        {
+          label: "Work toward the Galaxy Sword",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Work toward the Galaxy Sword" },
+        },
+        {
+          label: "Obtain the Galaxy Sword",
+          why: "Needed for SVE's later Nexus questline.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Obtain Galaxy Sword" },
+        },
+        {
+          label: "Progress Skull Cavern / reach Floor 100 if desired",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Progress Skull Cavern / reach Floor 100 if desired" },
         },
       ],
     },
@@ -741,6 +849,85 @@ const completionTracker: CompletionGame = {
         },
       ],
     },
+    {
+      id: "mod-completion",
+      title: "Mod Completion & Big Projects",
+      note: "These absorb the old roadmap's open-ended completion goals. Set each total to however many goals your installed mod set actually gives you.",
+      categories: [
+        {
+          id: "farm-layout",
+          title: "Finish Farm Layout",
+          defaultTotal: 1,
+          unit: "project complete",
+        },
+        {
+          id: "ginger-farm",
+          title: "Finish Ginger Island Farm",
+          defaultTotal: 1,
+          unit: "project complete",
+        },
+        {
+          id: "summit-farm",
+          title: "Develop Summit Farm",
+          defaultTotal: 1,
+          unit: "project complete",
+        },
+        {
+          id: "village-projects",
+          title: "Ridgeside Village Projects",
+          defaultTotal: 1,
+          unit: "projects complete",
+          note: "Edit the total to match the optional village projects you actually want to finish.",
+        },
+        {
+          id: "sve-special-orders",
+          title: "SVE Special Orders",
+          defaultTotal: 1,
+          unit: "orders complete",
+          note: "Edit the total as you discover major SVE special orders worth completing.",
+        },
+        {
+          id: "east-scarp-orders",
+          title: "East Scarp Special Orders",
+          defaultTotal: 1,
+          unit: "orders complete",
+        },
+        {
+          id: "east-scarp-secrets",
+          title: "East Scarp Secrets",
+          defaultTotal: 1,
+          unit: "secrets explored",
+        },
+        {
+          id: "sns-skills",
+          title: "Sword & Sorcery Skills",
+          defaultTotal: 1,
+          unit: "skills developed",
+          note: "Edit the total as the campaign introduces class/skill systems.",
+        },
+        {
+          id: "optional-character-stories",
+          title: "Optional Character Stories",
+          defaultTotal: 1,
+          unit: "stories completed",
+          note: "For Ridgeside, East Scarp, SVE, and S&S characters you personally care about. This replaces the old arbitrary Character #2/#3 slots.",
+        },
+        {
+          id: "mod-collections",
+          title: "Mod-Specific Collections",
+          defaultTotal: 1,
+          unit: "collection goals complete",
+          note: "Edit the total to match any additional collections added by your installed mods.",
+        },
+        {
+          id: "remaining-mod-quests",
+          title: "Remaining Mod Quests",
+          defaultTotal: 1,
+          unit: "quest goals complete",
+          note: "Use this only after the named progression chains above are complete.",
+        },
+      ],
+    },
   ],
 };
 
@@ -754,10 +941,10 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Follow whichever storyline is actually available. The roadmap is a guide, not a rule.",
+      text: "Follow whichever storyline is actually available. Story, farm progression, and completion now live in one unified guide.",
       notLabel: "You do NOT need to:",
       not: [
-        "Treat the roadmap like a hard gate",
+        "Treat the guide like a hard gate",
         "Befriend everyone",
         "Visit every region every week",
         "Clear your entire quest journal",
@@ -766,6 +953,204 @@ export const GAMES: Game[] = [
     },
     questBoard: {
       storylines: [
+        {
+          id: "ginger-island-access",
+          title: "Ginger Island — Boat & Arrival",
+          mod: "Vanilla / unlock progression",
+          importance: "required",
+          note: "This is the actual unlock chain for Ginger Island. It replaces the vague old-roadmap instruction to 'prepare for Ginger Island progression.'",
+          steps: [
+            {
+              id: "cc-or-joja",
+              label: "Complete the Community Center or Joja Warehouse route",
+              how: "The boat invitation only becomes available after the Community Center restoration cutscene or Joja Warehouse completion cutscene.",
+              bucket: "toward",
+              priority: 54,
+              why: "Unlocks Willy's invitation to the Fish Shop back room.",
+            },
+            {
+              id: "willy-letter",
+              label: "Read Willy's invitation and enter the Fish Shop back room",
+              how: "After the completion cutscene, Willy mails you an invitation. Enter the back room of the Fish Shop to inspect the broken boat.",
+              location: "Fish Shop back room",
+              bucket: "now",
+              priority: 54,
+            },
+            {
+              id: "boat-materials",
+              label: "Gather 200 Hardwood, 5 Iridium Bars, and 5 Battery Packs",
+              how: "The hull needs 200 Hardwood, the anchor needs 5 Iridium Bars, and the ticket stand needs 5 Battery Packs.",
+              bucket: "toward",
+              priority: 54,
+            },
+            {
+              id: "repair-boat",
+              label: "Repair all three parts of Willy's Boat",
+              location: "Fish Shop back room",
+              bucket: "now",
+              priority: 54,
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Repair Willy’s Boat" },
+            },
+            {
+              id: "overnight-repair",
+              label: "Sleep and view the overnight boat-repair cutscene",
+              how: "If another overnight cutscene takes priority, the boat-repair scene can be delayed by a day.",
+              bucket: "now",
+              priority: 53,
+            },
+            {
+              id: "arrive",
+              label: "Buy a 1,000g ticket and reach Ginger Island",
+              location: "Fish Shop back room → Ginger Island",
+              bucket: "now",
+              priority: 53,
+              reward: "Ginger Island unlocked",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Reach Ginger Island" },
+            },
+            {
+              id: "north",
+              label: "Give the first parrot 1 Golden Walnut to open Island North",
+              how: "Follow Leo into the jungle, then give the parrot in Leo's hut 1 Golden Walnut. This removes the turtle blocking Island North.",
+              location: "Leo's hut / Island East",
+              bucket: "now",
+              priority: 52,
+              reward: "Island North + Volcano route",
+            },
+          ],
+        },
+        {
+          id: "ginger-island-west",
+          title: "Ginger Island — West, Farmhouse & Trader",
+          mod: "Vanilla / unlock progression",
+          importance: "recommended",
+          note: "Recommended west-side unlock path after Island North is open.",
+          steps: [
+            {
+              id: "west",
+              label: "Spend 10 Golden Walnuts to open Island West",
+              location: "Island South",
+              bucket: "toward",
+              priority: 48,
+              requires: ["ginger-island-access:north"],
+              unlock: "Open Island North first",
+              reward: "Island West + Island Farm area",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Unlock Island Farm" },
+            },
+            {
+              id: "farmhouse",
+              label: "Spend 20 Golden Walnuts to repair the Island Farmhouse",
+              location: "Island West",
+              bucket: "toward",
+              priority: 48,
+              reward: "Sleep on Ginger Island; unlocks the Island Trader parrot",
+            },
+            {
+              id: "trader",
+              label: "Spend 10 Golden Walnuts to unlock the Island Trader",
+              location: "Island North",
+              bucket: "toward",
+              priority: 47,
+              reward: "Island Trader barter shop",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Unlock Island Trader" },
+            },
+          ],
+        },
+        {
+          id: "ginger-island-digsite",
+          title: "Ginger Island — Dig Site & Professor Snail",
+          mod: "Vanilla / unlock progression",
+          importance: "recommended",
+          note: "Independent branch after Island North opens.",
+          steps: [
+            {
+              id: "bridge",
+              label: "Spend 10 Golden Walnuts to repair the Dig Site bridge",
+              location: "Island North",
+              bucket: "toward",
+              priority: 46,
+              requires: ["ginger-island-access:north"],
+              unlock: "Open Island North first",
+              reward: "Dig Site access",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Unlock Dig Site" },
+            },
+            {
+              id: "snail",
+              label: "Bomb the blocked Mushroom Cave and rescue Professor Snail",
+              location: "Dig Site",
+              bucket: "now",
+              priority: 46,
+              reward: "Island Field Office opens",
+            },
+          ],
+        },
+        {
+          id: "ginger-island-volcano",
+          title: "Ginger Island — Volcano & Forge",
+          mod: "Vanilla / unlock progression",
+          importance: "recommended",
+          note: "The Volcano has exactly 10 floors; reaching Floor 10 unlocks direct Forge access on future days.",
+          steps: [
+            {
+              id: "enter",
+              label: "Enter the Volcano Dungeon with a Watering Can",
+              how: "Use the Watering Can on the lava at the entrance to make a temporary path.",
+              location: "Island North",
+              bucket: "now",
+              priority: 46,
+              requires: ["ginger-island-access:north"],
+              unlock: "Open Island North first",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Progress Volcano Dungeon" },
+            },
+            {
+              id: "floor-10",
+              label: "Reach Volcano Floor 10 and the Forge",
+              location: "Volcano Caldera",
+              bucket: "toward",
+              priority: 46,
+              reward: "Forge access + permanent entrance shortcut on future days",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Reach Volcano Floor 10" },
+            },
+          ],
+        },
+        {
+          id: "ginger-island-resort",
+          title: "Ginger Island — Resort",
+          mod: "Vanilla / unlock progression",
+          importance: "recommended",
+          note: "A later island facility; it does not need to block your Volcano or Dig Site progress.",
+          steps: [
+            {
+              id: "resort",
+              label: "Spend 20 Golden Walnuts to build the Island Resort",
+              location: "Island South",
+              bucket: "toward",
+              priority: 40,
+              requires: ["ginger-island-west:farmhouse"],
+              unlock: "Repair the Island Farmhouse first",
+              reward: "Beach Resort + Island Southeast / Pirate Cove",
+              legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Unlock Ginger Island Resort" },
+            },
+          ],
+        },
+        {
+          id: "ginger-island-express",
+          title: "Ginger Island — Parrot Express",
+          mod: "Vanilla / unlock progression",
+          importance: "recommended",
+          note: "Fast travel around the island. East and South are open by default; once North and West are open, the farm-side parrot can offer the Express.",
+          steps: [
+            {
+              id: "express",
+              label: "Spend 10 Golden Walnuts to unlock the Parrot Express",
+              location: "North of the Island Farm",
+              bucket: "toward",
+              priority: 39,
+              requires: ["ginger-island-access:north", "ginger-island-west:west"],
+              unlock: "Open Island North and Island West first",
+              reward: "Fast travel between Docks, Jungle, Farm, Volcano, and Dig Site",
+            },
+          ],
+        },
         {
           id: "andy-spring",
           title: "Andy — Year 1 Strawberry Seeds",
@@ -877,7 +1262,7 @@ export const GAMES: Game[] = [
           title: "Mateo — Sword & Sorcery Chapter 1",
           mod: "Sword & Sorcery / East Scarp",
           importance: "required",
-          note: "Mateo is Chapter 1, not the whole campaign. The progression endpoint is the 10-heart Railroad event; romance-only follow-ups do not block later Sword & Sorcery chapters.",
+          note: "Mateo is Chapter 1, not the whole campaign. Keep and use the Player's Handbook for exact installed-version triggers. Once you have met Mateo and handled the active event, you do not need to sweep all of East Scarp. The progression endpoint is the 10-heart Railroad event; romance-only follow-ups do not block later chapters.",
           steps: [
             {
               id: "meet",
@@ -1120,6 +1505,7 @@ export const GAMES: Game[] = [
             {
               id: "start",
               label: "Start talking to and gifting Marlon",
+              how: "Useful old-roadmap gift notes: he loves Roots Platter, Slime Eggs, Life Elixir, Void Delight, and the Haste/Armor elixirs; he also likes Fried Mushroom, Purple Mushroom, Bomb, and Beer.",
               bucket: "toward",
               priority: 90,
               legacy: { phaseId: "p1", groupLabel: "Stardew Valley Expanded", text: "Begin giving Marlon gifts" },
@@ -1450,6 +1836,14 @@ export const GAMES: Game[] = [
               reward: "Large cellar + upstairs greenhouse",
               legacy: { phaseId: "p7", groupLabel: "Stardew Valley Expanded", text: "Repair Grandpa’s Shed" },
             },
+            {
+              id: "use-greenhouse",
+              label: "Set up and use the upstairs greenhouse",
+              location: "Grandpa's Shed",
+              bucket: "now",
+              priority: 42,
+              legacy: { phaseId: "p7", groupLabel: "Stardew Valley Expanded", text: "Use the upstairs greenhouse" },
+            },
           ],
         },
         {
@@ -1490,8 +1884,26 @@ export const GAMES: Game[] = [
           title: "Ridgeside Minecarts",
           mod: "Ridgeside Village",
           importance: "recommended",
-          note: "Talk to Yuuma now; the actual restoration quest waits for the 20-day gate.",
+          note: "Orientation only: take the cable car, find Yuuma, and then you are done exploring Ridgeside until a real quest gives you a reason to return. The restoration quest itself waits for the 20-day gate.",
           steps: [
+            {
+              id: "cable-car",
+              label: "Take the cable car to Ridgeside Village",
+              how: "The cable car is northeast of the Bus Stop and is always available.",
+              location: "Northeast of the Bus Stop",
+              bucket: "now",
+              priority: 89,
+              legacy: { phaseId: "p1", groupLabel: "Ridgeside Village", text: "Take the cable car to Ridgeside" },
+            },
+            {
+              id: "find-yuuma",
+              label: "Find Yuuma",
+              how: "You only need enough village orientation to locate Yuuma; you do not need to sweep the whole map.",
+              location: "Ridgeside Village",
+              bucket: "now",
+              priority: 89,
+              legacy: { phaseId: "p1", groupLabel: "Ridgeside Village", text: "Find Yuuma" },
+            },
             {
               id: "talk-yuuma",
               label: "Talk to Yuuma at least once",
@@ -1517,10 +1929,26 @@ export const GAMES: Game[] = [
             },
             {
               id: "repair",
-              label: "Deposit the minecart materials and return the next day",
+              label: "Deposit the minecart materials",
+              how: "Use the donation box at the minecarts next to Heaps.",
               bucket: "now",
               priority: 72,
               legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Deposit the materials" },
+            },
+            {
+              id: "sleep",
+              label: "Sleep so the Ridgeside minecarts can be repaired",
+              bucket: "now",
+              priority: 71,
+              legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Sleep" },
+            },
+            {
+              id: "test",
+              label: "Test the repaired Ridgeside minecarts",
+              bucket: "now",
+              priority: 71,
+              reward: "Ridgeside fast travel active",
+              legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Test the repaired Ridgeside minecarts" },
             },
           ],
         },
@@ -2064,6 +2492,7 @@ export const GAMES: Game[] = [
         "Seasonal items cannot be gotten early. When this season's items are done, use the Any season tab on the Community Center tracker.",
       ],
     },
+    // Legacy migration map only. These phase entries are no longer rendered; active guidance lives in Story & Quests, Farm & Progression, and Completion.
     phases: [
       {
         id: "p1",
