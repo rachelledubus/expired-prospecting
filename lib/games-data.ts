@@ -842,10 +842,10 @@ export const GAMES: Game[] = [
         },
         {
           id: "ridgeside-main",
-          title: "Ridge Forest → Ninja Story",
+          title: "Ridgeside Main Story — Ridge Forest",
           mod: "Ridgeside Village",
           importance: "required",
-          note: "This storyline is tool-gated, not Late-Summer-gated.",
+          note: "Major Ridgeside plotline. The first gate is a Steel Axe, then the north exit from The Ridge into Ridge Forest.",
           steps: [
             {
               id: "steel-axe",
