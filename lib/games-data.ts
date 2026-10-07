@@ -11,7 +11,7 @@ export type GameGroup = {
   field?: string;
   /** A short "how to trigger it" line shown under an item, keyed by the exact item text. Hidden once the box is checked. */
   how?: Record<string, string>;
-  /** Items the roadmap does not show because the quest board or the Community Center tab already tracks them. */
+  /** Legacy phase items superseded by the active Story/Farm/Completion guide. */
   hidden?: string[];
 };
 
@@ -81,7 +81,7 @@ export type GameQuestBoard = {
   storylines: GameStoryline[];
 };
 
-/** A checklist with a live quest board plus a long-term roadmap. */
+/** A live quest/progression checklist. Legacy phase data is retained only to preserve saved checkbox keys. */
 export type ChecklistGame = {
   kind: "checklist";
   id: string;
@@ -91,7 +91,7 @@ export type ChecklistGame = {
   saveLabel: string;
   saveDefault: string;
   rule: { text: string; notLabel: string; not: string[] };
-  /** Live, non-linear quest board: the main play direction. The phases below are only a folded long-term roadmap. */
+  /** Live, non-linear quest board: the main play direction. */
   questBoard: GameQuestBoard;
   /** General how-tos shown on the page: how events trigger, and what to do with a finished day. */
   guide: { events: string[]; early: string[] };
@@ -262,7 +262,7 @@ const communityCenter: BundleGame = {
     {
       id: "core-start",
       title: "Core progression",
-      note: "These used to live in the old roadmap. They now live here because they are vanilla/farm progression, not storylines.",
+      note: "Vanilla/farm progression lives here instead of being mixed into story quests.",
       items: [
         {
           label: "Unlock the Community Center",
@@ -284,7 +284,7 @@ const communityCenter: BundleGame = {
     {
       id: "tools-mining",
       title: "Mines & tools",
-      note: "This is the full regular-Mines path that used to be split across several roadmap phases.",
+      note: "Full regular-Mines progression in one place.",
       items: [
         {
           label: "Reach Mine Floor 20",
@@ -852,7 +852,7 @@ const completionTracker: CompletionGame = {
     {
       id: "mod-completion",
       title: "Mod Completion & Big Projects",
-      note: "These absorb the old roadmap's open-ended completion goals. Set each total to however many goals your installed mod set actually gives you.",
+      note: "Open-ended completion goals live here. Set each total to however many goals your installed mod set actually gives you.",
       categories: [
         {
           id: "farm-layout",
@@ -958,7 +958,7 @@ export const GAMES: Game[] = [
           title: "Ginger Island — Boat & Arrival",
           mod: "Vanilla / unlock progression",
           importance: "required",
-          note: "This is the actual unlock chain for Ginger Island. It replaces the vague old-roadmap instruction to 'prepare for Ginger Island progression.'",
+          note: "This is the actual unlock chain for Ginger Island, from the Community Center/Joja finish through your first island access.",
           steps: [
             {
               id: "cc-or-joja",
@@ -1505,7 +1505,7 @@ export const GAMES: Game[] = [
             {
               id: "start",
               label: "Start talking to and gifting Marlon",
-              how: "Useful old-roadmap gift notes: he loves Roots Platter, Slime Eggs, Life Elixir, Void Delight, and the Haste/Armor elixirs; he also likes Fried Mushroom, Purple Mushroom, Bomb, and Beer.",
+              how: "Useful gifts: he loves Roots Platter, Slime Eggs, Life Elixir, Void Delight, and the Haste/Armor elixirs; he also likes Fried Mushroom, Purple Mushroom, Bomb, and Beer.",
               bucket: "toward",
               priority: 90,
               legacy: { phaseId: "p1", groupLabel: "Stardew Valley Expanded", text: "Begin giving Marlon gifts" },
