@@ -263,3 +263,25 @@
 @media (max-width: 520px) {
   .tp.gm .gm-undo-bar { bottom: 8px; }
 }
+
+
+/* Persistent major-storyline overview */
+.tp.gm .gm-major-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.tp.gm .gm-major-story { background: var(--card); border-radius: 14px; box-shadow: 0 2px 9px rgba(22,50,79,.07);
+  padding: 13px 14px; border-left: 4px solid var(--sage); }
+.tp.gm .gm-major-story.toward { border-left-color: #C8A75A; }
+.tp.gm .gm-major-story.waiting { border-left-color: #C9C2B4; }
+.tp.gm .gm-major-story.deadline { border-left-color: var(--accent); }
+.tp.gm .gm-major-story.complete { border-left-color: var(--navy); opacity: .8; }
+.tp.gm .gm-major-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tp.gm .gm-major-head h3 { margin: 2px 0 0; color: var(--navy); font: 700 17px/1.25 "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-major-status { flex: none; background: #F2EEE6; border-radius: 999px; padding: 3px 8px; color: var(--muted);
+  font: 700 10px "DM Sans", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+.tp.gm .gm-major-progress { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; margin: 10px 0 6px; color: var(--muted); font-size: 12px; }
+.tp.gm .gm-major-progress .gm-bar { margin: 0; }
+.tp.gm .gm-major-next { margin: 6px 0 3px; color: var(--ink); font-size: 14px; }
+.tp.gm .gm-major-next b { color: var(--navy); font-family: "DM Sans", system-ui, sans-serif; }
+
+@media (max-width: 760px) {
+  .tp.gm .gm-major-grid { grid-template-columns: 1fr; }
+}
