@@ -305,6 +305,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   const completedStories = game.questBoard.storylines.filter((story) =>
     story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)]),
   );
+  const majorStories = game.questBoard.storylines.filter((story) => story.importance === "required");
 
   const questStats = useMemo(() => {
     let qDone = 0;
@@ -395,6 +396,49 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             })}
           </details>
         )}
+      </article>
+    );
+  };
+
+  const renderMajorStory = (story: GameStoryline) => {
+    const current = questRows.find((row) => row.story.id === story.id);
+    const doneCount = story.steps.filter((step) => !!prog.checks[questStepKey(game, story, step)]).length;
+    const complete = doneCount === story.steps.length;
+    const status = complete
+      ? "Complete"
+      : current?.bucket === "waiting"
+        ? "Waiting"
+        : current?.bucket === "toward"
+          ? "Work toward"
+          : current?.bucket === "deadline"
+            ? "Time-sensitive"
+            : "Available";
+
+    return (
+      <article className={"gm-major-story " + (complete ? "complete" : current?.bucket ?? "")} key={story.id}>
+        <div className="gm-major-head">
+          <div>
+            <span className="gm-quest-mod">{story.mod}</span>
+            <h3>{story.title}</h3>
+          </div>
+          <span className="gm-major-status">{status}</span>
+        </div>
+        <div className="gm-major-progress">
+          <span>{doneCount}/{story.steps.length}</span>
+          <div className="gm-bar thin" aria-hidden="true">
+            <i style={{ width: `${story.steps.length ? Math.round((doneCount / story.steps.length) * 100) : 0}%` }} />
+          </div>
+        </div>
+        {complete ? (
+          <p className="gm-note">Storyline complete. Open Completed Storylines below if you need to undo a step.</p>
+        ) : current ? (
+          <>
+            <p className="gm-major-next"><b>Next:</b> {current.step.label}</p>
+            {current.step.location && <p className="gm-note">📍 {current.step.location}</p>}
+            {current.bucket === "waiting" && current.reason && <p className="gm-note">🔒 {current.reason}</p>}
+            {current.step.why && <p className="gm-note">{current.step.why}</p>}
+          </>
+        ) : null}
       </article>
     );
   };
@@ -542,6 +586,11 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       </div>
 
       <p className="gm-guide-rule">{game.rule.text}</p>
+
+      <section>
+        <div className="label">Major Storylines</div>
+        <div className="gm-major-grid">{majorStories.map(renderMajorStory)}</div>
+      </section>
 
       {availableRows.length > 0 && (
         <section>
