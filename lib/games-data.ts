@@ -26,6 +26,7 @@ export type GamePhase = {
 
 export type GameQuestBucket = "deadline" | "now" | "toward" | "waiting";
 export type GameImportance = "required" | "recommended" | "optional";
+export type ProgressionRef = { gameId: string; phaseId: string; groupLabel: string; text: string };
 
 export type GameQuestStep = {
   id: string;
@@ -48,6 +49,8 @@ export type GameQuestStep = {
   };
   /** Other quest-board steps that must be checked first, formatted as storylineId:stepId. */
   requires?: string[];
+  /** Farm & Progression checkboxes that must be checked first. */
+  requiresProgress?: { label: string; ref: ProgressionRef }[];
   unlock?: string;
   /** Reuse an existing phase checkbox so old progress is preserved. */
   legacy?: { phaseId: string; groupLabel: string; text: string };
@@ -68,7 +71,7 @@ export type ProgressionItem = {
   label: string;
   how?: string;
   why?: string;
-  ref: { gameId: string; phaseId: string; groupLabel: string; text: string };
+  ref: ProgressionRef;
 };
 
 export type ProgressionSection = {
@@ -2603,9 +2606,11 @@ export const GAMES: Game[] = [
             {
               id: "meet-lance",
               label: "Meet Lance at the Volcano Forge",
-              how: "Reach the Forge at the top of the Ginger Island volcano dungeon.",
+              how: "Reach Ginger Island, open Island North, enter the Volcano, and reach Floor 10 / the Forge. Lance is introduced there.",
               location: "Volcano Forge",
               bucket: "toward",
+              requires: ["ginger-island-volcano:floor-10"],
+              unlock: "Reach Ginger Island and Volcano Floor 10 first",
               priority: 64,
               reward: "Lance becomes available and later visits your farm",
             },
@@ -2669,7 +2674,8 @@ export const GAMES: Game[] = [
               location: "Island West",
               bucket: "toward",
               priority: 35,
-              requires: ["sve-highlands:diamond-wand"],
+              requires: ["sve-highlands:diamond-wand", "ginger-island-west:farmhouse"],
+              unlock: "Complete the Highlands core story and repair the Ginger Island Farmhouse first",
               reward: "Visit the First Slash guild and related Fable Reef story content",
               progressKey: { storylineId: "sve-highlands", stepId: "first-slash" },
             },
@@ -2688,6 +2694,10 @@ export const GAMES: Game[] = [
               how: "After obtaining the Skull Key, complete Clint's Railroad Boulder quest: 20 Iridium Ore and 20 Coal.",
               location: "Railroad",
               bucket: "toward",
+              requiresProgress: [
+                { label: "Obtain the Skull Key", ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Obtain the Skull Key" } },
+              ],
+              unlock: "Obtain the Skull Key from Mine Floor 120 first",
               priority: 58,
               reward: "The Summit opens; this also satisfies one Nexus prerequisite",
             },
@@ -2697,6 +2707,10 @@ export const GAMES: Game[] = [
               how: "Get 1 Prismatic Shard, take it to the Three Pillars in the northeast Calico Desert, hold it, and step onto the center tile between the pillars. The shard is consumed and becomes the Galaxy Sword.",
               location: "Northeast Calico Desert — Three Pillars",
               bucket: "toward",
+              requiresProgress: [
+                { label: "Visit the Calico Desert", ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Visit the Desert" } },
+              ],
+              unlock: "Repair the Bus and reach the Calico Desert first",
               priority: 58,
               why: "Required to start the Nexus questline.",
             },
@@ -2715,6 +2729,8 @@ export const GAMES: Game[] = [
               how: "Unlock Ginger Island, enter the Volcano Dungeon, and reach Floor 10. Lance is introduced at the Forge/Caldera as part of SVE progression.",
               location: "Ginger Island Volcano",
               bucket: "toward",
+              requires: ["ginger-island-volcano:floor-10"],
+              unlock: "Reach Ginger Island and Volcano Floor 10 first",
               priority: 58,
               why: "Required to start the Nexus questline.",
             },
@@ -2827,6 +2843,7 @@ export const GAMES: Game[] = [
               how: "Complete the Community Center, visit Forest West, and reach at least 138 days played. The quest then triggers at the farmhouse at the start of a day.",
               bucket: "toward",
               priority: 42,
+              requires: ["sve-post-cc-areas:cc-complete"],
               gate: { minTotalDay: 139 },
               unlock: "Community Center complete + Forest West visited + 138 days played",
             },
@@ -3467,10 +3484,14 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Magnus and see The Barrier",
-              how: "Cindersap Forest, 6 AM–6 PM, sunny, any season.",
+              how: "First complete the Community Center golden-scroll/Wizard introduction so Magnus is accessible. Then reach 2 hearts and enter Cindersap Forest 6 AM–6 PM on a sunny day.",
               location: "Cindersap Forest",
               gate: { weather: ["sunny"] },
               bucket: "now",
+              requiresProgress: [
+                { label: "Unlock the Community Center and Wizard introduction", ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Unlock the Community Center" } },
+              ],
+              unlock: "Finish the Community Center/Wizard introduction first",
               priority: 66,
             },
             {
