@@ -329,6 +329,14 @@
 .tp.gm .gm-completion-card.done .gm-completion-number { background: var(--sage); color: #fff; }
 .tp.gm .gm-completion-body { padding: 0 14px 14px; }
 .tp.gm .gm-completion-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 10px; margin-top: 10px; }
+.tp.gm .gm-completion-completed { margin-top: 12px; padding-top: 10px; border-top: 1px solid #EFE9DE; }
+.tp.gm .gm-completion-completed > summary { cursor: pointer; list-style: none; color: var(--muted);
+  font: 700 12px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-completion-completed > summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-completion-completed > summary::before { content: "›"; display: inline-block; margin-right: 6px; transition: transform .15s; }
+.tp.gm .gm-completion-completed[open] > summary::before { transform: rotate(90deg); }
+.tp.gm .gm-completion-list-done { opacity: .68; }
+.tp.gm .gm-completion-list-done .gm-item { text-decoration-color: currentColor; }
 .tp.gm .gm-completion-list .gm-item, .tp.gm .gm-custom-row .gm-item { margin: 0; min-width: 0; }
 .tp.gm .gm-completion-subhead { margin: 12px 0 7px; color: var(--muted);
   font: 700 10px "DM Sans", system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; }
