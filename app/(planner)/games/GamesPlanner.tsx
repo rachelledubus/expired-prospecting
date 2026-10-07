@@ -583,13 +583,33 @@ const itemLabel = (i: BundleItem) =>
 const inView = (i: BundleItem, view: View) =>
   view === "any" ? i.seasons === "any" : i.seasons !== "any" && i.seasons.includes(view);
 
-function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
+function BundleView({
+  game,
+  prog,
+  setCheck,
+  setField,
+  storyGame,
+  storyProg,
+  setStoryCheck,
+}: ViewProps<BundleGame> & {
+  storyGame: ChecklistGame;
+  storyProg: GameProgress;
+  setStoryCheck: (key: string, value: boolean) => void;
+}) {
+  const storyDate = parseGameDate(storyProg.fields[saveKey(storyGame.id)] ?? storyGame.saveDefault);
   const storedSeason = prog.fields[seasonKey(game.id)];
-  const now: Season = (SEASONS as readonly string[]).includes(storedSeason ?? "")
-    ? (storedSeason as Season)
-    : game.defaultSeason;
+  const storySeason = storyDate?.season as Season | undefined;
+  const now: Season = storySeason && (SEASONS as readonly string[]).includes(storySeason)
+    ? storySeason
+    : (SEASONS as readonly string[]).includes(storedSeason ?? "")
+      ? (storedSeason as Season)
+      : game.defaultSeason;
   const [view, setView] = useState<View>(now);
   const [shown, setShown] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (storySeason) setView(storySeason);
+  }, [storySeason]);
 
   const key = (b: Bundle, i: BundleItem) => bundleItemKey(game.id, b.id, i);
   const doneCount = (b: Bundle) => b.items.filter((i) => prog.checks[key(b, i)]).length;
@@ -598,15 +618,27 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
   const bundlesDone = game.bundles.filter(complete).length;
   const pct = game.bundles.length ? Math.round((bundlesDone / game.bundles.length) * 100) : 0;
 
-  // Items still worth gathering in a view: unchecked items in bundles that are not finished yet.
   const remaining = (v: View) =>
     game.bundles.reduce(
       (n, b) => (complete(b) ? n : n + b.items.filter((i) => inView(i, v) && !prog.checks[key(b, i)]).length),
       0,
     );
 
-  const tabs: { id: View; label: string }[] = [...SEASONS.map((s) => ({ id: s as View, label: s })), { id: "any", label: "Any season" }];
+  const tabs: { id: View; label: string }[] = [
+    ...SEASONS.map((s) => ({ id: s as View, label: s })),
+    { id: "any", label: "Any season" },
+  ];
   const visible = game.bundles.filter((b) => b.items.some((i) => inView(i, view)));
+  const openBundles = visible.filter((b) => !complete(b));
+  const doneBundles = visible.filter(complete);
+  const daysLeft = storyDate && storyDate.season === now ? 28 - storyDate.day + 1 : null;
+
+  const seasonalItems = game.bundles.flatMap((b) => {
+    if (complete(b)) return [];
+    return b.items
+      .filter((i) => i.seasons !== "any" && i.seasons.includes(now) && !prog.checks[key(b, i)])
+      .map((i) => ({ bundle: b, item: i }));
+  });
 
   const viewNote =
     view === "any"
@@ -626,9 +658,6 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
     return lines.join("\n");
   };
 
-  const openBundles = visible.filter((b) => !complete(b));
-  const doneBundles = visible.filter(complete);
-
   const renderBundle = (b: Bundle) => {
     const d = doneCount(b);
     const isDone = d >= b.need;
@@ -647,12 +676,7 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
     return (
       <section key={b.id} className={"gm-bundle" + (isDone ? " done" : "")}>
         {isDone ? (
-          <button
-            type="button"
-            className="gm-bh"
-            aria-expanded={expanded}
-            onClick={() => setShown((s) => ({ ...s, [b.id]: !s[b.id] }))}
-          >
+          <button type="button" className="gm-bh" aria-expanded={expanded} onClick={() => setShown((s) => ({ ...s, [b.id]: !s[b.id] }))}>
             {head}
           </button>
         ) : (
@@ -660,38 +684,100 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
         )}
         {expanded && (
           <div className="gm-bitems">
-            {b.items
-              .filter((i) => inView(i, view))
-              .map((i) => {
-                const others = i.seasons === "any" ? [] : i.seasons.filter((s) => s !== view);
-                const sub = [others.length ? `Also in ${others.join(", ")}` : "", i.note ?? ""].filter(Boolean).join(". ");
-                return (
-                  <Check
-                    key={i.id ?? i.name}
-                    label={itemLabel(i)}
-                    sub={sub || undefined}
-                    checked={!!prog.checks[key(b, i)]}
-                    onChange={(v) => setCheck(key(b, i), v)}
-                  />
-                );
-              })}
+            {b.items.filter((i) => inView(i, view)).map((i) => {
+              const others = i.seasons === "any" ? [] : i.seasons.filter((s) => s !== view);
+              const sub = [others.length ? `Also in ${others.join(", ")}` : "", i.note ?? ""].filter(Boolean).join(". ");
+              return (
+                <Check
+                  key={i.id ?? i.name}
+                  label={itemLabel(i)}
+                  sub={sub || undefined}
+                  checked={!!prog.checks[key(b, i)]}
+                  onChange={(v) => setCheck(key(b, i), v)}
+                />
+              );
+            })}
           </div>
         )}
       </section>
     );
   };
 
-
   return (
     <>
       <p className="gm-mods">{game.mods}</p>
-      <div className="gm-bar" aria-hidden="true">
-        <i style={{ width: `${pct}%` }} />
+
+      <div className="gm-context-card gm-farm-context">
+        <div>
+          <span className="gm-context-label">Current season</span>
+          <b>{storyDate ? `${storyDate.season} ${storyDate.day}, Year ${storyDate.year}` : now}</b>
+        </div>
+        <div>
+          <span className="gm-context-label">Community Center</span>
+          <b>{bundlesDone}/{game.bundles.length} bundles</b>
+        </div>
+        {daysLeft !== null && (
+          <div>
+            <span className="gm-context-label">Season window</span>
+            <b>{daysLeft} {daysLeft === 1 ? "day" : "days"} left</b>
+          </div>
+        )}
       </div>
+
+      {seasonalItems.length > 0 && (
+        <section>
+          <div className="label">⏰ Do before {now} ends</div>
+          <div className="gm-card gm-season-urgent">
+            <p className="gm-note">
+              {seasonalItems.length} unchecked Community Center {seasonalItems.length === 1 ? "item is" : "items are"} available this season.
+              {daysLeft !== null ? ` You have ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left.` : ""}
+            </p>
+            {seasonalItems.slice(0, 6).map(({ bundle, item }) => (
+              <Check
+                key={`${bundle.id}:${item.id ?? item.name}`}
+                label={itemLabel(item)}
+                sub={item.note}
+                checked={!!prog.checks[key(bundle, item)]}
+                onChange={(v) => setCheck(key(bundle, item), v)}
+              />
+            ))}
+            {seasonalItems.length > 6 && <p className="gm-note">+ {seasonalItems.length - 6} more in the {now} Community Center view below.</p>}
+          </div>
+        </section>
+      )}
+
+      {game.progression?.map((section) => {
+        const doneN = section.items.filter((item) => {
+          const r = item.ref;
+          return !!storyProg.checks[itemKey(r.gameId, r.phaseId, r.groupLabel, r.text)];
+        }).length;
+        return (
+          <section key={section.id}>
+            <div className="label">{section.title} · {doneN}/{section.items.length}</div>
+            <div className="gm-card gm-progression-card">
+              {section.note && <p className="gm-note">{section.note}</p>}
+              {section.items.map((item) => {
+                const r = item.ref;
+                const k = itemKey(r.gameId, r.phaseId, r.groupLabel, r.text);
+                return (
+                  <Check
+                    key={item.label}
+                    label={item.label}
+                    sub={item.why}
+                    checked={!!storyProg.checks[k]}
+                    onChange={(v) => setStoryCheck(k, v)}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+
+      <div className="label">Community Center</div>
+      <div className="gm-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
       <div className="gm-overall">
-        <span>
-          {bundlesDone} of {game.bundles.length} bundles complete
-        </span>
+        <span>{bundlesDone} of {game.bundles.length} bundles complete</span>
         <span>{pct}%</span>
       </div>
       <div className="gm-rooms">
@@ -725,7 +811,7 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
       </div>
       <div className="gm-viewrow">
         <p className="gm-note">{viewNote}</p>
-        {view !== "any" && view !== now && (
+        {!storyDate && view !== "any" && view !== now && (
           <button type="button" className="gm-pill ghost" onClick={() => setField(seasonKey(game.id), view)}>
             It is {view} in game now
           </button>
@@ -741,14 +827,8 @@ function BundleView({ game, prog, setCheck, setField }: ViewProps<BundleGame>) {
         </details>
       )}
 
-      <div className="gm-foot-actions">
-        <CopyButton getText={remainingText} />
-      </div>
-      <ul className="gm-ul gm-footnotes">
-        {game.footnotes.map((t) => (
-          <li key={t}>{t}</li>
-        ))}
-      </ul>
+      <div className="gm-foot-actions"><CopyButton getText={remainingText} /></div>
+      <ul className="gm-ul gm-footnotes">{game.footnotes.map((t) => <li key={t}>{t}</li>)}</ul>
     </>
   );
 }
@@ -763,6 +843,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
 
   const game = GAMES.find((g) => g.id === gameId) ?? GAMES[0];
   const prog = progress[game.id] ?? emptyProgress();
+  const storyGame = GAMES.find((g): g is ChecklistGame => !isBundleGame(g)) ?? (GAMES[0] as ChecklistGame);
+  const storyProg = progress[storyGame.id] ?? emptyProgress();
 
   // Saving: changes queue up, then go to the server together half a second after the last tap.
   const pending = useRef<Record<string, GameProgressPatch>>({});
@@ -856,27 +938,30 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setCheck = (key: string, value: boolean) => {
+  const setGameCheck = (targetGameId: string, key: string, value: boolean) => {
     setProgress((p) => {
-      const cur = p[game.id] ?? emptyProgress();
+      const cur = p[targetGameId] ?? emptyProgress();
       const checks = { ...cur.checks };
       if (value) checks[key] = true;
       else delete checks[key];
-      return { ...p, [game.id]: { ...cur, checks } };
+      return { ...p, [targetGameId]: { ...cur, checks } };
     });
-    queue(game.id, { checks: { [key]: value } });
+    queue(targetGameId, { checks: { [key]: value } });
   };
 
-  const setField = (key: string, value: string) => {
+  const setGameField = (targetGameId: string, key: string, value: string) => {
     setProgress((p) => {
-      const cur = p[game.id] ?? emptyProgress();
+      const cur = p[targetGameId] ?? emptyProgress();
       const fields = { ...cur.fields };
       if (value === "") delete fields[key];
       else fields[key] = value;
-      return { ...p, [game.id]: { ...cur, fields } };
+      return { ...p, [targetGameId]: { ...cur, fields } };
     });
-    queue(game.id, { fields: { [key]: value } });
+    queue(targetGameId, { fields: { [key]: value } });
   };
+
+  const setCheck = (key: string, value: boolean) => setGameCheck(game.id, key, value);
+  const setField = (key: string, value: string) => setGameField(game.id, key, value);
 
   const resetGame = () => {
     if (!armed) {
@@ -936,7 +1021,16 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
           <Lookup />
 
           {isBundleGame(game) ? (
-            <BundleView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+            <BundleView
+              key={game.id}
+              game={game}
+              prog={prog}
+              setCheck={setCheck}
+              setField={setField}
+              storyGame={storyGame}
+              storyProg={storyProg}
+              setStoryCheck={(key, value) => setGameCheck(storyGame.id, key, value)}
+            />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           )}
