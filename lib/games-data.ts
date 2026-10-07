@@ -393,6 +393,12 @@ const communityCenter: BundleGame = {
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Pickaxe to Gold" },
         },
         {
+          label: "Upgrade Pickaxe to Iridium",
+          how: "After the Gold Pickaxe, bring it plus 5 Iridium Bars and 25,000g to Clint's Blacksmith. This is a hard access requirement for SVE Grandpa's Shed.",
+          why: "Lets you clear Grandpa's Shed access debris and speeds up late-game mining.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade Pickaxe to Iridium" },
+        },
+        {
           label: "Upgrade important tools toward Iridium",
           how: "Upgrade only the tools you actually use most. Each Iridium tool upgrade at Clint's requires the Gold version of that tool, 5 Iridium Bars, and 25,000g.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade important tools toward Iridium" },
@@ -2893,9 +2899,20 @@ export const GAMES: Game[] = [
             {
               id: "enter-ruins",
               label: "Gain access to and enter Grandpa's ruined Shed",
-              how: "Clear the obstruction to the shed using the tool levels required by your farm layout, then enter the ruins.",
+              how: "Current SVE requires an Iridium Pickaxe and Steel (Iron-tier) Axe to clear the debris blocking Grandpa's Shed. Upgrade both tools first, then clear the obstruction and enter the ruins.",
               location: "Grandpa's Shed",
               bucket: "toward",
+              requiresProgress: [
+                {
+                  label: "Upgrade Axe to Steel",
+                  ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
+                },
+                {
+                  label: "Upgrade Pickaxe to Iridium",
+                  ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade Pickaxe to Iridium" },
+                },
+              ],
+              unlock: "Upgrade the Axe to Steel and Pickaxe to Iridium first",
               priority: 44,
             },
             {
@@ -4084,6 +4101,7 @@ export const GAMES: Game[] = [
               "Finish the Community Center OR be down to seasonal items",
               "Progress Skull Cavern / reach Floor 100 if desired",
               "Obtain Galaxy Sword",
+              "Upgrade Pickaxe to Iridium",
               "Upgrade important tools toward Iridium",
               "Prepare for Ginger Island progression",
             ],
