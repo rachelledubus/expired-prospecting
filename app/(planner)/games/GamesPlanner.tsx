@@ -430,15 +430,40 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           </div>
         </div>
         {complete ? (
-          <p className="gm-note">Storyline complete. Open Completed Storylines below if you need to undo a step.</p>
+          <p className="gm-note">Storyline complete. You can still open the full path below and undo any step.</p>
         ) : current ? (
           <>
             <p className="gm-major-next"><b>Next:</b> {current.step.label}</p>
+            {current.step.how && <p className="gm-note">{current.step.how}</p>}
             {current.step.location && <p className="gm-note">📍 {current.step.location}</p>}
             {current.bucket === "waiting" && current.reason && <p className="gm-note">🔒 {current.reason}</p>}
+            {current.step.reward && <p className="gm-note"><b>Unlocks:</b> {current.step.reward}</p>}
             {current.step.why && <p className="gm-note">{current.step.why}</p>}
           </>
         ) : null}
+        <details className="gm-major-path">
+          <summary>Full storyline · {doneCount}/{story.steps.length}</summary>
+          {story.note && <p className="gm-note">{story.note}</p>}
+          {story.steps.map((step, idx) => {
+            const k = questStepKey(game, story, step);
+            const isDone = !!prog.checks[k];
+            const isCurrent = current?.step.id === step.id;
+            return (
+              <div className={"gm-major-path-step" + (isCurrent ? " current" : "") + (isDone ? " done" : "")} key={step.id}>
+                <span className="gm-major-path-mark">{isDone ? "✓" : isCurrent ? "→" : idx + 1}</span>
+                <div>
+                  <b>{step.label}</b>
+                  {isCurrent && step.how && <span>{step.how}</span>}
+                </div>
+                {isDone && (
+                  <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                    Undo
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </details>
       </article>
     );
   };
