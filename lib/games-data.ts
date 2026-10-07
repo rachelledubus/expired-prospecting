@@ -51,6 +51,8 @@ export type GameQuestStep = {
   unlock?: string;
   /** Reuse an existing phase checkbox so old progress is preserved. */
   legacy?: { phaseId: string; groupLabel: string; text: string };
+  /** Reuse a quest-step key when a step moves to a different storyline card. */
+  progressKey?: { storylineId: string; stepId: string };
 };
 
 export type GameStoryline = {
@@ -203,7 +205,10 @@ export function knownCheckKeys(game: Game): Set<string> {
   }
   game.questBoard.storylines.forEach((story) =>
     story.steps.forEach((step) => {
-      if (!step.legacy) keys.add(questKey(game.id, story.id, step.id));
+      if (!step.legacy) {
+        const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
+        keys.add(questKey(game.id, owner.storylineId, owner.stepId));
+      }
     }),
   );
   game.phases.forEach((p) =>
@@ -713,6 +718,21 @@ const completionTracker: CompletionGame = {
         },
       ],
     },
+    {
+      id: "mod-powers",
+      title: "Mod Powers & Permanent Unlocks",
+      note: "Track permanent bonuses here so they stay visible without turning friendship grinding into your main quest.",
+      categories: [
+        {
+          id: "sve-powers",
+          title: "SVE Permanent Powers",
+          defaultTotal: 7,
+          unit: "powers earned",
+          note: "Use the SVE Special Items & Powers screen as the source of truth. Common targets include Cheese Mastery, Strawberry Mastery, Brewing Mastery, Crafting Mastery, Starfruit Mastery, Animal Mastery, and Warp Magic. Grape Mastery is marriage-only with Sophia, so edit the total if you want to include it.",
+          sourceHint: "Special Items & Powers",
+        },
+      ],
+    },
   ],
 };
 
@@ -768,24 +788,34 @@ export const GAMES: Game[] = [
           ],
         },
         {
+          id: "sophia-sprinkler",
+          title: "Sophia — Year 1 Vineyard Bonus",
+          mod: "Stardew Valley Expanded",
+          importance: "optional",
+          note: "Missable bonus only. This must never block the Scarlett/Pondwood progression chain.",
+          steps: [
+            {
+              id: "sprinkler",
+              label: "Trigger Sophia's Year 1 vineyard introduction and get the Quality Sprinkler",
+              how: "Enter Blue Moon Vineyard 6 AM–3 PM in Spring or Summer, Year 1, with one empty inventory slot. If the window has already passed, mark this handled/missed; the Scarlett unlock is still available.",
+              location: "Blue Moon Vineyard",
+              reward: "Quality Sprinkler + access to Sophia's vineyard ledger",
+              why: "Useful Year 1 reward, but not a prerequisite for Sophia's later heart progression.",
+              bucket: "deadline",
+              priority: 98,
+              gate: { year: 1, seasons: ["Spring", "Summer"] },
+              unlock: "Year 1 Spring or Summer",
+              progressKey: { storylineId: "sophia-year1", stepId: "sprinkler" },
+            },
+          ],
+        },
+        {
           id: "sophia-year1",
           title: "Sophia — Scarlett/Pondwood Unlock",
           mod: "Stardew Valley Expanded",
           importance: "recommended",
           note: "Progression goal: reach Sophia's 8-heart event. That event, plus Community Center/Joja completion, unlocks Scarlett as a full NPC and Pondwood/Grampleton content. Stop here unless you personally want Sophia's romance/story scenes.",
           steps: [
-            {
-              id: "sprinkler",
-              label: "Trigger Sophia's vineyard introduction and get the Quality Sprinkler",
-              how: "Enter Blue Moon Vineyard 6 AM–3 PM in Spring or Summer, Year 1, with one empty inventory slot.",
-              location: "Blue Moon Vineyard",
-              reward: "Quality Sprinkler + access to Sophia's vineyard ledger",
-              why: "Useful early farm upgrade and a Year 1-only event.",
-              bucket: "deadline",
-              priority: 98,
-              gate: { year: 1, seasons: ["Spring", "Summer"] },
-              unlock: "Year 1 Spring or Summer",
-            },
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Sophia and see her vineyard event",
@@ -990,6 +1020,7 @@ export const GAMES: Game[] = [
               priority: 110,
               requires: ["mateo:five-1"],
               unlock: "Only available for 3 in-game days after Mateo 5-heart Part I",
+              progressKey: { storylineId: "mateo", stepId: "five-2" },
             },
             {
               id: "guild-bonus",
@@ -1188,6 +1219,7 @@ export const GAMES: Game[] = [
               priority: 35,
               requires: ["sve-highlands:diamond-wand"],
               reward: "Visit the First Slash guild and related Fable Reef story content",
+              progressKey: { storylineId: "sve-highlands", stepId: "first-slash" },
             },
           ],
         },
@@ -2343,7 +2375,6 @@ export const GAMES: Game[] = [
             label: "Stardew Valley Expanded",
             items: [
               "Repair Grandpa’s Shed",
-              "Complete Grandpa’s Shed interior renovation",
               "Use the upstairs greenhouse",
               "Continue SVE character storylines",
               "Progress Wizard/Magnus content",
@@ -2383,7 +2414,7 @@ export const GAMES: Game[] = [
             items: [
               "Continue unlocking S&S characters",
               "Develop S&S skills",
-              "Complete major character campaigns",
+              "Complete the Sword & Sorcery main campaign",
               "Explore the Deep Dark when unlocked",
               "Complete the major dungeon content",
               "Progress toward the S&S finale",
