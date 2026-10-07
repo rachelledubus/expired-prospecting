@@ -1997,7 +1997,7 @@ export const GAMES: Game[] = [
             {
               id: "unlock-vivienne",
               label: "Unlock Vivienne through Eloise's puppy-adoption story",
-              how: "After Eloise's puppy-adoption event, enter East Scarp 9 AM–5 PM on a sunny Monday, Thursday, Saturday, or Sunday to trigger Vivienne's unlocking event.",
+              how: "Vivienne requires Eloise's puppy-adoption event first. East Scarp's current wiki does not publish the puppy event's full trigger, so use Event Lookup with non-heart/show-all events enabled to surface that hidden prerequisite on your installed version. After the puppy event, enter East Scarp 9 AM–5 PM on a sunny Monday, Thursday, Saturday, or Sunday.",
               location: "East Scarp",
               gate: { weather: ["sunny"] },
               bucket: "toward",
