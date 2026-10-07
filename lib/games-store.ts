@@ -81,6 +81,7 @@ export async function loadProgress(game: Game): Promise<GameProgress> {
 }
 
 const MAX_FIELD_LENGTH = 200;
+const MAX_CUSTOM_COMPLETION_FIELD_LENGTH = 12000;
 
 /**
  * Check a request body. Returns a clean patch, or a message saying what is wrong.
@@ -113,7 +114,11 @@ export function parsePatch(game: Game, body: unknown): GameProgressPatch | strin
       if (typeof v !== "string") return "Each text field must be text.";
       if (!fieldKeys.has(k)) continue;
       if (k === seasonKey(game.id) && v !== "" && !(SEASONS as readonly string[]).includes(v)) return "That is not a season.";
-      patch.fields[k] = v.slice(0, MAX_FIELD_LENGTH);
+      const maxLength =
+        k.includes("|completion|") && k.endsWith("|custom-items")
+          ? MAX_CUSTOM_COMPLETION_FIELD_LENGTH
+          : MAX_FIELD_LENGTH;
+      patch.fields[k] = v.slice(0, maxLength);
     }
   }
   return patch;
