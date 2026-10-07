@@ -1023,6 +1023,7 @@ export const GAMES: Game[] = [
             {
               id: "repair-boat",
               label: "Repair all three parts of Willy's Boat",
+              how: "In the Fish Shop back room, interact with the broken hull, anchor, and ticket machine and donate the materials from the previous step to each repair point.",
               location: "Fish Shop back room",
               bucket: "now",
               priority: 54,
@@ -1038,6 +1039,7 @@ export const GAMES: Game[] = [
             {
               id: "arrive",
               label: "Buy a 1,000g ticket and reach Ginger Island",
+              how: "After the overnight repair cutscene, return to the Fish Shop back room, use the boat ticket machine, pay 1,000g, and board Willy's boat.",
               location: "Fish Shop back room → Ginger Island",
               bucket: "now",
               priority: 53,
@@ -1065,6 +1067,7 @@ export const GAMES: Game[] = [
             {
               id: "west",
               label: "Spend 10 Golden Walnuts to open Island West",
+              how: "Use the parrot upgrade that removes the sleeping turtle blocking the west path from Island South; pay the parrot 10 Golden Walnuts.",
               location: "Island South",
               bucket: "toward",
               priority: 48,
@@ -1076,6 +1079,7 @@ export const GAMES: Game[] = [
             {
               id: "farmhouse",
               label: "Spend 20 Golden Walnuts to repair the Island Farmhouse",
+              how: "After Island West is open, find the ruined farmhouse and pay the nearby parrot 20 Golden Walnuts.",
               location: "Island West",
               bucket: "toward",
               priority: 48,
@@ -1084,6 +1088,7 @@ export const GAMES: Game[] = [
             {
               id: "trader",
               label: "Spend 10 Golden Walnuts to unlock the Island Trader",
+              how: "After repairing the Island Farmhouse, return to Island North and pay the Trader parrot 10 Golden Walnuts.",
               location: "Island North",
               bucket: "toward",
               priority: 47,
@@ -1102,6 +1107,7 @@ export const GAMES: Game[] = [
             {
               id: "bridge",
               label: "Spend 10 Golden Walnuts to repair the Dig Site bridge",
+              how: "In Island North, use the parrot beside the broken bridge and pay 10 Golden Walnuts to restore access to the Dig Site.",
               location: "Island North",
               bucket: "toward",
               priority: 46,
@@ -1113,6 +1119,7 @@ export const GAMES: Game[] = [
             {
               id: "snail",
               label: "Bomb the blocked Mushroom Cave and rescue Professor Snail",
+              how: "In the Dig Site, use a Bomb or another explosive on the boulder blocking the Mushroom Cave, then enter and talk to Professor Snail.",
               location: "Dig Site",
               bucket: "now",
               priority: 46,
@@ -1141,6 +1148,7 @@ export const GAMES: Game[] = [
             {
               id: "floor-10",
               label: "Reach Volcano Floor 10 and the Forge",
+              how: "Enter the Volcano with your Watering Can and climb all 10 floors in one run. Reaching the Caldera at Floor 10 gives you access to the Forge and the permanent entrance shortcut.",
               location: "Volcano Caldera",
               bucket: "toward",
               priority: 46,
@@ -1159,6 +1167,7 @@ export const GAMES: Game[] = [
             {
               id: "resort",
               label: "Spend 20 Golden Walnuts to build the Island Resort",
+              how: "After the Island Farmhouse is repaired, use the resort parrot on Island South and pay 20 Golden Walnuts.",
               location: "Island South",
               bucket: "toward",
               priority: 40,
@@ -1179,6 +1188,7 @@ export const GAMES: Game[] = [
             {
               id: "express",
               label: "Spend 10 Golden Walnuts to unlock the Parrot Express",
+              how: "Once Island North and West are open, use the parrot north of the Island Farm and pay 10 Golden Walnuts. The express then connects the major island areas.",
               location: "North of the Island Farm",
               bucket: "toward",
               priority: 39,
@@ -1304,6 +1314,7 @@ export const GAMES: Game[] = [
             {
               id: "meet",
               label: "Meet Mateo",
+              how: "Travel to East Scarp and find Mateo's tent in the southeast part of the main East Scarp area. Talk to Mateo; then follow the Museum/Mines introduction events that appear next.",
               location: "East Scarp",
               why: "Starts Sword & Sorcery's first chapter.",
               bucket: "now",
@@ -1593,6 +1604,7 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Lance",
+              how: "After meeting Lance at the Volcano Forge, talk to him when available and give liked/loved gifts until his Social tab reaches 2 hearts.",
               bucket: "toward",
               priority: 64,
               why: "2 hearts is the hard requirement for Marlon's Boat and the Highlands.",
@@ -1609,6 +1621,7 @@ export const GAMES: Game[] = [
             {
               id: "enter-highlands",
               label: "Take Marlon's boat to the Highlands and see Lance's 2-heart story",
+              how: "After completing Marlon's Boat materials, use the restored boat at the Adventurer's Guild to travel to the Highlands, then enter the area for Lance's event when available.",
               location: "The Highlands",
               bucket: "now",
               priority: 63,
@@ -1682,6 +1695,7 @@ export const GAMES: Game[] = [
             {
               id: "meet-alesia",
               label: "Meet Alesia at the Adventurer's Guild",
+              how: "After her introduction becomes available in your SVE version, enter the Adventurer's Guild to trigger it. If it does not fire, use Event Lookup to see the exact unmet condition for Alesia's intro.",
               location: "Adventurer's Guild",
               bucket: "toward",
               priority: 58,
@@ -1690,6 +1704,7 @@ export const GAMES: Game[] = [
             {
               id: "volcano-caldera",
               label: "Reach the Volcano Caldera and meet Lance",
+              how: "Unlock Ginger Island, enter the Volcano Dungeon, and reach Floor 10. Lance is introduced at the Forge/Caldera as part of SVE progression.",
               location: "Ginger Island Volcano",
               bucket: "toward",
               priority: 58,
@@ -1706,6 +1721,7 @@ export const GAMES: Game[] = [
             {
               id: "nexus-part2",
               label: "Complete Enchanted Grove Part II at the Wizard's Tower",
+              how: "After Part I, enter the Wizard's Tower when the next Enchanted Grove event is available. Use Event Lookup if it does not trigger so you can see the current-version condition.",
               location: "Wizard's Tower",
               bucket: "now",
               priority: 58,
@@ -1713,6 +1729,7 @@ export const GAMES: Game[] = [
             {
               id: "nexus-part3",
               label: "Complete Enchanted Grove Part III in the Backwoods",
+              how: "After Part II, enter the Backwoods when the next event is available. This completes the core Nexus unlock sequence.",
               location: "Backwoods / Enchanted Grove",
               bucket: "now",
               priority: 58,
@@ -1729,6 +1746,7 @@ export const GAMES: Game[] = [
             {
               id: "badlands",
               label: "Enter the Crimson Badlands",
+              how: "After the Nexus Warp: Galdoran Continent event, travel to Castle Village Outpost and use its minecart into the Crimson Badlands; the Enchanted Grove warp becomes another route later.",
               location: "Galdoran Continent / Castle Village Outpost",
               bucket: "now",
               priority: 57,
@@ -1807,12 +1825,14 @@ export const GAMES: Game[] = [
             {
               id: "starfruit",
               label: "Gather 200 Starfruit for Aurora Vineyard",
+              how: "Grow or otherwise acquire 200 Starfruit. Starfruit can be grown in Summer, the Greenhouse, or on Ginger Island; keep the full stack for the Aurora Vineyard quest instead of selling it.",
               bucket: "toward",
               priority: 42,
             },
             {
               id: "turn-in",
               label: "Complete the Aurora Vineyard quest",
+              how: "When the Aurora Vineyard quest is active, deliver the requested 200 Starfruit to complete it. Apples appears the next in-game day.",
               location: "Aurora Vineyard",
               bucket: "now",
               priority: 42,
@@ -1821,6 +1841,7 @@ export const GAMES: Game[] = [
             {
               id: "meet-apples",
               label: "Meet Apples",
+              how: "Return to Aurora Vineyard on the next in-game day after completing the 200-Starfruit quest and follow the new event there.",
               location: "Aurora Vineyard",
               bucket: "now",
               priority: 42,
@@ -1862,6 +1883,7 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 600 Stone, 150 Hardwood, 50 Iron Bars, and 20 Battery Packs",
+              how: "Stockpile all four materials for Robin's Grandpa's Shed restoration. Smelt Iron Bars from 5 Iron Ore + 1 Coal each; Battery Packs come from Lightning Rods after storms or other later-game sources.",
               bucket: "toward",
               priority: 43,
             },
@@ -1878,6 +1900,7 @@ export const GAMES: Game[] = [
             {
               id: "use-greenhouse",
               label: "Set up and use the upstairs greenhouse",
+              how: "After the shed restoration is finished, go upstairs and begin using the greenhouse space for crops that benefit from year-round growing.",
               location: "Grandpa's Shed",
               bucket: "now",
               priority: 42,
@@ -1946,6 +1969,7 @@ export const GAMES: Game[] = [
             {
               id: "talk-yuuma",
               label: "Talk to Yuuma at least once",
+              how: "After taking the cable car to Ridgeside, find Yuuma in the village and speak to him once. The minecart restoration event will not start until you have done this.",
               bucket: "now",
               priority: 88,
               legacy: { phaseId: "p1", groupLabel: "Ridgeside Village", text: "Talk to Yuuma at least once" },
@@ -1963,6 +1987,7 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 300 Wood, 10 Iron Bars, and 5 Gold Bars",
+              how: "Collect 300 Wood, smelt 10 Iron Bars, and smelt 5 Gold Bars. Keep the full amounts for the Ridgeside minecart donation box.",
               bucket: "toward",
               priority: 72,
             },
@@ -1977,6 +2002,7 @@ export const GAMES: Game[] = [
             {
               id: "sleep",
               label: "Sleep so the Ridgeside minecarts can be repaired",
+              how: "After depositing all minecart materials, finish the day and sleep. The repair completes the following day.",
               bucket: "now",
               priority: 71,
               legacy: { phaseId: "p2", groupLabel: "Ridgeside Transportation Quest", text: "Sleep" },
@@ -1984,6 +2010,7 @@ export const GAMES: Game[] = [
             {
               id: "test",
               label: "Test the repaired Ridgeside minecarts",
+              how: "Return to a Ridgeside minecart stop the next day and use it once so you know the fast-travel system is active.",
               bucket: "now",
               priority: 71,
               reward: "Ridgeside fast travel active",
@@ -2020,6 +2047,7 @@ export const GAMES: Game[] = [
             {
               id: "meet-daia",
               label: "Meet Daia and begin the Ridge Forest storyline",
+              how: "After entering Ridge Forest, follow the story encounter that introduces Daia; then return to the Ninja House as the storyline directs you.",
               location: "Ridge Forest / Ninja House story",
               bucket: "now",
               priority: 83,
@@ -2218,6 +2246,7 @@ export const GAMES: Game[] = [
             {
               id: "greenhouse-event",
               label: "Trigger Lenny's 8-heart event at the Village Office",
+              how: "Reach 8 hearts with Lenny and at least 700,000g total lifetime earnings, then enter the Ridgeside Village Office. The event can occur in any season/weather.",
               location: "Ridgeside Village Office",
               bucket: "now",
               priority: 55,
@@ -2226,12 +2255,14 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 60 Hardwood, 100 Stone, and 50 Iron Bars",
+              how: "Collect exactly 60 Hardwood, 100 Stone, and 50 Iron Bars for the Ridgeside Greenhouse quest; keep them for the donation box in Lenny's office.",
               bucket: "toward",
               priority: 54,
             },
             {
               id: "restore",
               label: "Deposit the greenhouse materials in Lenny's office and return the next day",
+              how: "Place all 60 Hardwood, 100 Stone, and 50 Iron Bars into the donation box inside Lenny's office, then sleep. The Community Greenhouse is restored the next day.",
               location: "Ridgeside Village Office",
               bucket: "now",
               priority: 54,
