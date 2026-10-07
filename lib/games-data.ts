@@ -66,6 +66,7 @@ export type GameStoryline = {
 
 export type ProgressionItem = {
   label: string;
+  how?: string;
   why?: string;
   ref: { gameId: string; phaseId: string; groupLabel: string; text: string };
 };
@@ -266,16 +267,19 @@ const communityCenter: BundleGame = {
       items: [
         {
           label: "Unlock the Community Center",
+          how: "From Spring 5 onward, enter Pelican Town from the Bus Stop between 8 AM and 1 PM on a non-rainy day for Lewis's cutscene. Go inside the Community Center and inspect the golden scroll. The next morning, read the Wizard's letter, visit his tower, and drink the potion so you can read the bundle scrolls.",
           why: "Starts the bundle route and eventually unlocks Willy's Ginger Island boat after restoration.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Unlock the Community Center" },
         },
         {
           label: "Buy the first backpack upgrade",
+          how: "Bring 2,000g to Pierre's General Store and interact with the red backpack displayed to the right of the counter. It expands your inventory from 12 to 24 slots.",
           why: "Makes mining, questing, and multi-region days much less annoying.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Buy the first backpack upgrade" },
         },
         {
           label: "Upgrade Axe to Steel",
+          how: "At Clint's Blacksmith, upgrade the Axe to Copper first (5 Copper Bars + 2,000g), then Steel (5 Iron Bars + 5,000g). Clint keeps the tool while upgrading it.",
           why: "Unlocks the north entrance from The Ridge into Ridge Forest.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
         },
@@ -288,76 +292,94 @@ const communityCenter: BundleGame = {
       items: [
         {
           label: "Reach Mine Floor 20",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 20. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Reach Mine Floor 20" },
         },
         {
           label: "Reach Mine Floor 40",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 40. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Reach Mine Floor 40" },
         },
         {
           label: "Upgrade Pickaxe to Copper",
+          how: "Bring your Pickaxe, 5 Copper Bars, and 2,000g to Clint's Blacksmith and choose Tool Upgrade.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Upgrade Pickaxe to Copper" },
         },
         {
           label: "Save iron ore instead of selling it",
+          how: "Keep Iron Ore from Mines Floors 41–79. Smelt 5 Iron Ore + 1 Coal in a Furnace per Iron Bar; you will need Iron Bars for tool upgrades, sprinklers, and multiple mod quests.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Save iron ore instead of selling it" },
         },
         {
           label: "Save gold ore once you can reach it",
+          how: "Keep Gold Ore once you reach the gold section of the Mines (Floor 80+). Smelt 5 Gold Ore + 1 Coal per Gold Bar instead of selling the ore.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Save gold ore once I can reach it" },
         },
         {
           label: "Reach Mine Floor 50",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 50. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 50" },
         },
         {
           label: "Reach Mine Floor 60",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 60. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 60" },
         },
         {
           label: "Reach Mine Floor 70",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 70. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 70" },
         },
         {
           label: "Reach Mine Floor 80",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 80. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 80" },
         },
         {
           label: "Obtain the Firewalker Boots",
+          how: "Open the treasure chest on Mine Floor 80. If you missed/sold them, the Adventurer's Guild sells Firewalker Boots for 2,000g after you have reached Floor 80.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Obtain the Firewalker Boots" },
         },
         {
           label: "Upgrade Pickaxe to Steel",
+          how: "After the Copper Pickaxe, bring it plus 5 Iron Bars and 5,000g to Clint's Blacksmith and choose Tool Upgrade.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Upgrade Pickaxe to Steel when affordable" },
         },
         {
           label: "Reach Mine Floor 90",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 90. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 90" },
         },
         {
           label: "Reach Mine Floor 100",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 100. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 100" },
         },
         {
           label: "Reach Mine Floor 110",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 110. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 110" },
         },
         {
           label: "Reach Mine Floor 120",
+          how: "Use ladders or shafts in the regular Mines until you reach Floor 120. Elevator checkpoints save every 5 floors, so you do not need to do this in one day.",
           why: "Finishes the regular Mines and gives the Skull Key.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 120" },
         },
         {
           label: "Obtain the Skull Key",
+          how: "Reach Mine Floor 120 and open the treasure chest there. The Skull Key is added automatically to your wallet.",
           why: "Unlocks Skull Cavern once the bus is repaired and is also used by later SVE progression.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Obtain the Skull Key" },
         },
         {
           label: "Upgrade Pickaxe to Gold",
+          how: "After the Steel Pickaxe, bring it plus 5 Gold Bars and 10,000g to Clint's Blacksmith and choose Tool Upgrade.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Pickaxe to Gold" },
         },
         {
           label: "Upgrade important tools toward Iridium",
+          how: "Upgrade only the tools you actually use most. Each Iridium tool upgrade at Clint's requires the Gold version of that tool, 5 Iridium Bars, and 25,000g.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade important tools toward Iridium" },
         },
       ],
@@ -369,30 +391,37 @@ const communityCenter: BundleGame = {
       items: [
         {
           label: "Build a Silo",
+          how: "At Robin's Carpenter's Shop, choose Construct Farm Buildings. A Silo costs 100g + 100 Stone + 10 Clay + 5 Copper Bars and takes 2 days to build.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Build a Silo" },
         },
         {
           label: "Build a Coop or Barn",
+          how: "Use Robin's Construct Farm Buildings menu. Pick whichever animal path you want first; build the Silo before cutting lots of grass so the hay is stored.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Build a Coop OR Barn" },
         },
         {
           label: "Begin producing artisan goods",
+          how: "Start with whichever machine your current farm supports—e.g. Preserves Jars for crops, Mayonnaise Machines for eggs, or Cheese Presses for milk. The goal is simply to have at least one repeatable artisan-income source.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Begin producing some artisan goods" },
         },
         {
           label: "Build a reliable mining-food supply",
+          how: "Keep a repeatable stack of food you can take underground without raiding your bundle/crop stash. Pick something easy for your save and restock it before mining days.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Have a reliable source of food for mining" },
         },
         {
           label: "Mostly Quality Sprinklers or better",
+          how: "Quality Sprinklers unlock at Farming 6 and cost 1 Iron Bar + 1 Gold Bar + 1 Refined Quartz each. Replace hand-watered crop sections until most of your main field is automated.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have mostly Quality Sprinklers or better" },
         },
         {
           label: "Establish reliable daily income",
+          how: "Count this when your crops/animals/artisan machines reliably cover normal purchases and upgrades without needing emergency fishing/mining for cash.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have a reliable daily income" },
         },
         {
           label: "Build a reliable combat-food supply",
+          how: "Keep a separate stack for long combat runs—enough healing/energy that you can enter Skull Cavern, the Volcano, or mod dungeons without stopping because you ran out of food.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have a reliable supply of mining/combat food" },
         },
       ],
@@ -404,37 +433,45 @@ const communityCenter: BundleGame = {
       items: [
         {
           label: "Repair the Bus",
+          how: "Community Center route: complete all four Vault bundles for 42,500g total. Joja route: purchase Bus Repair for 40,000g from the Community Development Form.",
           why: "Complete all four Vault bundles for 42,500g total.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Repair the Bus" },
         },
         {
           label: "Visit the Calico Desert",
+          how: "After the bus is repaired, go to the Bus Stop and buy a 500g ticket from the machine while bus service is available. The ride takes you directly to Calico Desert.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Visit the Desert" },
         },
         {
           label: "Enter Skull Cavern",
+          how: "Bring the Skull Key from Mine Floor 120 to the Calico Desert. The Skull Cavern entrance is in the northwest corner of the Desert; walk inside and the key unlocks the door.",
           why: "Requires the Skull Key from Mine Floor 120.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Enter Skull Cavern" },
         },
         {
           label: "Obtain an Iridium Bar",
+          how: "Smelt 5 Iridium Ore + 1 Coal in a Furnace for 8 in-game hours. Skull Cavern is the main early source of larger amounts of Iridium Ore.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Obtain an Iridium Bar" },
         },
         {
           label: "Begin collecting Iridium",
+          how: "Start doing Skull Cavern runs and break Iridium Nodes whenever you find them. Save the ore/bars for tools, Willy's boat, sprinklers, and later mod requirements.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Begin collecting Iridium" },
         },
         {
           label: "Work toward the Galaxy Sword",
+          how: "Your actual requirement is 1 Prismatic Shard plus Desert access. Skull Cavern is the most practical place to hunt for one once your combat setup is ready; Mystic Stones, Omni Geodes, fishing treasure, and some monster drops can also produce one.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Work toward the Galaxy Sword" },
         },
         {
           label: "Obtain the Galaxy Sword",
+          how: "Take 1 Prismatic Shard to the Three Pillars in the northeast Calico Desert. Hold the shard in your hands and walk onto the center tile between the pillars. The shard is consumed and you receive the Galaxy Sword. You do not need the Dwarvish Translation Guide to do this.",
           why: "Needed for SVE's later Nexus questline.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Obtain Galaxy Sword" },
         },
         {
           label: "Progress Skull Cavern / reach Floor 100 if desired",
+          how: "Use bombs, staircases, speed/luck food, and early starts to descend quickly. Floor 100 is a milestone/quest target; Skull Cavern itself has no final bottom floor.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Progress Skull Cavern / reach Floor 100 if desired" },
         },
       ],
@@ -1636,6 +1673,8 @@ export const GAMES: Game[] = [
             {
               id: "galaxy-sword",
               label: "Obtain the Galaxy Sword",
+              how: "Get 1 Prismatic Shard, take it to the Three Pillars in the northeast Calico Desert, hold it, and step onto the center tile between the pillars. The shard is consumed and becomes the Galaxy Sword.",
+              location: "Northeast Calico Desert — Three Pillars",
               bucket: "toward",
               priority: 58,
               why: "Required to start the Nexus questline.",
