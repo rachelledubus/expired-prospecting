@@ -295,7 +295,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         <h3>{story.title}</h3>
         <Check
           label={step.label}
-          sub={step.how}
+          sub={step.how ? `How: ${step.how}` : undefined}
           checked={!!prog.checks[key]}
           onChange={(v) => setCheck(key, v)}
         />
@@ -378,7 +378,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         ) : current ? (
           <>
             <p className="gm-major-next"><b>Next:</b> {current.step.label}</p>
-            {current.step.how && <p className="gm-note">{current.step.how}</p>}
+            {current.step.how && <p className="gm-note"><b>How:</b> {current.step.how}</p>}
             {current.step.location && <p className="gm-note">📍 {current.step.location}</p>}
             {current.bucket === "waiting" && current.reason && <p className="gm-note">🔒 {current.reason}</p>}
             {current.step.reward && <p className="gm-note"><b>Unlocks:</b> {current.step.reward}</p>}
@@ -737,7 +737,10 @@ function BundleView({
                   <Check
                     key={item.label}
                     label={item.label}
-                    sub={item.why}
+                    sub={[
+                      item.how ? `How: ${item.how}` : "",
+                      item.why ? `Why: ${item.why}` : "",
+                    ].filter(Boolean).join("  •  ") || undefined}
                     checked={!!storyProg.checks[k]}
                     onChange={(v) => setStoryCheck(k, v)}
                   />
