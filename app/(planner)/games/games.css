@@ -307,6 +307,23 @@
 .tp.gm .gm-major-path-step span:not(.gm-major-path-mark) { display: block; margin-top: 2px; }
 
 
+/* Daily social priorities */
+.tp.gm .gm-social-section { margin-top: 16px; }
+.tp.gm .gm-social-card { padding: 13px 14px; }
+.tp.gm .gm-social-card > .gm-note { margin: 0 0 10px; }
+.tp.gm .gm-social-list { display: grid; gap: 7px; }
+.tp.gm .gm-social-row { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 9px; align-items: start;
+  padding: 9px 10px; border-radius: 11px; background: rgba(255,255,255,.55); }
+.tp.gm .gm-social-rank { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--navy); color: #fff; font: 700 12px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-social-copy { min-width: 0; }
+.tp.gm .gm-social-name { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 3px; }
+.tp.gm .gm-social-name > b { color: var(--navy); font: 700 14px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-social-copy > span { display: block; color: var(--text); font-size: 12.5px; line-height: 1.35; }
+.tp.gm .gm-social-copy > em { display: block; margin-top: 3px; color: var(--muted); font: 500 11.5px/1.35 "DM Sans", system-ui, sans-serif; font-style: normal; }
+.tp.gm .gm-personal-goal { border-radius: 999px; padding: 2px 7px; background: #F2DFE8; color: #79465F;
+  font: 700 10px "DM Sans", system-ui, sans-serif; }
+
 /* Completion tab */
 .tp.gm .gm-completion-summary { display: grid; grid-template-columns: minmax(150px,.45fr) minmax(150px,.45fr) minmax(240px,1fr);
   gap: 10px; margin: 12px 0 14px; }
