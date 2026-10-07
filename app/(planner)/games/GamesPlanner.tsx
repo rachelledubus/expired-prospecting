@@ -930,44 +930,89 @@ function CompletionView({ game, prog, setCheck, setField }: ViewProps<Completion
                     <div className="gm-bar thin" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
                     {category.note && <p className="gm-note">{category.note}</p>}
 
-                    {category.items.length > 0 && (
-                      <div className="gm-completion-list">
-                        {category.items.map((item) => {
-                          const key = completionItemKey(game.id, category.id, item);
-                          return (
-                            <Check
-                              key={item}
-                              label={item}
-                              checked={!!prog.checks[key]}
-                              onChange={(value) => setCheck(key, value)}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
+                    {(() => {
+                      const openBuiltIn = category.items.filter(
+                        (item) => !prog.checks[completionItemKey(game.id, category.id, item)],
+                      );
+                      const doneBuiltIn = category.items.filter(
+                        (item) => !!prog.checks[completionItemKey(game.id, category.id, item)],
+                      );
+                      const openCustom = custom.filter((item) => !item.done);
+                      const doneCustom = custom.filter((item) => item.done);
 
-                    {custom.length > 0 && (
-                      <div className="gm-custom-list">
-                        <div className="gm-completion-subhead">Custom / modded items</div>
-                        {custom.map((item) => (
-                          <div className="gm-custom-row" key={item.id}>
-                            <Check
-                              label={item.label}
-                              checked={item.done}
-                              onChange={(value) => toggleCustom(category.id, item.id, value)}
-                            />
-                            <button
-                              type="button"
-                              className="gm-custom-remove"
-                              aria-label={`Remove ${item.label}`}
-                              onClick={() => removeCustom(category.id, item.id)}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      return (
+                        <>
+                          {(openBuiltIn.length > 0 || openCustom.length > 0) && (
+                            <div className="gm-completion-list">
+                              {openBuiltIn.map((item) => {
+                                const key = completionItemKey(game.id, category.id, item);
+                                return (
+                                  <Check
+                                    key={item}
+                                    label={item}
+                                    checked={false}
+                                    onChange={(value) => setCheck(key, value)}
+                                  />
+                                );
+                              })}
+                              {openCustom.map((item) => (
+                                <div className="gm-custom-row" key={item.id}>
+                                  <Check
+                                    label={item.label}
+                                    checked={false}
+                                    onChange={(value) => toggleCustom(category.id, item.id, value)}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="gm-custom-remove"
+                                    aria-label={`Remove ${item.label}`}
+                                    onClick={() => removeCustom(category.id, item.id)}
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {(doneBuiltIn.length > 0 || doneCustom.length > 0) && (
+                            <details className="gm-completion-completed">
+                              <summary>Completed · {doneBuiltIn.length + doneCustom.length}</summary>
+                              <div className="gm-completion-list gm-completion-list-done">
+                                {doneBuiltIn.map((item) => {
+                                  const key = completionItemKey(game.id, category.id, item);
+                                  return (
+                                    <Check
+                                      key={item}
+                                      label={item}
+                                      checked
+                                      onChange={(value) => setCheck(key, value)}
+                                    />
+                                  );
+                                })}
+                                {doneCustom.map((item) => (
+                                  <div className="gm-custom-row" key={item.id}>
+                                    <Check
+                                      label={item.label}
+                                      checked
+                                      onChange={(value) => toggleCustom(category.id, item.id, value)}
+                                    />
+                                    <button
+                                      type="button"
+                                      className="gm-custom-remove"
+                                      aria-label={`Remove ${item.label}`}
+                                      onClick={() => removeCustom(category.id, item.id)}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {category.allowCustom && (
                       <div className="gm-custom-add">
