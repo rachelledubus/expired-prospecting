@@ -218,6 +218,62 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     return rows;
   }, [game, prog, gameDate, weather]);
 
+  const socialRows = useMemo(() => {
+    const rows: Array<{
+      story: GameStoryline;
+      step: GameQuestStep;
+      npc: string;
+      hearts: number;
+      personal: boolean;
+      why: string;
+      importance: QuestRow["importance"];
+      score: number;
+    }> = [];
+
+    for (const story of game.questBoard.storylines) {
+      const socialStep = story.steps.find((step) => {
+        if (!step.social) return false;
+        return !prog.checks[questStepKey(game, story, step)];
+      });
+      if (!socialStep?.social) continue;
+
+      const social = socialStep.social;
+      const startStepOk =
+        !social.startAfterStepId ||
+        !!prog.checks[questKey(game.id, story.id, social.startAfterStepId)];
+      const startProgressOk =
+        !social.startAfterProgress ||
+        !!prog.checks[
+          itemKey(
+            social.startAfterProgress.gameId,
+            social.startAfterProgress.phaseId,
+            social.startAfterProgress.groupLabel,
+            social.startAfterProgress.text,
+          )
+        ];
+
+      if (!startStepOk || !startProgressOk) continue;
+
+      const importance = socialStep.importance ?? story.importance ?? "recommended";
+      if (importance === "optional") continue;
+
+      const importanceScore = importance === "required" ? 300 : 180;
+      const personalScore = social.personal ? 140 : 0;
+      rows.push({
+        story,
+        step: socialStep,
+        npc: social.npc,
+        hearts: social.hearts,
+        personal: !!social.personal,
+        why: social.why ?? story.note ?? "",
+        importance,
+        score: importanceScore + personalScore + (socialStep.priority ?? 0),
+      });
+    }
+
+    return rows.sort((a, b) => b.score - a.score || a.npc.localeCompare(b.npc));
+  }, [game, prog]);
+
   const scoreRow = (row: QuestRow) => {
     const bucketScore = row.bucket === "deadline" ? 500 : row.bucket === "now" ? 400 : row.bucket === "toward" ? 250 : 0;
     const importanceScore = row.importance === "required" ? 70 : row.importance === "recommended" ? 35 : 0;
@@ -446,6 +502,33 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           </select>
         </div>
       </div>
+
+      {socialRows.length > 0 && (
+        <section className="gm-social-section">
+          <div className="label">💬 Talk to Today · {socialRows.length}</div>
+          <div className="gm-card gm-social-card">
+            <p className="gm-note">
+              These are the friendships currently gating progression or a personal goal. Talk to them when convenient; gifts are optional unless you want to speed it up.
+            </p>
+            <div className="gm-social-list">
+              {socialRows.map((row, index) => (
+                <div className="gm-social-row" key={`${row.story.id}:${row.npc}`}>
+                  <span className="gm-social-rank">{index + 1}</span>
+                  <div className="gm-social-copy">
+                    <div className="gm-social-name">
+                      <b>{row.npc}</b>
+                      <span className={`gm-importance ${row.importance}`}>{importanceLabel(row.importance)}</span>
+                      {row.personal && <span className="gm-personal-goal">Personal goal</span>}
+                    </div>
+                    <span>Target: {row.hearts}♥ · {row.why}</span>
+                    <em>If you already reached {row.hearts}♥, focus on triggering the listed heart event instead of grinding more friendship.</em>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {deadlineRows.length > 0 && (
         <section>
