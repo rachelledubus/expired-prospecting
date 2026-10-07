@@ -590,7 +590,7 @@ export const GAMES: Game[] = [
               how: "Needed for his early Year 1 Spring event.",
               bucket: "deadline",
               priority: 100,
-              gate: { year: 1, seasons: ["Spring"], minDay: 4, weather: ["sunny"] },
+              gate: { year: 1, seasons: ["Spring"], minDay: 4 },
             },
             {
               id: "strawberries",
@@ -600,7 +600,7 @@ export const GAMES: Game[] = [
               why: "Year 1 Spring-only content; easiest to miss if you ignore it.",
               bucket: "deadline",
               priority: 100,
-              gate: { year: 1, seasons: ["Spring"], minDay: 4 },
+              gate: { year: 1, seasons: ["Spring"], minDay: 4, weather: ["sunny"] },
               unlock: "Year 1 Spring only",
             },
             {
@@ -1225,7 +1225,7 @@ export const GAMES: Game[] = [
           {
             label: "Ridgeside Main Story Begins",
             hidden: ["Find the entrance to the Ridge Forest", "Clear the large log blocking access", "Enter the Ridge Forest"],
-            how: {"Find the entrance to the Ridge Forest": "North of The Ridge, behind a large log.", "Clear the large log blocking access": "Needs a Steel Axe.", "Find the Ninja House": "East side of The Ridge. Open 8 AM to 8 PM, closed on festival days.", "Read available clues/books": "The red book and the Ancient Book are both in the Ninja House.", "Begin The Preparations when it becomes available": "It starts when you enter the Ninja House after visiting the Ridge Forest. The Seer gives it through her subjects."},
+            how: {"Find the entrance to the Ridge Forest": "Go north through Ridgeside Village into The Ridge (the area with the Ninja House), then walk straight north from where you enter The Ridge. The log blocks that north exit.", "Clear the large log blocking access": "Needs a Steel Axe.", "Find the Ninja House": "East side of The Ridge. Open 8 AM to 8 PM, closed on festival days.", "Read available clues/books": "The red book and the Ancient Book are both in the Ninja House.", "Begin The Preparations when it becomes available": "It starts when you enter the Ninja House after visiting the Ridge Forest. The Seer gives it through her subjects."},
             note: "Your Steel Axe gives you a reason to start exploring more seriously.",
             items: [
               "Find the entrance to the Ridge Forest",
