@@ -507,7 +507,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       {optionalRows.length > 0 && (
         <details className="gm-card gm-fold-card">
           <summary>🌿 Optional Side Stories · {optionalRows.length}</summary>
-          <p className="gm-note">These are here when you want a change of pace. They do not outrank active progression. Extra friendship stories that do not unlock anything belong here or in Completion instead of taking up arbitrary Character #2/#3 roadmap slots.</p>
+          <p className="gm-note">These are here when you want a change of pace. They do not outrank active progression. Extra friendship stories that do not unlock anything belong here or in Completion instead of taking up arbitrary extra-character slots.</p>
           <div className="gm-smart-list">{optionalRows.map((row) => renderQuest(row))}</div>
         </details>
       )}
