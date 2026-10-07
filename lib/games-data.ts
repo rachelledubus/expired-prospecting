@@ -2289,6 +2289,7 @@ export const GAMES: Game[] = [
             {
               id: "shadow",
               label: "Return after 11 PM on a clear night and interact with the shadow figure",
+              how: "After the first Abandoned House event, return to the Hike Trail/Abandoned House area after 11 PM on a clear night and interact with the shadow figure when it appears.",
               location: "Abandoned House",
               gate: { weather: ["sunny"] },
               bucket: "now",
@@ -2297,6 +2298,7 @@ export const GAMES: Game[] = [
             {
               id: "meet-undreya",
               label: "Wait at least one day, return after 11 PM, and enter the Abandoned House",
+              how: "After the shadow-figure event, sleep at least once. On a later night after 11 PM, return to the Abandoned House and enter it to continue Undreya's introduction.",
               location: "Abandoned House",
               bucket: "now",
               priority: 40,
@@ -2305,6 +2307,7 @@ export const GAMES: Game[] = [
             {
               id: "third-event",
               label: "See Undreya's third event on a sunny Thursday before 2 PM",
+              how: "After meeting Undreya, enter the Hike Trail on a sunny Thursday before 2 PM to trigger the third event.",
               location: "Hike Trail",
               gate: { weather: ["sunny"] },
               bucket: "now",
@@ -2412,6 +2415,7 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Lexi and see the Sea Cave event",
+              how: "Talk to and gift Lexi until the Social tab reaches 2 hearts, then enter the Sea Cave when her 2-heart event is available.",
               location: "Sea Cave",
               bucket: "now",
               priority: 35,
