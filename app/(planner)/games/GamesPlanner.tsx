@@ -180,12 +180,17 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       let reason = "";
 
       const missingReq = step.requires?.find((ref) => !isRefDone(ref));
-      if (missingReq) {
+      const missingProgress = step.requiresProgress?.find(({ ref }) =>
+        !prog.checks[itemKey(ref.gameId, ref.phaseId, ref.groupLabel, ref.text)],
+      );
+      if (missingReq || missingProgress) {
         bucket = "waiting";
-        reason = step.unlock ?? "Finish the required storyline first";
+        reason =
+          step.unlock ??
+          (missingProgress ? `Finish: ${missingProgress.label}` : "Finish the required storyline first");
       }
 
-      if (!missingReq && step.gate && gameDate) {
+      if (!missingReq && !missingProgress && step.gate && gameDate) {
         const g = step.gate;
         let dateMet = true;
         if (g.year !== undefined && gameDate.year !== g.year) dateMet = false;
