@@ -51,6 +51,15 @@ export type GameQuestStep = {
   requires?: string[];
   /** Farm & Progression checkboxes that must be checked first. */
   requiresProgress?: { label: string; ref: ProgressionRef }[];
+  /** Friendship target used by the daily social-priority dashboard. */
+  social?: {
+    npc: string;
+    hearts: number;
+    personal?: boolean;
+    why?: string;
+    startAfterStepId?: string;
+    startAfterProgress?: ProgressionRef;
+  };
   unlock?: string;
   /** Reuse an existing phase checkbox so old progress is preserved. */
   legacy?: { phaseId: string; groupLabel: string; text: string };
@@ -2276,6 +2285,11 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Sophia and see her vineyard event",
+              social: {
+                "npc": "Sophia",
+                "hearts": 2,
+                "why": "Progresses the Scarlett/Pondwood unlock chain."
+              },
               how: "Blue Moon Vineyard, 8 AM–4 PM, Spring/Summer/Fall, any weather, with one empty inventory slot.",
               location: "Blue Moon Vineyard",
               bucket: "now",
@@ -2285,6 +2299,11 @@ export const GAMES: Game[] = [
             {
               id: "four-hearts",
               label: "Reach 4 hearts with Sophia and see her Pelican Town event",
+              social: {
+                "npc": "Sophia",
+                "hearts": 4,
+                "why": "Next friendship gate toward Scarlett/Pondwood."
+              },
               how: "Enter Pelican Town 8 AM–4 PM on a sunny Spring/Summer/Fall day after her 2-heart event.",
               location: "Pelican Town",
               bucket: "now",
@@ -2294,6 +2313,11 @@ export const GAMES: Game[] = [
             {
               id: "six-hearts-1",
               label: "Reach 6 hearts with Sophia and see Part I",
+              social: {
+                "npc": "Sophia",
+                "hearts": 6,
+                "why": "Next friendship gate toward Scarlett/Pondwood."
+              },
               how: "Enter Pelican Town 8 AM–3 PM on a rainy Spring/Summer/Fall day after her 4-heart event.",
               location: "Pelican Town",
               bucket: "now",
@@ -2311,6 +2335,11 @@ export const GAMES: Game[] = [
             {
               id: "eight-hearts",
               label: "Reach 8 hearts with Sophia and see her 8-heart event",
+              social: {
+                "npc": "Sophia",
+                "hearts": 8,
+                "why": "Final Sophia friendship gate needed for the Scarlett/Pondwood payoff."
+              },
               how: "Enter Pelican Town 10 AM–5 PM on a sunny Friday, Saturday, or Sunday after seeing 6-heart Part II.",
               location: "Pelican Town",
               reward: "Unlock prerequisite for Scarlett as a full NPC and Pondwood/Grampleton access once the Community Center or Joja route is complete",
@@ -2355,6 +2384,12 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Mateo and see the Town event",
+              social: {
+                "npc": "Mateo",
+                "hearts": 2,
+                "startAfterStepId": "meet",
+                "why": "Required Sword & Sorcery Chapter 1 progression."
+              },
               how: "Town, 8 PM–midnight, sunny, any season. Mateo events are normally three days apart unless noted.",
               location: "Pelican Town",
               gate: { weather: ["sunny"] },
@@ -2364,6 +2399,11 @@ export const GAMES: Game[] = [
             {
               id: "four-hearts",
               label: "Reach 4 hearts with Mateo and see the Beach event",
+              social: {
+                "npc": "Mateo",
+                "hearts": 4,
+                "why": "Required Sword & Sorcery Chapter 1 progression."
+              },
               how: "Beach, 6 PM–midnight, sunny, any season.",
               location: "The Beach",
               gate: { weather: ["sunny"] },
@@ -2373,6 +2413,11 @@ export const GAMES: Game[] = [
             {
               id: "five-1",
               label: "See Mateo's 5-heart Part I",
+              social: {
+                "npc": "Mateo",
+                "hearts": 5,
+                "why": "Required Sword & Sorcery Chapter 1 progression."
+              },
               how: "Mines, 6 PM–midnight, any weather, any season. After this, Mateo has an optional missable Saloon scene for only 3 in-game days; the separate Missable Scenes card will warn you without blocking Chapter 1.",
               bucket: "now",
               priority: 90,
@@ -2387,6 +2432,11 @@ export const GAMES: Game[] = [
             {
               id: "six-1",
               label: "See Mateo's 6-heart Part I",
+              social: {
+                "npc": "Mateo",
+                "hearts": 6,
+                "why": "Required Sword & Sorcery Chapter 1 progression."
+              },
               how: "Town, 10 AM–6 PM, sunny, any season.",
               location: "Pelican Town",
               gate: { weather: ["sunny"] },
@@ -2405,6 +2455,11 @@ export const GAMES: Game[] = [
             {
               id: "seven",
               label: "See Mateo's 7-heart Part I after meeting Krobus",
+              social: {
+                "npc": "Mateo",
+                "hearts": 7,
+                "why": "Required Sword & Sorcery Chapter 1 progression."
+              },
               how: "Hospital, 9 AM–3 PM, any day except Friday. Requires having met Krobus.",
               location: "Clinic",
               bucket: "now",
@@ -2424,6 +2479,11 @@ export const GAMES: Game[] = [
             {
               id: "eight",
               label: "See Mateo's 8-heart Part I and accept the guild quest",
+              social: {
+                "npc": "Mateo",
+                "hearts": 8,
+                "why": "Starts the Coastal Guild portion of Mateo's chapter."
+              },
               how: "East Scarp, 10 AM–6 PM, sunny. Wait two weeks after the prior event.",
               location: "East Scarp",
               gate: { weather: ["sunny"] },
@@ -2452,6 +2512,11 @@ export const GAMES: Game[] = [
             {
               id: "ten",
               label: "See Mateo's 10-heart Railroad event",
+              social: {
+                "npc": "Mateo",
+                "hearts": 10,
+                "why": "Completes Mateo's required chapter and opens later Sword & Sorcery progression."
+              },
               how: "Railroad, 8 PM–midnight, sunny. Choose either platonic or romantic; the platonic choice still completes the progression chapter. A later Deep Mountains event is romance-only.",
               location: "Railroad",
               gate: { weather: ["sunny"] },
@@ -2513,6 +2578,12 @@ export const GAMES: Game[] = [
             {
               id: "hector-chapter",
               label: "Complete Hector's chapter through the 10-heart Part II event",
+              social: {
+                "npc": "Hector",
+                "hearts": 10,
+                "startAfterStepId": "hector-intro",
+                "why": "Required Sword & Sorcery campaign progression."
+              },
               how: "Follow Hector's events and the quests they issue. Most events are only 1–3 days apart. Use the S&S Player's Handbook for the exact current quest order.",
               bucket: "toward",
               priority: 81,
@@ -2578,6 +2649,11 @@ export const GAMES: Game[] = [
             {
               id: "five-hearts",
               label: "Reach 5 hearts with Marlon",
+              social: {
+                "npc": "Marlon",
+                "hearts": 5,
+                "why": "Required for the SVE Rusty Key / Krobus access chain."
+              },
               how: "In Year 1, 5 hearts is the key SVE requirement for Marlon's Rusty Key event.",
               bucket: "toward",
               priority: 90,
@@ -2623,6 +2699,12 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Lance",
+              social: {
+                "npc": "Lance",
+                "hearts": 2,
+                "startAfterStepId": "meet-lance",
+                "why": "Required to continue the Highlands storyline."
+              },
               how: "After meeting Lance at the Volcano Forge, talk to him when available and give liked/loved gifts until his Social tab reaches 2 hearts.",
               bucket: "toward",
               priority: 64,
@@ -3248,6 +3330,13 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Jio and see his Ninja House event",
+              social: {
+                "npc": "Jio",
+                "hearts": 2,
+                "personal": true,
+                "startAfterStepId": "unlock",
+                "why": "Personal romance goal."
+              },
               how: "Talk to Jio and give up to 2 gifts per week. His best gifts include Lava Lily, Kedi Delight, Elven Comb, Fluffy Apple Crumble, Ridgeside Clementine, Clementine Cake, and Clementine Juice. At 2 hearts, enter the Ninja House at any time, any season, any weather.",
               location: "Ninja House",
               bucket: "toward",
@@ -3256,6 +3345,12 @@ export const GAMES: Game[] = [
             {
               id: "four-hearts",
               label: "Reach 4 hearts with Jio and see his Ridge event",
+              social: {
+                "npc": "Jio",
+                "hearts": 4,
+                "personal": true,
+                "why": "Personal romance goal."
+              },
               how: "After reaching 4 hearts, enter The Ridge between 7 PM and 2 AM on a sunny day.",
               location: "The Ridge",
               gate: { weather: ["sunny"] },
@@ -3265,6 +3360,12 @@ export const GAMES: Game[] = [
             {
               id: "six-hearts",
               label: "Reach 6 hearts with Jio and see his Ninja House event",
+              social: {
+                "npc": "Jio",
+                "hearts": 6,
+                "personal": true,
+                "why": "Personal romance goal."
+              },
               how: "After reaching 6 hearts, enter the Ninja House between 9 AM and 4 PM on a sunny day.",
               location: "Ninja House",
               gate: { weather: ["sunny"] },
@@ -3274,6 +3375,12 @@ export const GAMES: Game[] = [
             {
               id: "eight-hearts",
               label: "Reach 8 hearts with Jio and see his Ridge event",
+              social: {
+                "npc": "Jio",
+                "hearts": 8,
+                "personal": true,
+                "why": "Unlocks dating with a Bouquet."
+              },
               how: "After reaching 8 hearts, enter The Ridge between 7 PM and 2 AM on a sunny day.",
               location: "The Ridge",
               gate: { weather: ["sunny"] },
@@ -3292,6 +3399,12 @@ export const GAMES: Game[] = [
             {
               id: "nine-hearts",
               label: "Reach 9 hearts with Jio and see his Spirit Realm event",
+              social: {
+                "npc": "Jio",
+                "hearts": 9,
+                "personal": true,
+                "why": "Personal romance goal after dating."
+              },
               how: "At 9 hearts, enter the Spirit Realm at any time, in any season and weather. Jio's 9-heart event takes place there.",
               location: "Spirit Realm",
               bucket: "toward",
@@ -3300,6 +3413,12 @@ export const GAMES: Game[] = [
             {
               id: "ten-hearts",
               label: "Reach 10 hearts with Jio",
+              social: {
+                "npc": "Jio",
+                "hearts": 10,
+                "personal": true,
+                "why": "Required before proposing with the Mermaid's Pendant."
+              },
               how: "Keep talking to Jio and giving loved/liked gifts until his Social tab reaches 10 hearts. He does not have a separate documented 10-heart event; 10 hearts is the marriage requirement.",
               bucket: "toward",
               priority: 74,
@@ -3351,6 +3470,12 @@ export const GAMES: Game[] = [
             {
               id: "fourteen-hearts",
               label: "Reach 14 hearts with Jio and see his post-marriage event",
+              social: {
+                "npc": "Jio",
+                "hearts": 14,
+                "personal": true,
+                "why": "Post-marriage Jio story."
+              },
               how: "After marriage, raise Jio to 14 hearts. Part I triggers on the 1st of a non-Winter season between 12 AM and 2 AM while Jio is home, with a sufficiently upgraded farmhouse and sunny weather. Part II takes place at the farmhouse between 8 PM and midnight on a sunny non-Winter day.",
               location: "Farmhouse",
               gate: { seasons: ["Spring", "Summer", "Fall"], weather: ["sunny"] },
@@ -3413,6 +3538,11 @@ export const GAMES: Game[] = [
             {
               id: "lenny-eight",
               label: "Reach 8 hearts with Lenny and 700,000g total earnings",
+              social: {
+                "npc": "Lenny",
+                "hearts": 8,
+                "why": "Unlocks the Ridgeside Community Greenhouse quest."
+              },
               how: "Both are required before Lenny's 8-heart greenhouse event can trigger.",
               bucket: "toward",
               priority: 55,
@@ -3501,6 +3631,17 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Magnus and see The Barrier",
+              social: {
+                "npc": "Magnus",
+                "hearts": 2,
+                "startAfterProgress": {
+                  "gameId": "stardew-mega-mod",
+                  "phaseId": "p1",
+                  "groupLabel": "Main Progression",
+                  "text": "Unlock the Community Center"
+                },
+                "why": "Progresses the minor-magic unlock."
+              },
               how: "First complete the Community Center golden-scroll/Wizard introduction so Magnus is accessible. Then reach 2 hearts and enter Cindersap Forest 6 AM–6 PM on a sunny day.",
               location: "Cindersap Forest",
               gate: { weather: ["sunny"] },
@@ -3514,6 +3655,11 @@ export const GAMES: Game[] = [
             {
               id: "four-hearts",
               label: "Reach 4 hearts with Magnus and unlock minor magic",
+              social: {
+                "npc": "Magnus",
+                "hearts": 4,
+                "why": "Unlocks Mana/minor magic."
+              },
               how: "After his Shrine of Illusions letter, enter the Wizard's Tower. Any season, any weather.",
               location: "Wizard's Tower",
               reward: "Mana, minor magic, and Shrine of Illusions access",
@@ -3541,6 +3687,12 @@ export const GAMES: Game[] = [
             {
               id: "three-hearts",
               label: "Reach 3 hearts with Rosa and see the East Scarp event",
+              social: {
+                "npc": "Rosa",
+                "hearts": 3,
+                "startAfterStepId": "meet",
+                "why": "Unlocks the Cherry Orchard bridge order and Luma route."
+              },
               how: "East Scarp, 10 AM–4 PM, sunny, Monday/Thursday/Saturday/Sunday.",
               location: "East Scarp",
               gate: { weather: ["sunny"] },
@@ -3641,6 +3793,12 @@ export const GAMES: Game[] = [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Eyvind and see his Deep Mountains event",
+              social: {
+                "npc": "Eyvind",
+                "hearts": 2,
+                "startAfterStepId": "intro-2",
+                "why": "Progresses Eyvind's East Scarp storyline."
+              },
               how: "Deep Mountains, 8 AM–5 PM, sunny, not Winter.",
               location: "Deep Mountains",
               bucket: "now",
@@ -3650,6 +3808,11 @@ export const GAMES: Game[] = [
             {
               id: "four-hearts",
               label: "Reach 4 hearts with Eyvind and see his next event",
+              social: {
+                "npc": "Eyvind",
+                "hearts": 4,
+                "why": "Progresses Eyvind's East Scarp storyline."
+              },
               how: "Deep Mountains, 8 AM–4 PM, sunny, not Winter.",
               location: "Deep Mountains",
               bucket: "now",
@@ -3659,6 +3822,11 @@ export const GAMES: Game[] = [
             {
               id: "six-hearts",
               label: "Reach 6 hearts with Eyvind and see his Summer event",
+              social: {
+                "npc": "Eyvind",
+                "hearts": 6,
+                "why": "Progresses Eyvind's garden/story unlocks."
+              },
               how: "Deep Mountains, 10 AM–4 PM, sunny, during Summer.",
               location: "Deep Mountains",
               bucket: "now",
@@ -3669,6 +3837,11 @@ export const GAMES: Game[] = [
             {
               id: "eight-hearts",
               label: "Reach 8 hearts with Eyvind and see his evening event",
+              social: {
+                "npc": "Eyvind",
+                "hearts": 8,
+                "why": "Contributes to the Void Goat unlock and later Eyvind events."
+              },
               how: "Deep Mountains, 6 PM–midnight, any season and any weather.",
               location: "Deep Mountains",
               bucket: "now",
@@ -3688,6 +3861,12 @@ export const GAMES: Game[] = [
             {
               id: "vivienne-ten",
               label: "Reach 10 hearts with Vivienne and see her 10-heart event",
+              social: {
+                "npc": "Vivienne",
+                "hearts": 10,
+                "startAfterStepId": "unlock-vivienne",
+                "why": "Required for Eyvind's 9-heart Part I."
+              },
               how: "Eyvind's 9-heart Part I will not trigger until Vivienne's 10-heart event has been seen.",
               bucket: "toward",
               priority: 66,
@@ -3713,6 +3892,11 @@ export const GAMES: Game[] = [
             {
               id: "george-six",
               label: "Reach at least 6 hearts with George",
+              social: {
+                "npc": "George",
+                "hearts": 6,
+                "why": "Required for Eyvind's 9-heart Part III and contributes to the Void Goat unlock."
+              },
               how: "Eyvind's 9-heart Part III requires 6+ hearts with George. George's 6-heart event also combines with Eyvind's 8-heart event to unlock Void Goats.",
               bucket: "toward",
               priority: 65,
