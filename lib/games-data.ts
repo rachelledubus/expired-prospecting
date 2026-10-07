@@ -1019,6 +1019,22 @@ const completionTracker: CompletionGame = {
           allowCustom: true,
         },
         {
+          id: "artifacts-sve",
+          title: "Artifacts — Stardew Valley Expanded",
+          items: [
+            "Amber",
+            "Boomerang",
+            "Faded Button",
+            "Fossilized Apple",
+            "Old Coin",
+            "Rusty Shield",
+            "Stone of Yoba",
+          ],
+          note: "These are the 7 Museum artifacts added by SVE. Check each one only after donating it to the Museum.",
+          sourceHint: "Museum / SVE Artifacts",
+          allowCustom: true,
+        },
+        {
           id: "minerals",
           title: "Minerals",
           items: [
