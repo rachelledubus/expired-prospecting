@@ -180,3 +180,64 @@
 .tp.gm .gm-hit-text { margin: 0 0 8px; color: var(--muted); }
 .tp.gm .gm-hit-link, .tp.gm .gm-lookup-links a { color: var(--navy); font-weight: 600; text-underline-offset: 3px; }
 .tp.gm .gm-lookup-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0 0; font-size: 14px; }
+
+
+/* Smart Stardew progression architecture */
+.tp.gm .gm-context-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 14px; align-items: end;
+  background: var(--card); border-radius: 16px; box-shadow: 0 2px 10px rgba(22,50,79,.08); padding: 16px; margin: 12px 0 16px; }
+.tp.gm .gm-context-label { display: block; margin: 0 0 6px; font: 700 10px "DM Sans", system-ui, sans-serif; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--sage); }
+.tp.gm .gm-weather-block .gm-input { width: 100%; }
+.tp.gm .gm-deadline-stack, .tp.gm .gm-smart-list { display: grid; gap: 10px; }
+.tp.gm .gm-dashboard { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 12px; margin-bottom: 14px; }
+.tp.gm .gm-main-panel, .tp.gm .gm-next-panel, .tp.gm .gm-progress-panel { background: var(--card); border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(22,50,79,.08); padding: 14px; }
+.tp.gm .gm-main-panel { grid-row: span 2; }
+.tp.gm .gm-panel-label { margin: 0 0 8px; font: 700 11px "DM Sans", system-ui, sans-serif; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sage); }
+.tp.gm .gm-progress-panel { align-self: stretch; }
+.tp.gm .gm-overview-number { margin: 8px 0; color: var(--navy); font: 700 15px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-mini-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tp.gm .gm-mini-stats span { background: #F6F2EA; border-radius: 10px; padding: 7px 8px; color: var(--muted); font-size: 12.5px; }
+.tp.gm .gm-mini-stats b { color: var(--navy); }
+.tp.gm .gm-guide-rule { margin: 10px 2px 16px; color: var(--muted); font-size: 14px; }
+
+.tp.gm .gm-smart-quest { background: var(--card); border-radius: 14px; box-shadow: 0 2px 9px rgba(22,50,79,.07);
+  padding: 12px 14px; border-left: 4px solid #C9C2B4; }
+.tp.gm .gm-smart-quest.deadline { border-left-color: var(--accent); }
+.tp.gm .gm-smart-quest.now { border-left-color: var(--sage); }
+.tp.gm .gm-smart-quest.toward { border-left-color: #C8A75A; }
+.tp.gm .gm-smart-quest.waiting { opacity: .82; }
+.tp.gm .gm-smart-quest.main { box-shadow: 0 4px 14px rgba(22,50,79,.11); }
+.tp.gm .gm-smart-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.tp.gm .gm-smart-quest h3 { margin: 2px 0 2px; font: 700 18px/1.25 "DM Sans", system-ui, sans-serif; color: var(--navy); }
+.tp.gm .gm-importance, .tp.gm .gm-pinned { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 7px;
+  font: 700 9px "DM Sans", system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; }
+.tp.gm .gm-importance.required { background: #F5E8E2; color: #884C3D; }
+.tp.gm .gm-importance.recommended { background: #EAF1E8; color: #506D55; }
+.tp.gm .gm-importance.optional { background: #EEEAE2; color: var(--muted); }
+.tp.gm .gm-pinned { background: var(--navy); color: #fff; }
+.tp.gm .gm-smart-top .gm-quest-mod { flex-basis: auto; margin-left: auto; }
+.tp.gm .gm-quest-facts { display: flex; flex-wrap: wrap; gap: 5px 10px; margin: 2px 0 7px; color: var(--muted); font-size: 13px; }
+.tp.gm .gm-why, .tp.gm .gm-next-preview { margin: 7px 0; color: var(--muted); font-size: 13.5px; }
+.tp.gm .gm-why b, .tp.gm .gm-next-preview b { color: var(--navy); font-family: "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-quest-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 0; }
+.tp.gm .gm-link-btn { border: 0; background: transparent; padding: 4px 0; cursor: pointer; color: var(--navy);
+  font: 700 12px "DM Sans", system-ui, sans-serif; text-decoration: underline; text-underline-offset: 3px; }
+.tp.gm .gm-path-step { display: grid; grid-template-columns: 18px 1fr; gap: 6px; padding: 5px 0; color: var(--muted); font-size: 13.5px; }
+.tp.gm .gm-path-step.current { color: var(--navy); font-weight: 600; }
+.tp.gm .gm-path-step + .gm-path-step { border-top: 1px solid #F0EBE1; }
+
+.tp.gm .gm-farm-context { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+.tp.gm .gm-farm-context > div { background: #F8F5EE; border-radius: 12px; padding: 10px 12px; }
+.tp.gm .gm-farm-context b { color: var(--navy); font: 700 15px "DM Sans", system-ui, sans-serif; }
+.tp.gm .gm-season-urgent { border-left: 4px solid var(--accent); }
+.tp.gm .gm-progression-card { padding-top: 10px; }
+
+@media (max-width: 760px) {
+  .tp.gm .gm-context-card, .tp.gm .gm-dashboard, .tp.gm .gm-farm-context { grid-template-columns: 1fr; }
+  .tp.gm .gm-main-panel { grid-row: auto; }
+  .tp.gm .gm-smart-top .gm-quest-mod { margin-left: 0; flex-basis: 100%; }
+  .tp.gm .gm-date { align-items: stretch; }
+  .tp.gm .gm-date .gm-sel { flex: 1 1 90px; }
+}
