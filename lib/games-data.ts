@@ -133,7 +133,32 @@ export type BundleGame = {
   progression?: ProgressionSection[];
 };
 
-export type Game = ChecklistGame | BundleGame;
+export type CompletionCategory = {
+  id: string;
+  title: string;
+  defaultTotal: number;
+  unit: string;
+  note?: string;
+  sourceHint?: string;
+};
+
+export type CompletionSection = {
+  id: string;
+  title: string;
+  note?: string;
+  categories: CompletionCategory[];
+};
+
+export type CompletionGame = {
+  kind: "completion";
+  id: string;
+  tab: string;
+  title: string;
+  mods: string;
+  sections: CompletionSection[];
+};
+
+export type Game = ChecklistGame | BundleGame | CompletionGame;
 
 export type GameProgress = {
   checks: Record<string, true>;
@@ -161,12 +186,17 @@ export const mainQuestKey = (gameId: string) => `${gameId}|main-quest`;
 export const seasonKey = (gameId: string) => `${gameId}|season`;
 export const bundleItemKey = (gameId: string, bundleId: string, item: BundleItem) =>
   [gameId, bundleId, item.id ?? item.name].join("|");
+export const completionCountKey = (gameId: string, categoryId: string) => `${gameId}|completion|${categoryId}|count`;
+export const completionTotalKey = (gameId: string, categoryId: string) => `${gameId}|completion|${categoryId}|total`;
+export const completionTargetsKey = (gameId: string, categoryId: string) => `${gameId}|completion|${categoryId}|targets`;
 
 export const isBundleGame = (game: Game): game is BundleGame => game.kind === "bundles";
+export const isCompletionGame = (game: Game): game is CompletionGame => game.kind === "completion";
 
 /** Every box key a game can have, used to reject anything else on save. */
 export function knownCheckKeys(game: Game): Set<string> {
   const keys = new Set<string>();
+  if (isCompletionGame(game)) return keys;
   if (isBundleGame(game)) {
     game.bundles.forEach((b) => b.items.forEach((i) => keys.add(bundleItemKey(game.id, b.id, i))));
     return keys;
@@ -184,6 +214,17 @@ export function knownCheckKeys(game: Game): Set<string> {
 
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
+  if (isCompletionGame(game)) {
+    const keys = new Set<string>();
+    game.sections.forEach((section) =>
+      section.categories.forEach((category) => {
+        keys.add(completionCountKey(game.id, category.id));
+        keys.add(completionTotalKey(game.id, category.id));
+        keys.add(completionTargetsKey(game.id, category.id));
+      }),
+    );
+    return keys;
+  }
   if (isBundleGame(game)) return new Set<string>([seasonKey(game.id)]);
   const keys = new Set<string>([saveKey(game.id), weatherKey(game.id), mainQuestKey(game.id)]);
   game.phases.forEach((p) => p.groups.forEach((g) => g.field && keys.add(fieldKey(game.id, p.id, g.field))));
@@ -552,6 +593,126 @@ const communityCenter: BundleGame = {
     { id: "vault-5000", room: "Vault", name: "5,000g Bundle", need: 1, items: [{ name: "Pay 5,000g", seasons: ANY }] },
     { id: "vault-10000", room: "Vault", name: "10,000g Bundle", need: 1, items: [{ name: "Pay 10,000g", seasons: ANY }] },
     { id: "vault-25000", room: "Vault", name: "25,000g Bundle", need: 1, items: [{ name: "Pay 25,000g", seasons: ANY }] },
+  ],
+};
+
+const completionTracker: CompletionGame = {
+  kind: "completion",
+  id: "stardew-completion",
+  tab: "Completion",
+  title: "Stardew — Completion",
+  mods: "Collections • Museum • Perfection • modded totals editable",
+  sections: [
+    {
+      id: "collections",
+      title: "Collections",
+      note: "Use the totals shown by your actual modded save when they differ from vanilla. The defaults are the current vanilla 1.6 baseline.",
+      categories: [
+        {
+          id: "fish",
+          title: "Fishing",
+          defaultTotal: 72,
+          unit: "fish caught",
+          note: "Catch every entry in the Fish collection. Add the fish you are actively hunting to Next targets.",
+          sourceHint: "Collections → Fish",
+        },
+        {
+          id: "artifacts",
+          title: "Artifacts",
+          defaultTotal: 42,
+          unit: "artifacts donated",
+          note: "Track unique artifacts donated to the Museum.",
+          sourceHint: "Museum / Collections → Artifacts",
+        },
+        {
+          id: "minerals",
+          title: "Minerals",
+          defaultTotal: 53,
+          unit: "minerals donated",
+          note: "Track unique minerals donated to the Museum.",
+          sourceHint: "Museum / Collections → Minerals",
+        },
+        {
+          id: "cooking",
+          title: "Cooking",
+          defaultTotal: 81,
+          unit: "recipes cooked",
+          note: "A recipe counts when you have actually cooked it, not merely learned it.",
+          sourceHint: "Collections → Cooking",
+        },
+        {
+          id: "crafting",
+          title: "Crafting",
+          defaultTotal: 149,
+          unit: "recipes crafted",
+          note: "For vanilla Perfection, every required crafting recipe must be crafted at least once.",
+          sourceHint: "Advanced Crafting Information / Perfection Tracker",
+        },
+        {
+          id: "shipping",
+          title: "Shipping",
+          defaultTotal: 154,
+          unit: "items shipped",
+          note: "Ship one of every entry in Items Shipped. Selling directly to a shop does not fill the shipping collection.",
+          sourceHint: "Collections → Items Shipped",
+        },
+      ],
+    },
+    {
+      id: "perfection",
+      title: "Perfection & Endgame",
+      note: "These stay separate from Story & Quests so completion work never takes over your day unless you choose it.",
+      categories: [
+        {
+          id: "monster-goals",
+          title: "Monster Slayer Goals",
+          defaultTotal: 12,
+          unit: "goals complete",
+          sourceHint: "Adventurer's Guild",
+        },
+        {
+          id: "stardrops",
+          title: "Stardrops",
+          defaultTotal: 7,
+          unit: "found",
+        },
+        {
+          id: "golden-walnuts",
+          title: "Golden Walnuts",
+          defaultTotal: 130,
+          unit: "found",
+          sourceHint: "Ginger Island",
+        },
+        {
+          id: "skills",
+          title: "Skills at Level 10",
+          defaultTotal: 5,
+          unit: "skills maxed",
+          note: "Farming, Mining, Foraging, Fishing, and Combat.",
+        },
+        {
+          id: "obelisks",
+          title: "Obelisks",
+          defaultTotal: 4,
+          unit: "built",
+          note: "Earth, Water, Desert, and Island Obelisks.",
+        },
+        {
+          id: "gold-clock",
+          title: "Golden Clock",
+          defaultTotal: 1,
+          unit: "built",
+        },
+        {
+          id: "friendships",
+          title: "Great Friends",
+          defaultTotal: 34,
+          unit: "villagers maxed",
+          note: "Vanilla baseline is 34. Change the total to whatever your modded Perfection tracker expects.",
+          sourceHint: "Perfection Tracker / Social tab",
+        },
+      ],
+    },
   ],
 };
 
@@ -1785,4 +1946,5 @@ export const GAMES: Game[] = [
     ],
   },
   communityCenter,
+  completionTracker,
 ];
