@@ -277,22 +277,31 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     return bucketScore + importanceScore + (row.step.priority ?? 0) + weatherScore;
   };
 
-  const rankedRows = useMemo(() => [...questRows].sort((a, b) => scoreRow(b) - scoreRow(a)), [questRows]);
+  const rankedRows = [...questRows].sort((a, b) => scoreRow(b) - scoreRow(a));
+  const coreRows = rankedRows.filter((row) => row.importance !== "optional");
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
   const mainRow =
     pinnedRow ??
+    coreRows.find((row) => row.bucket !== "waiting" && row.todayOk) ??
+    coreRows.find((row) => row.bucket !== "waiting") ??
     rankedRows.find((row) => row.bucket !== "waiting" && row.todayOk) ??
     rankedRows.find((row) => row.bucket !== "waiting") ??
     rankedRows[0];
 
-  const sideRows = rankedRows
+  const coreSideRows = coreRows
     .filter((row) => row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
     .slice(0, 4);
+  const sideRows = coreSideRows.length
+    ? coreSideRows
+    : rankedRows
+        .filter((row) => row.importance === "optional" && row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
+        .slice(0, 2);
 
   const deadlineRows = rankedRows.filter((row) => row.bucket === "deadline");
-  const availableRows = rankedRows.filter((row) => row.bucket === "now");
-  const towardRows = rankedRows.filter((row) => row.bucket === "toward");
-  const waitingRows = rankedRows.filter((row) => row.bucket === "waiting");
+  const availableRows = coreRows.filter((row) => row.bucket === "now");
+  const towardRows = coreRows.filter((row) => row.bucket === "toward");
+  const waitingRows = coreRows.filter((row) => row.bucket === "waiting");
+  const optionalRows = rankedRows.filter((row) => row.importance === "optional" && row.bucket !== "deadline");
   const completedStories = game.questBoard.storylines.filter((story) =>
     story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)]),
   );
@@ -547,6 +556,14 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           <summary>🔒 Waiting On · {waitingRows.length}</summary>
           <p className="gm-note">These are real gates. If the card gives you a prerequisite, work on that; otherwise ignore it for now.</p>
           <div className="gm-smart-list">{waitingRows.map((row) => renderQuest(row))}</div>
+        </details>
+      )}
+
+      {optionalRows.length > 0 && (
+        <details className="gm-card gm-fold-card">
+          <summary>🌿 Optional Side Stories · {optionalRows.length}</summary>
+          <p className="gm-note">These are here when you want a change of pace. They do not outrank your active progression unless the important tracks are quiet.</p>
+          <div className="gm-smart-list">{optionalRows.map((row) => renderQuest(row))}</div>
         </details>
       )}
 
