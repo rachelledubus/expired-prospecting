@@ -5,9 +5,13 @@ import {
   GAMES,
   SEASONS,
   bundleItemKey,
+  completionCountKey,
+  completionTargetsKey,
+  completionTotalKey,
   emptyProgress,
   fieldKey,
   isBundleGame,
+  isCompletionGame,
   itemKey,
   mainQuestKey,
   questKey,
@@ -18,6 +22,7 @@ import {
   type BundleGame,
   type BundleItem,
   type ChecklistGame,
+  type CompletionGame,
   type GamePhase,
   type GameProgress,
   type GameProgressPatch,
@@ -946,6 +951,137 @@ function BundleView({
   );
 }
 
+
+/* ---------- Completion tracker ---------- */
+
+function CompletionView({ game, prog, setField }: ViewProps<CompletionGame>) {
+  const categoryRows = game.sections.flatMap((section) =>
+    section.categories.map((category) => {
+      const savedCount = Number(prog.fields[completionCountKey(game.id, category.id)] ?? "0");
+      const savedTotal = Number(prog.fields[completionTotalKey(game.id, category.id)] ?? String(category.defaultTotal));
+      const count = Number.isFinite(savedCount) ? Math.max(0, savedCount) : 0;
+      const total = Number.isFinite(savedTotal) && savedTotal > 0 ? savedTotal : category.defaultTotal;
+      const pct = Math.min(100, Math.round((count / total) * 100));
+      return { section, category, count, total, pct };
+    }),
+  );
+
+  const overall = categoryRows.length
+    ? Math.round(categoryRows.reduce((sum, row) => sum + row.pct, 0) / categoryRows.length)
+    : 0;
+  const completed = categoryRows.filter((row) => row.count >= row.total).length;
+
+  const updateCount = (categoryId: string, next: number, total: number) => {
+    const safe = Math.max(0, Math.min(total, Math.round(next)));
+    setField(completionCountKey(game.id, categoryId), String(safe));
+  };
+
+  return (
+    <>
+      <p className="gm-mods">{game.mods}</p>
+
+      <div className="gm-completion-summary">
+        <div>
+          <span className="gm-context-label">Overall tracked completion</span>
+          <strong>{overall}%</strong>
+        </div>
+        <div>
+          <span className="gm-context-label">Categories complete</span>
+          <strong>{completed}/{categoryRows.length}</strong>
+        </div>
+        <div className="gm-completion-summary-bar">
+          <div className="gm-bar" aria-hidden="true"><i style={{ width: `${overall}%` }} /></div>
+          <p className="gm-note">This is your portal tracker average, not the in-game Perfection percentage.</p>
+        </div>
+      </div>
+
+      <div className="gm-callout">
+        <b>For this modded save:</b> use the totals shown in your actual Collections/Perfection screens when they differ from the defaults here. You can edit every total.
+      </div>
+
+      {game.sections.map((section) => (
+        <section key={section.id} className="gm-completion-section">
+          <div className="label">{section.title}</div>
+          {section.note && <p className="gm-note gm-section-note">{section.note}</p>}
+          <div className="gm-completion-grid">
+            {section.categories.map((category) => {
+              const countKey = completionCountKey(game.id, category.id);
+              const totalKey = completionTotalKey(game.id, category.id);
+              const targetsKey = completionTargetsKey(game.id, category.id);
+              const savedCount = Number(prog.fields[countKey] ?? "0");
+              const savedTotal = Number(prog.fields[totalKey] ?? String(category.defaultTotal));
+              const count = Number.isFinite(savedCount) ? Math.max(0, savedCount) : 0;
+              const total = Number.isFinite(savedTotal) && savedTotal > 0 ? savedTotal : category.defaultTotal;
+              const pct = Math.min(100, Math.round((count / total) * 100));
+              const done = count >= total;
+
+              return (
+                <details className={"gm-completion-card" + (done ? " done" : "")} key={category.id}>
+                  <summary>
+                    <span>
+                      <b>{category.title}</b>
+                      <em>{category.sourceHint ?? category.unit}</em>
+                    </span>
+                    <span className="gm-completion-number">{count}/{total}</span>
+                  </summary>
+
+                  <div className="gm-completion-body">
+                    <div className="gm-bar thin" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+                    <div className="gm-completion-controls">
+                      <button type="button" className="gm-count-btn" disabled={count <= 0} onClick={() => updateCount(category.id, count - 1, total)}>−</button>
+                      <label>
+                        <span>Done</span>
+                        <input
+                          className="gm-input gm-count-input"
+                          inputMode="numeric"
+                          value={String(count)}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isFinite(n)) updateCount(category.id, n, total);
+                          }}
+                        />
+                      </label>
+                      <span className="gm-count-of">of</span>
+                      <label>
+                        <span>Total</span>
+                        <input
+                          className="gm-input gm-count-input"
+                          inputMode="numeric"
+                          value={String(total)}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isFinite(n) && n > 0) setField(totalKey, String(Math.round(n)));
+                          }}
+                        />
+                      </label>
+                      <button type="button" className="gm-count-btn" disabled={count >= total} onClick={() => updateCount(category.id, count + 1, total)}>+</button>
+                    </div>
+
+                    {category.note && <p className="gm-note">{category.note}</p>}
+
+                    <label className="gm-targets-label">
+                      <span>Missing / next targets</span>
+                      <textarea
+                        className="gm-input gm-targets"
+                        rows={3}
+                        placeholder={category.id === "fish" ? "e.g. Catfish — rainy Spring river; Eel — rainy evening…" : "Add the next few things you want to finish…"}
+                        value={prog.fields[targetsKey] ?? ""}
+                        onChange={(e) => setField(targetsKey, e.target.value)}
+                      />
+                    </label>
+
+                    {done && <div className="gm-completion-done">✓ Category complete</div>}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+
 /* ---------- Page ---------- */
 
 export default function GamesPlanner({ initial, loaded }: { initial: Record<string, GameProgress>; loaded: boolean }) {
@@ -957,7 +1093,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
 
   const game = GAMES.find((g) => g.id === gameId) ?? GAMES[0];
   const prog = progress[game.id] ?? emptyProgress();
-  const storyGame = GAMES.find((g): g is ChecklistGame => !isBundleGame(g)) ?? (GAMES[0] as ChecklistGame);
+  const storyGame = GAMES.find((g): g is ChecklistGame => g.kind === "checklist") ?? (GAMES[0] as ChecklistGame);
   const storyProg = progress[storyGame.id] ?? emptyProgress();
 
   // Saving: changes queue up, then go to the server together half a second after the last tap.
@@ -1162,6 +1298,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               storyProg={storyProg}
               setStoryCheck={(key, value) => setGameCheck(storyGame.id, key, value)}
             />
+          ) : isCompletionGame(game) ? (
+            <CompletionView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           )}
@@ -1180,7 +1318,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               {statusText}
             </span>
             <button type="button" className={"gm-pill ghost" + (armed ? " arm" : "")} onClick={resetGame}>
-              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Community Center" : "Reset Story & Quests"}
+              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Community Center" : isCompletionGame(game) ? "Reset Completion" : "Reset Story & Quests"}
             </button>
           </div>
         </div>
