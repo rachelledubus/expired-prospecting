@@ -1115,7 +1115,7 @@ export const GAMES: Game[] = [
           title: "Marlon → Krobus — Sewer Access",
           mod: "Stardew Valley Expanded",
           importance: "required",
-          note: "Concrete payoff: the Rusty Key opens the Sewers/Krobus and gates Mateo's 7-heart chapter. Stop prioritizing Marlon here unless another later quest explicitly needs him."
+          note: "Concrete payoff: the Rusty Key opens the Sewers/Krobus and gates Mateo's 7-heart chapter. Stop prioritizing Marlon here unless another later quest explicitly needs him.",
           steps: [
             {
               id: "start",
