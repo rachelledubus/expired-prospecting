@@ -5,9 +5,8 @@ import {
   GAMES,
   SEASONS,
   bundleItemKey,
-  completionCountKey,
-  completionTargetsKey,
-  completionTotalKey,
+  completionCustomItemsKey,
+  completionItemKey,
   emptyProgress,
   isBundleGame,
   isCompletionGame,
@@ -813,26 +812,71 @@ function BundleView({
 
 /* ---------- Completion tracker ---------- */
 
-function CompletionView({ game, prog, setField }: ViewProps<CompletionGame>) {
+function CompletionView({ game, prog, setCheck, setField }: ViewProps<CompletionGame>) {
+  type CustomCompletionItem = { id: string; label: string; done: boolean };
+  const [newCustom, setNewCustom] = useState<Record<string, string>>({});
+
+  const parseCustom = (categoryId: string): CustomCompletionItem[] => {
+    const raw = prog.fields[completionCustomItemsKey(game.id, categoryId)];
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((item): item is CustomCompletionItem =>
+          !!item &&
+          typeof item === "object" &&
+          typeof item.id === "string" &&
+          typeof item.label === "string" &&
+          typeof item.done === "boolean",
+        )
+        .slice(0, 60);
+    } catch {
+      return [];
+    }
+  };
+
+  const saveCustom = (categoryId: string, items: CustomCompletionItem[]) => {
+    setField(completionCustomItemsKey(game.id, categoryId), items.length ? JSON.stringify(items) : "");
+  };
+
   const categoryRows = game.sections.flatMap((section) =>
     section.categories.map((category) => {
-      const savedCount = Number(prog.fields[completionCountKey(game.id, category.id)] ?? "0");
-      const savedTotal = Number(prog.fields[completionTotalKey(game.id, category.id)] ?? String(category.defaultTotal));
-      const count = Number.isFinite(savedCount) ? Math.max(0, savedCount) : 0;
-      const total = Number.isFinite(savedTotal) && savedTotal > 0 ? savedTotal : category.defaultTotal;
-      const pct = Math.min(100, Math.round((count / total) * 100));
-      return { section, category, count, total, pct };
+      const custom = parseCustom(category.id);
+      const builtInDone = category.items.filter((item) => !!prog.checks[completionItemKey(game.id, category.id, item)]).length;
+      const customDone = custom.filter((item) => item.done).length;
+      const done = builtInDone + customDone;
+      const total = category.items.length + custom.length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      return { section, category, custom, done, total, pct };
     }),
   );
 
-  const overall = categoryRows.length
-    ? Math.round(categoryRows.reduce((sum, row) => sum + row.pct, 0) / categoryRows.length)
-    : 0;
-  const completed = categoryRows.filter((row) => row.count >= row.total).length;
+  const totalItems = categoryRows.reduce((sum, row) => sum + row.total, 0);
+  const totalDone = categoryRows.reduce((sum, row) => sum + row.done, 0);
+  const overall = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
+  const completed = categoryRows.filter((row) => row.total > 0 && row.done === row.total).length;
+  const trackableCategories = categoryRows.filter((row) => row.total > 0).length;
 
-  const updateCount = (categoryId: string, next: number, total: number) => {
-    const safe = Math.max(0, Math.min(total, Math.round(next)));
-    setField(completionCountKey(game.id, categoryId), String(safe));
+  const addCustom = (categoryId: string) => {
+    const label = (newCustom[categoryId] ?? "").trim();
+    if (!label) return;
+    const current = parseCustom(categoryId);
+    if (current.some((item) => item.label.toLowerCase() === label.toLowerCase())) {
+      setNewCustom((values) => ({ ...values, [categoryId]: "" }));
+      return;
+    }
+    const id = `${Date.now()}-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "item"}`;
+    saveCustom(categoryId, [...current, { id, label, done: false }]);
+    setNewCustom((values) => ({ ...values, [categoryId]: "" }));
+  };
+
+  const toggleCustom = (categoryId: string, id: string, done: boolean) => {
+    saveCustom(categoryId, parseCustom(categoryId).map((item) => item.id === id ? { ...item, done } : item));
+  };
+
+  const removeCustom = (categoryId: string, id: string) => {
+    saveCustom(categoryId, parseCustom(categoryId).filter((item) => item.id !== id));
   };
 
   return (
@@ -841,21 +885,21 @@ function CompletionView({ game, prog, setField }: ViewProps<CompletionGame>) {
 
       <div className="gm-completion-summary">
         <div>
-          <span className="gm-context-label">Overall tracked completion</span>
+          <span className="gm-context-label">Checklist progress</span>
           <strong>{overall}%</strong>
         </div>
         <div>
-          <span className="gm-context-label">Categories complete</span>
-          <strong>{completed}/{categoryRows.length}</strong>
+          <span className="gm-context-label">Items checked</span>
+          <strong>{totalDone}/{totalItems}</strong>
         </div>
         <div className="gm-completion-summary-bar">
           <div className="gm-bar" aria-hidden="true"><i style={{ width: `${overall}%` }} /></div>
-          <p className="gm-note">This is your portal tracker average, not the in-game Perfection percentage.</p>
+          <p className="gm-note">{completed}/{trackableCategories} checklist categories are fully complete.</p>
         </div>
       </div>
 
       <div className="gm-callout">
-        <b>For this modded save:</b> use the totals shown in your actual Collections/Perfection screens when they differ from the defaults here. You can edit every total.
+        <b>No manual quantities:</b> check the actual fish, artifact, recipe, shipment, goal, or unlock when you complete it. The totals calculate themselves.
       </div>
 
       {game.sections.map((section) => (
@@ -864,71 +908,90 @@ function CompletionView({ game, prog, setField }: ViewProps<CompletionGame>) {
           {section.note && <p className="gm-note gm-section-note">{section.note}</p>}
           <div className="gm-completion-grid">
             {section.categories.map((category) => {
-              const countKey = completionCountKey(game.id, category.id);
-              const totalKey = completionTotalKey(game.id, category.id);
-              const targetsKey = completionTargetsKey(game.id, category.id);
-              const savedCount = Number(prog.fields[countKey] ?? "0");
-              const savedTotal = Number(prog.fields[totalKey] ?? String(category.defaultTotal));
-              const count = Number.isFinite(savedCount) ? Math.max(0, savedCount) : 0;
-              const total = Number.isFinite(savedTotal) && savedTotal > 0 ? savedTotal : category.defaultTotal;
-              const pct = Math.min(100, Math.round((count / total) * 100));
-              const done = count >= total;
+              const custom = parseCustom(category.id);
+              const builtInDone = category.items.filter((item) => !!prog.checks[completionItemKey(game.id, category.id, item)]).length;
+              const customDone = custom.filter((item) => item.done).length;
+              const doneN = builtInDone + customDone;
+              const totalN = category.items.length + custom.length;
+              const pct = totalN ? Math.round((doneN / totalN) * 100) : 0;
+              const done = totalN > 0 && doneN === totalN;
 
               return (
                 <details className={"gm-completion-card" + (done ? " done" : "")} key={category.id}>
                   <summary>
                     <span>
                       <b>{category.title}</b>
-                      <em>{category.sourceHint ?? category.unit}</em>
+                      <em>{category.sourceHint ?? (totalN ? "Checklist" : "Add items as they appear")}</em>
                     </span>
-                    <span className="gm-completion-number">{count}/{total}</span>
+                    <span className="gm-completion-number">{doneN}/{totalN}</span>
                   </summary>
 
                   <div className="gm-completion-body">
                     <div className="gm-bar thin" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-                    <div className="gm-completion-controls">
-                      <button type="button" className="gm-count-btn" disabled={count <= 0} onClick={() => updateCount(category.id, count - 1, total)}>−</button>
-                      <label>
-                        <span>Done</span>
-                        <input
-                          className="gm-input gm-count-input"
-                          inputMode="numeric"
-                          value={String(count)}
-                          onChange={(e) => {
-                            const n = Number(e.target.value);
-                            if (Number.isFinite(n)) updateCount(category.id, n, total);
-                          }}
-                        />
-                      </label>
-                      <span className="gm-count-of">of</span>
-                      <label>
-                        <span>Total</span>
-                        <input
-                          className="gm-input gm-count-input"
-                          inputMode="numeric"
-                          value={String(total)}
-                          onChange={(e) => {
-                            const n = Number(e.target.value);
-                            if (Number.isFinite(n) && n > 0) setField(totalKey, String(Math.round(n)));
-                          }}
-                        />
-                      </label>
-                      <button type="button" className="gm-count-btn" disabled={count >= total} onClick={() => updateCount(category.id, count + 1, total)}>+</button>
-                    </div>
-
                     {category.note && <p className="gm-note">{category.note}</p>}
 
-                    <label className="gm-targets-label">
-                      <span>Missing / next targets</span>
-                      <textarea
-                        className="gm-input gm-targets"
-                        rows={3}
-                        placeholder={category.id === "fish" ? "e.g. Catfish — rainy Spring river; Eel — rainy evening…" : "Add the next few things you want to finish…"}
-                        value={prog.fields[targetsKey] ?? ""}
-                        onChange={(e) => setField(targetsKey, e.target.value)}
-                      />
-                    </label>
+                    {category.items.length > 0 && (
+                      <div className="gm-completion-list">
+                        {category.items.map((item) => {
+                          const key = completionItemKey(game.id, category.id, item);
+                          return (
+                            <Check
+                              key={item}
+                              label={item}
+                              checked={!!prog.checks[key]}
+                              onChange={(value) => setCheck(key, value)}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
 
+                    {custom.length > 0 && (
+                      <div className="gm-custom-list">
+                        <div className="gm-completion-subhead">Custom / modded items</div>
+                        {custom.map((item) => (
+                          <div className="gm-custom-row" key={item.id}>
+                            <Check
+                              label={item.label}
+                              checked={item.done}
+                              onChange={(value) => toggleCustom(category.id, item.id, value)}
+                            />
+                            <button
+                              type="button"
+                              className="gm-custom-remove"
+                              aria-label={`Remove ${item.label}`}
+                              onClick={() => removeCustom(category.id, item.id)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {category.allowCustom && (
+                      <div className="gm-custom-add">
+                        <input
+                          className="gm-input"
+                          type="text"
+                          maxLength={80}
+                          placeholder="Add a modded or personal checklist item…"
+                          value={newCustom[category.id] ?? ""}
+                          onChange={(e) => setNewCustom((values) => ({ ...values, [category.id]: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustom(category.id);
+                            }
+                          }}
+                        />
+                        <button type="button" className="gm-pill" onClick={() => addCustom(category.id)}>
+                          Add item
+                        </button>
+                      </div>
+                    )}
+
+                    {totalN === 0 && <p className="gm-completion-empty">No items yet. Add one when this goal gives you something specific to track.</p>}
                     {done && <div className="gm-completion-done">✓ Category complete</div>}
                   </div>
                 </details>
