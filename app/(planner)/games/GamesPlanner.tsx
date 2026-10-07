@@ -380,10 +380,16 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             {story.steps.map((s, idx) => {
               const k = questStepKey(game, story, s);
               const isCurrent = idx === row.index;
+              const isDone = !!prog.checks[k];
               return (
                 <div className={isCurrent ? "gm-path-step current" : "gm-path-step"} key={s.id}>
-                  <span>{prog.checks[k] ? "✓" : isCurrent ? "→" : "·"}</span>
+                  <span>{isDone ? "✓" : isCurrent ? "→" : "·"}</span>
                   <span>{s.label}</span>
+                  {isDone && (
+                    <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                      Undo
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -570,7 +576,23 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       {completedStories.length > 0 && (
         <details className="gm-card gm-fold-card">
           <summary>✅ Completed Storylines · {completedStories.length}</summary>
-          <ul className="gm-ul">{completedStories.map((story) => <li key={story.id}>{story.title}</li>)}</ul>
+          <p className="gm-note">Open a completed storyline if you checked something by mistake.</p>
+          {completedStories.map((story) => (
+            <details className="gm-completed-story" key={story.id}>
+              <summary>{story.title}</summary>
+              {story.steps.map((step) => {
+                const k = questStepKey(game, story, step);
+                return (
+                  <div className="gm-completed-step" key={step.id}>
+                    <span>✓ {step.label}</span>
+                    <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                      Undo
+                    </button>
+                  </div>
+                );
+              })}
+            </details>
+          ))}
         </details>
       )}
 
@@ -857,6 +879,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const [progress, setProgress] = useState<Record<string, GameProgress>>(initial);
   const [status, setStatus] = useState<Status>(loaded ? "idle" : "loadfail");
   const [armed, setArmed] = useState(false);
+  const [lastCheck, setLastCheck] = useState<{ gameId: string; key: string; value: boolean } | null>(null);
 
   const game = GAMES.find((g) => g.id === gameId) ?? GAMES[0];
   const prog = progress[game.id] ?? emptyProgress();
@@ -956,6 +979,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   }, []);
 
   const setGameCheck = (targetGameId: string, key: string, value: boolean) => {
+    setLastCheck({ gameId: targetGameId, key, value });
     setProgress((p) => {
       const cur = p[targetGameId] ?? emptyProgress();
       const checks = { ...cur.checks };
@@ -964,6 +988,21 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
       return { ...p, [targetGameId]: { ...cur, checks } };
     });
     queue(targetGameId, { checks: { [key]: value } });
+  };
+
+  const undoLastCheck = () => {
+    if (!lastCheck) return;
+    const { gameId: targetGameId, key, value } = lastCheck;
+    const reversed = !value;
+    setProgress((p) => {
+      const cur = p[targetGameId] ?? emptyProgress();
+      const checks = { ...cur.checks };
+      if (reversed) checks[key] = true;
+      else delete checks[key];
+      return { ...p, [targetGameId]: { ...cur, checks } };
+    });
+    queue(targetGameId, { checks: { [key]: reversed } });
+    setLastCheck(null);
   };
 
   const setGameField = (targetGameId: string, key: string, value: string) => {
@@ -989,6 +1028,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
     }
     if (armTimer.current) clearTimeout(armTimer.current);
     setArmed(false);
+    setLastCheck(null);
     setProgress((p) => ({ ...p, [game.id]: emptyProgress() }));
     queue(game.id, { reset: true });
   };
@@ -1050,6 +1090,15 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+          )}
+
+          {lastCheck && (
+            <div className="gm-undo-bar" role="status">
+              <span>{lastCheck.value ? "Checked off." : "Unchecked."}</span>
+              <button type="button" onClick={undoLastCheck}>
+                ↶ Undo last change
+              </button>
+            </div>
           )}
 
           <div className="gm-foot">
