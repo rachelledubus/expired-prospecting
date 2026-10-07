@@ -900,7 +900,7 @@ const completionTracker: CompletionGame = {
             "Water Grub",
             "Wolf Snapper",
           ],
-          note: "All 43 fish added by Stardew Valley Expanded 1.15. Check each fish after it appears in your Fish Collection.",
+          note: "Current SVE fishing-collection entries, including Dulse Seaweed. Check each one after it appears in your Fish Collection.",
           sourceHint: "SVE → Fish Collection",
           allowCustom: true,
         },
