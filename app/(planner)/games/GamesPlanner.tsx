@@ -9,7 +9,6 @@ import {
   completionTargetsKey,
   completionTotalKey,
   emptyProgress,
-  fieldKey,
   isBundleGame,
   isCompletionGame,
   itemKey,
@@ -23,7 +22,6 @@ import {
   type BundleItem,
   type ChecklistGame,
   type CompletionGame,
-  type GamePhase,
   type GameProgress,
   type GameProgressPatch,
   type GameQuestBucket,
@@ -114,57 +112,7 @@ type ViewProps<G> = {
   setField: (key: string, value: string) => void;
 };
 
-/* ---------- Phase checklist (Stardew Mega-Mod) ---------- */
-
-const boardKeyCache = new WeakMap<ChecklistGame, Set<string>>();
-
-/** Roadmap boxes that a quest board step already uses. They live on the board, so the roadmap does not repeat them. */
-function boardKeys(game: ChecklistGame): Set<string> {
-  let keys = boardKeyCache.get(game);
-  if (!keys) {
-    const found = new Set<string>();
-    game.questBoard?.storylines.forEach((story) =>
-      story.steps.forEach((step) => {
-        if (step.legacy) found.add(itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text));
-      }),
-    );
-    keys = found;
-    boardKeyCache.set(game, found);
-  }
-  return keys;
-}
-
-/** The items of a roadmap group that are shown there. */
-function roadmapItems(game: ChecklistGame, phase: GamePhase, g: GamePhase["groups"][number]): string[] {
-  const onBoard = boardKeys(game);
-  return g.items.filter((t) => !g.hidden?.includes(t) && !onBoard.has(itemKey(game.id, phase.id, g.label, t)));
-}
-
-function phaseCounts(game: ChecklistGame, phase: GamePhase, progress: GameProgress) {
-  let total = 0;
-  let done = 0;
-  let hidden = 0;
-  for (const g of phase.groups) {
-    const shown = roadmapItems(game, phase, g);
-    hidden += g.items.length - shown.length;
-    for (const t of shown) {
-      total += 1;
-      if (progress.checks[itemKey(game.id, phase.id, g.label, t)]) done += 1;
-    }
-  }
-  return { done, total, hidden };
-}
-
-function phaseRemainingText(game: ChecklistGame, phase: GamePhase, progress: GameProgress): string {
-  const lines = [`Phase: ${phase.title} (${phase.when})`];
-  for (const g of phase.groups) {
-    const left = roadmapItems(game, phase, g).filter((t) => !progress.checks[itemKey(game.id, phase.id, g.label, t)]);
-    if (!left.length) continue;
-    lines.push("", g.label);
-    left.forEach((t) => lines.push(`- [ ] ${t}`));
-  }
-  return lines.join("\n");
-}
+/* ---------- Smart Stardew quest guide ---------- */
 
 type ParsedGameDate = { season: string; day: number; year: number; totalDay: number };
 
@@ -196,16 +144,6 @@ function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuest
 }
 
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  const stats = useMemo(
-    () => game.phases.map((p) => ({ phase: p, ...phaseCounts(game, p, prog) })),
-    [game, prog],
-  );
-
-  const isOpen = (p: GamePhase) => !!open[`${game.id}:${p.id}`];
-  const toggle = (p: GamePhase) => setOpen((o) => ({ ...o, [`${game.id}:${p.id}`]: !isOpen(p) }));
-
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
   const shownDate = gameDate ?? parseGameDate(game.saveDefault) ?? { season: "Spring", day: 1, year: 1, totalDay: 1 };
@@ -474,85 +412,6 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     );
   };
 
-  const roadmapCards = stats.map(({ phase, done: d, total: t, hidden: hiddenN }, idx) => {
-    const isDone = d === t;
-    const expanded = isOpen(phase);
-    return (
-      <section
-        key={phase.id}
-        id={`gm-${game.id}-${phase.id}`}
-        className={"gm-phase" + (isDone ? " done" : " later") + (expanded ? " open" : "")}
-      >
-        <button type="button" className="gm-head" aria-expanded={expanded} onClick={() => toggle(phase)}>
-          <span className="gm-badge">{isDone ? "✓" : idx + 1}</span>
-          <span className="gm-title">
-            <b>{phase.title}</b>
-            <span>{phase.when}</span>
-          </span>
-          <span className="gm-meta">
-            <b>{d}/{t}</b>
-            {isDone && <em>Done</em>}
-          </span>
-          <i className="gm-chev" aria-hidden="true" />
-        </button>
-        {expanded && (
-          <div className="gm-body">
-            <div className="gm-bar thin" aria-hidden="true">
-              <i style={{ width: `${t ? Math.round((d / t) * 100) : 0}%` }} />
-            </div>
-            {phase.callout && (
-              <div className="gm-callout">
-                {phase.callout.lead && <b>{phase.callout.lead} </b>}
-                {phase.callout.text}
-              </div>
-            )}
-            {phase.groups.filter((g) => roadmapItems(game, phase, g).length > 0).map((g) => (
-              <div className="gm-group" key={g.label}>
-                <div className="gm-sublabel">{g.label}</div>
-                {g.note && <p className="gm-note">{g.note}</p>}
-                {g.field && (
-                  <div className="gm-field-row">
-                    <label className="gm-lbl" htmlFor={`gm-f-${phase.id}-${g.field}`}>{g.field}:</label>
-                    <input
-                      id={`gm-f-${phase.id}-${g.field}`}
-                      className="gm-input"
-                      type="text"
-                      maxLength={200}
-                      placeholder="Who did I pick?"
-                      value={prog.fields[fieldKey(game.id, phase.id, g.field)] ?? ""}
-                      onChange={(e) => setField(fieldKey(game.id, phase.id, g.field!), e.target.value)}
-                    />
-                  </div>
-                )}
-                {roadmapItems(game, phase, g).map((text) => {
-                  const key = itemKey(game.id, phase.id, g.label, text);
-                  const checked = !!prog.checks[key];
-                  return (
-                    <Check
-                      key={text}
-                      label={text}
-                      sub={checked ? undefined : g.how?.[text]}
-                      checked={checked}
-                      onChange={(v) => setCheck(key, v)}
-                    />
-                  );
-                })}
-                {g.after && <p className="gm-note end">{g.after}</p>}
-              </div>
-            ))}
-            {hiddenN > 0 && <p className="gm-note">{hiddenN} linked items are tracked elsewhere in this guide, so they are not duplicated here.</p>}
-            {phase.footer && (
-              <div className={"gm-callout" + (phase.footer.warn ? " warn" : "")}>
-                <b>{phase.footer.lead} </b>{phase.footer.text}
-              </div>
-            )}
-            <CopyButton getText={() => phaseRemainingText(game, phase, prog)} />
-          </div>
-        )}
-      </section>
-    );
-  });
-
   return (
     <>
       <p className="gm-mods">{game.mods}</p>
@@ -648,7 +507,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       {optionalRows.length > 0 && (
         <details className="gm-card gm-fold-card">
           <summary>🌿 Optional Side Stories · {optionalRows.length}</summary>
-          <p className="gm-note">These are here when you want a change of pace. They do not outrank your active progression unless the important tracks are quiet.</p>
+          <p className="gm-note">These are here when you want a change of pace. They do not outrank active progression. Extra friendship stories that do not unlock anything belong here or in Completion instead of taking up arbitrary Character #2/#3 roadmap slots.</p>
           <div className="gm-smart-list">{optionalRows.map((row) => renderQuest(row))}</div>
         </details>
       )}
@@ -683,11 +542,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         <ul className="gm-ul">{game.guide.early.map((t) => <li key={t}>{t}</li>)}</ul>
       </details>
 
-      <details className="gm-roadmap">
-        <summary>🗺️ Overall game roadmap · reference only</summary>
-        <p className="gm-note">This is the big-picture sequence, not a list you have to clear before doing something else.</p>
-        {roadmapCards}
-      </details>
+
     </>
   );
 }
