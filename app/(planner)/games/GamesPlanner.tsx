@@ -238,9 +238,12 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       if (!socialStep?.social) continue;
 
       const social = socialStep.social;
+      const startStep = social.startAfterStepId
+        ? story.steps.find((step) => step.id === social.startAfterStepId)
+        : undefined;
       const startStepOk =
         !social.startAfterStepId ||
-        !!prog.checks[questKey(game.id, story.id, social.startAfterStepId)];
+        (!!startStep && !!prog.checks[questStepKey(game, story, startStep)]);
       const startProgressOk =
         !social.startAfterProgress ||
         !!prog.checks[
@@ -258,7 +261,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       if (importance === "optional") continue;
 
       const importanceScore = importance === "required" ? 300 : 180;
-      const personalScore = social.personal ? 140 : 0;
+      const personalScore = social.personal ? 90 : 0;
       rows.push({
         story,
         step: socialStep,
