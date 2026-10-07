@@ -1784,7 +1784,7 @@ export const GAMES: Game[] = [
               label: "Trigger the first Abandoned House event",
               how: "After at least 40 days in game, enter the Hike Trail on a rainy day before 6 PM.",
               location: "Hike Trail",
-              gate: { minTotalDay: 41, weather: ["rain", "storm"] },
+              gate: { minTotalDay: 42, weather: ["rain", "storm"] },
               bucket: "now",
               priority: 40,
             },
