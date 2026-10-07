@@ -25,13 +25,18 @@ export type GamePhase = {
 };
 
 export type GameQuestBucket = "deadline" | "now" | "toward" | "waiting";
+export type GameImportance = "required" | "recommended" | "optional";
 
 export type GameQuestStep = {
   id: string;
   label: string;
   how?: string;
+  location?: string;
+  reward?: string;
+  why?: string;
   bucket: GameQuestBucket;
   priority?: number;
+  importance?: GameImportance;
   /** Calendar-only gate. Story prerequisites belong in requires. */
   gate?: {
     year?: number;
@@ -39,6 +44,7 @@ export type GameQuestStep = {
     minDay?: number;
     maxDay?: number;
     minTotalDay?: number;
+    weather?: ("sunny" | "rain" | "storm" | "snow")[];
   };
   /** Other quest-board steps that must be checked first, formatted as storylineId:stepId. */
   requires?: string[];
@@ -52,7 +58,21 @@ export type GameStoryline = {
   title: string;
   mod: string;
   note?: string;
+  importance?: GameImportance;
   steps: GameQuestStep[];
+};
+
+export type ProgressionItem = {
+  label: string;
+  why?: string;
+  ref: { gameId: string; phaseId: string; groupLabel: string; text: string };
+};
+
+export type ProgressionSection = {
+  id: string;
+  title: string;
+  note?: string;
+  items: ProgressionItem[];
 };
 
 export type GameQuestBoard = {
@@ -110,6 +130,7 @@ export type BundleGame = {
   rooms: string[];
   bundles: Bundle[];
   footnotes: string[];
+  progression?: ProgressionSection[];
 };
 
 export type Game = ChecklistGame | BundleGame;
@@ -134,6 +155,8 @@ export const questKey = (gameId: string, storylineId: string, stepId: string) =>
   [gameId, "quest", storylineId, stepId].join("|");
 export const fieldKey = (gameId: string, phaseId: string, name: string) => `${gameId}|${phaseId}|field|${name}`;
 export const saveKey = (gameId: string) => `${gameId}|save`;
+export const weatherKey = (gameId: string) => `${gameId}|weather`;
+export const mainQuestKey = (gameId: string) => `${gameId}|main-quest`;
 
 export const seasonKey = (gameId: string) => `${gameId}|season`;
 export const bundleItemKey = (gameId: string, bundleId: string, item: BundleItem) =>
@@ -162,7 +185,7 @@ export function knownCheckKeys(game: Game): Set<string> {
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
   if (isBundleGame(game)) return new Set<string>([seasonKey(game.id)]);
-  const keys = new Set<string>([saveKey(game.id)]);
+  const keys = new Set<string>([saveKey(game.id), weatherKey(game.id), mainQuestKey(game.id)]);
   game.phases.forEach((p) => p.groups.forEach((g) => g.field && keys.add(fieldKey(game.id, p.id, g.field))));
   return keys;
 }
@@ -176,9 +199,9 @@ const ANY = "any" as const;
 const communityCenter: BundleGame = {
   kind: "bundles",
   id: "community-center",
-  tab: "Community Center",
-  title: "Community Center Bundles",
-  mods: "Standard bundles, sorted by the season you can get each item",
+  tab: "Farm & Progression",
+  title: "Stardew — Farm & Progression",
+  mods: "Community Center • tools • mining • farm infrastructure",
   defaultSeason: "Spring",
   rooms: ["Crafts Room", "Pantry", "Fish Tank", "Boiler Room", "Bulletin Board", "Vault"],
   footnotes: [
@@ -188,6 +211,80 @@ const communityCenter: BundleGame = {
     "Crab pots unlock at Fishing level 3 and need bait every day. Fruit trees need a clear 3 by 3 patch of ground.",
     "The notes use base game locations and shop prices. Mods can change a few of them.",
     "If a bundle needs fewer items than it lists, finishing it hides the rest.",
+  ],
+  progression: [
+    {
+      id: "story-unlocks",
+      title: "Story-relevant unlocks",
+      note: "These only surface because they unlock or materially support a storyline.",
+      items: [
+        {
+          label: "Upgrade Axe to Steel",
+          why: "Unlocks the north entrance from The Ridge into Ridge Forest.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
+        },
+        {
+          label: "Reach Mine Floor 120",
+          why: "Finishes the regular Mines and gives the Skull Key.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Reach Mine Floor 120" },
+        },
+        {
+          label: "Obtain the Skull Key",
+          why: "Unlocks Skull Cavern once the bus is repaired.",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p3", groupLabel: "Mining Progression", text: "Obtain the Skull Key" },
+        },
+      ],
+    },
+    {
+      id: "tools-mining",
+      title: "Tools & mining",
+      note: "Support goals, not mandatory daily chores.",
+      items: [
+        {
+          label: "Reach Mine Floor 40",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Reach Mine Floor 40" },
+        },
+        {
+          label: "Upgrade Pickaxe to Copper",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Upgrade Pickaxe to Copper" },
+        },
+        {
+          label: "Reach Mine Floor 80",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Reach Mine Floor 80" },
+        },
+        {
+          label: "Upgrade Pickaxe to Steel",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Upgrade Pickaxe to Steel when affordable" },
+        },
+      ],
+    },
+    {
+      id: "farm-basics",
+      title: "Farm development",
+      note: "Build these because they support your play, not because the guide says the calendar demands them.",
+      items: [
+        {
+          label: "Build a Silo",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Build a Silo" },
+        },
+        {
+          label: "Build a Coop or Barn",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Build a Coop OR Barn" },
+        },
+        {
+          label: "Begin producing artisan goods",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Begin producing some artisan goods" },
+        },
+        {
+          label: "Build a reliable mining-food supply",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Have a reliable source of food for mining" },
+        },
+        {
+          label: "Mostly Quality Sprinklers or better",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have mostly Quality Sprinklers or better" },
+        },
+      ],
+    },
   ],
   bundles: [
     // Crafts Room
@@ -462,8 +559,8 @@ export const GAMES: Game[] = [
   {
     kind: "checklist",
     id: "stardew-mega-mod",
-    tab: "Stardew Mega-Mod",
-    title: "Stardew Mega-Mod Progression",
+    tab: "Story & Quests",
+    title: "Stardew — Story & Quests",
     mods: "Stardew Valley Expanded • Ridgeside Village • East Scarp • Sword & Sorcery",
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
@@ -484,6 +581,7 @@ export const GAMES: Game[] = [
           id: "andy-spring",
           title: "Andy — Spring Year 1",
           mod: "Stardew Valley Expanded",
+          importance: "optional",
           note: "Time-sensitive early SVE content. Do this before Spring ends.",
           steps: [
             {
@@ -492,12 +590,14 @@ export const GAMES: Game[] = [
               how: "Needed for his early Year 1 Spring event.",
               bucket: "deadline",
               priority: 100,
-              gate: { year: 1, seasons: ["Spring"], minDay: 4 },
+              gate: { year: 1, seasons: ["Spring"], minDay: 4, weather: ["sunny"] },
             },
             {
               id: "strawberries",
               label: "Trigger Andy's Year 1 Spring event",
               how: "Enter Cindersap Forest 7 AM–5 PM on a sunny Spring day. It only occurs in Year 1 after day 3, once you have spoken to Andy.",
+              location: "Cindersap Forest",
+              why: "Year 1 Spring-only content; easiest to miss if you ignore it.",
               bucket: "deadline",
               priority: 100,
               gate: { year: 1, seasons: ["Spring"], minDay: 4 },
@@ -517,12 +617,16 @@ export const GAMES: Game[] = [
           id: "sophia-year1",
           title: "Sophia — Early Year 1",
           mod: "Stardew Valley Expanded",
+          importance: "recommended",
           note: "Her earliest vineyard event gives a Quality Sprinkler and is exclusive to Year 1.",
           steps: [
             {
               id: "sprinkler",
               label: "Trigger Sophia's vineyard introduction and get the Quality Sprinkler",
               how: "Enter Blue Moon Vineyard 6 AM–3 PM in Spring or Summer, Year 1, with one empty inventory slot.",
+              location: "Blue Moon Vineyard",
+              reward: "Quality Sprinkler",
+              why: "A useful early farm upgrade and Year 1-only event.",
               bucket: "deadline",
               priority: 98,
               gate: { year: 1, seasons: ["Spring", "Summer"] },
@@ -550,11 +654,14 @@ export const GAMES: Game[] = [
           id: "mateo",
           title: "Mateo — Sword & Sorcery",
           mod: "Sword & Sorcery / East Scarp",
+          importance: "required",
           note: "This is your main active mod storyline. Most early events are any season; the real early wall is Krobus at 7 hearts.",
           steps: [
             {
               id: "meet",
               label: "Meet Mateo",
+              location: "East Scarp",
+              why: "Starts the Sword & Sorcery storyline.",
               bucket: "now",
               priority: 96,
               legacy: { phaseId: "p1", groupLabel: "East Scarp + Sword & Sorcery", text: "Meet Mateo" },
@@ -577,6 +684,8 @@ export const GAMES: Game[] = [
               id: "two-hearts",
               label: "Reach 2 hearts with Mateo and see the Town event",
               how: "Town, 8 PM–midnight, sunny, any season. Mateo events are normally three days apart unless noted.",
+              location: "Pelican Town",
+              gate: { weather: ["sunny"] },
               bucket: "now",
               priority: 92,
             },
@@ -584,6 +693,8 @@ export const GAMES: Game[] = [
               id: "four-hearts",
               label: "Reach 4 hearts with Mateo and see the Beach event",
               how: "Beach, 6 PM–midnight, sunny, any season.",
+              location: "The Beach",
+              gate: { weather: ["sunny"] },
               bucket: "now",
               priority: 90,
             },
@@ -612,6 +723,8 @@ export const GAMES: Game[] = [
               id: "six-1",
               label: "See Mateo's 6-heart Part I",
               how: "Town, 10 AM–6 PM, sunny, any season.",
+              location: "Pelican Town",
+              gate: { weather: ["sunny"] },
               bucket: "now",
               priority: 88,
             },
@@ -619,6 +732,8 @@ export const GAMES: Game[] = [
               id: "six-2",
               label: "See Mateo's 6-heart Part II",
               how: "Cindersap Forest, 6 PM–midnight, rain, any season.",
+              location: "Cindersap Forest",
+              gate: { weather: ["rain", "storm"] },
               bucket: "now",
               priority: 88,
             },
@@ -651,6 +766,7 @@ export const GAMES: Game[] = [
           id: "marlon-krobus",
           title: "Marlon → Krobus",
           mod: "Stardew Valley Expanded",
+          importance: "required",
           note: "This is a progression gate for Sword & Sorcery, not a seasonal storyline.",
           steps: [
             {
@@ -689,6 +805,7 @@ export const GAMES: Game[] = [
           id: "ridgeside-minecart",
           title: "Ridgeside Minecarts",
           mod: "Ridgeside Village",
+          importance: "recommended",
           note: "Talk to Yuuma now; the actual restoration quest waits for the 20-day gate.",
           steps: [
             {
@@ -727,12 +844,15 @@ export const GAMES: Game[] = [
           id: "ridgeside-main",
           title: "Ridge Forest → Ninja Story",
           mod: "Ridgeside Village",
+          importance: "required",
           note: "This storyline is tool-gated, not Late-Summer-gated.",
           steps: [
             {
               id: "steel-axe",
               label: "Upgrade the Axe to Steel",
-              how: "A Steel Axe is the real requirement for opening the Ridge Forest.",
+              how: "This is the tool gate for the Ridge Forest entrance.",
+              why: "Unlocks the Ridgeside main-story area.",
+              reward: "Access to Ridge Forest",
               bucket: "toward",
               priority: 84,
               legacy: { phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
@@ -740,7 +860,9 @@ export const GAMES: Game[] = [
             {
               id: "clear-log",
               label: "Clear the large log and enter the Ridge Forest",
-              how: "The Ridge Forest is north of The Ridge. Clear its blocking log with the Steel Axe.",
+              how: "Take the cable car to Ridgeside, go north through the village into The Ridge (the map with the Ninja House), then walk straight north from where you enter The Ridge. The large log blocks that north exit. If you are still in the main village, you are one map too far south.",
+              location: "North edge of The Ridge",
+              reward: "Access to Ridge Forest",
               bucket: "now",
               priority: 84,
             },
@@ -760,8 +882,8 @@ export const GAMES: Game[] = [
             },
             {
               id: "mistbloom",
-              label: "Collect 25 Mountain Mistbloom and the nine required relics",
-              how: "The Preparations asks for 25 Mountain Mistbloom plus nine relics. The red book in the Ninja House describes the relics.",
+              label: "Collect the Mountain Mistbloom and relics listed in The Preparations",
+              how: "Use the in-game quest log for the exact quantity on your installed Ridgeside version. The red book in the Ninja House gives the relic clues.",
               bucket: "toward",
               priority: 80,
             },
@@ -778,12 +900,15 @@ export const GAMES: Game[] = [
           id: "magnus",
           title: "Magnus — Magic",
           mod: "Stardew Valley Expanded",
+          importance: "recommended",
           note: "A season-independent SVE side story that unlocks mana/minor magic at 4 hearts.",
           steps: [
             {
               id: "two-hearts",
               label: "Reach 2 hearts with Magnus and see The Barrier",
               how: "Cindersap Forest, 6 AM–6 PM, sunny, any season.",
+              location: "Cindersap Forest",
+              gate: { weather: ["sunny"] },
               bucket: "now",
               priority: 66,
             },
@@ -791,6 +916,8 @@ export const GAMES: Game[] = [
               id: "four-hearts",
               label: "Reach 4 hearts with Magnus and unlock minor magic",
               how: "After his Shrine of Illusions letter, enter the Wizard's Tower. Any season, any weather.",
+              location: "Wizard's Tower",
+              reward: "Minor magic / mana progression",
               bucket: "now",
               priority: 66,
             },
@@ -800,6 +927,7 @@ export const GAMES: Game[] = [
           id: "rosa",
           title: "Rosa — East Scarp Side Story",
           mod: "East Scarp",
+          importance: "optional",
           note: "Use Rosa as your one active East Scarp side story instead of trying to befriend the whole town.",
           steps: [
             {
@@ -857,6 +985,7 @@ export const GAMES: Game[] = [
           id: "ridgeside-side",
           title: "One Ridgeside Side Story",
           mod: "Ridgeside Village",
+          importance: "optional",
           note: "Pick only one resident at a time. Ian, Jeric, Philip, and Ysabelle all have early friendship events that are not locked to a future season.",
           steps: [
             {
@@ -884,6 +1013,7 @@ export const GAMES: Game[] = [
           id: "eyvind",
           title: "Eyvind Introduction",
           mod: "East Scarp",
+          importance: "optional",
           note: "This one really is date-gated.",
           steps: [
             {
@@ -1110,7 +1240,7 @@ export const GAMES: Game[] = [
           {
             label: "The Preparations",
             hidden: ["Find the quest’s required cursed artifacts", "Collect required special forage/items"],
-            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "The quest asks for 25 Mountain Mistbloom.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
+            how: {"Find the quest’s required cursed artifacts": "The red book in the Ninja House has the details.", "Collect required special forage/items": "Use the in-game quest log for the exact Mistbloom quantity on your installed Ridgeside version.", "Turn in The Preparations": "Donate the items in the deposit box in the Ninja House."},
             note: "Do these naturally instead of trying to finish everything in one day.",
             items: [
               "Find the quest’s required cursed artifacts",
