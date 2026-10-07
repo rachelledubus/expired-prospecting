@@ -191,7 +191,8 @@ function shiftGameDate(d: ParsedGameDate, days: number): string {
 
 function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
   if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
-  return questKey(game.id, story.id, step.id);
+  const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
+  return questKey(game.id, owner.storylineId, owner.stepId);
 }
 
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
