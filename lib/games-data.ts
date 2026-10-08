@@ -315,7 +315,9 @@ export type BundleGame = {
   bundles: Bundle[];
   footnotes: string[];
   progression?: ProgressionSection[];
-  /** Replaces the bundle-gathering dashboard once every Community Center bundle is complete. */
+  /** Personal-save stage override when the Community Center is complete in game even if tracker boxes are stale. */
+  postCompletionActive?: boolean;
+  /** Replaces the bundle-gathering dashboard once the Community Center stage is complete. */
   postCompletion?: ProgressionSection[];
 };
 
@@ -446,6 +448,7 @@ const communityCenter: BundleGame = {
   mods: "Community Center • tools • mining • farm infrastructure",
   defaultSeason: "Spring",
   rooms: ["Crafts Room", "Pantry", "Fish Tank", "Boiler Room", "Bulletin Board", "Vault"],
+  postCompletionActive: true,
   footnotes: [
     "These are the standard bundles. Remixed bundles use different items.",
     "Seasons are the base game seasons. The Greenhouse grows crops all year, and Ginger Island lets you catch some fish in any season.",
