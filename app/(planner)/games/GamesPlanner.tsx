@@ -1559,7 +1559,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               {statusText}
             </span>
             <button type="button" className={"gm-pill ghost" + (armed ? " arm" : "")} onClick={resetGame}>
-              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Community Center" : isCompletionGame(game) ? "Reset Completion" : "Reset Story & Quests"}
+              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : "Reset Story & Quests"}
             </button>
           </div>
         </div>
