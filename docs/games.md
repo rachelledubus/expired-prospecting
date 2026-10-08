@@ -41,6 +41,7 @@ the top of the page.
 
 - Once every Community Center bundle is complete, the tab automatically changes from a seasonal bundle tracker into a **post–Community Center progression dashboard**.
 - The main view becomes: **Next major unlock — Ginger Island**, **Power progression**, **SVE expansion — Lance & the Highlands**, **Post-CC world unlocks**, and **Later unlocks — keep on the radar**.
+- **Power progression** includes both weapon-upgrade systems: the vanilla Volcano Forge and Sword & Sorcery's Underforge. The Underforge track follows Mateo's 10-heart unlock into Artificer 2 (Pure Ore), Artificer 4 (Exquisite Gems), and Artificer 6 (Blade Coating), with separate checkboxes for actually applying each upgrade layer.
 - The first unchecked milestone across those sections is surfaced as **DO NEXT** at the top, so the tab answers what to work on rather than showing old bundle chores.
 - These post-CC milestones reuse the exact Story & Quests checkbox keys wherever possible. Checking Willy's Boat, Volcano Floor 10, Lance/Highlands, Galaxy Sword, Grandpa's Shed, Nexus, etc. in either tab updates the same saved progress.
 - Completed milestones collapse under **Completed here** inside each section.
