@@ -735,7 +735,7 @@ function BundleView({
   const bundlesDone = game.bundles.filter(complete).length;
   const pct = game.bundles.length ? Math.round((bundlesDone / game.bundles.length) * 100) : 0;
 
-  const communityCenterComplete = game.bundles.length > 0 && bundlesDone === game.bundles.length;
+  const communityCenterComplete = !!game.postCompletionActive || (game.bundles.length > 0 && bundlesDone === game.bundles.length);
   const storyById = new Map(storyGame.questBoard.storylines.map((story) => [story.id, story]));
 
   const resolveProgressionItem = (item: ProgressionItem) => {
@@ -993,8 +993,8 @@ function BundleView({
           </details>
 
           <details className="gm-fold-card gm-cc-archive">
-            <summary>Completed Community Center archive · {bundlesDone}/{game.bundles.length}</summary>
-            <p className="gm-note">Your bundle history is preserved here. You should not need this for normal play anymore.</p>
+            <summary>Community Center bundle archive · {bundlesDone}/{game.bundles.length} tracked</summary>
+            <p className="gm-note">The Community Center is complete in-game. This preserves the old tracker in case any checkbox history is stale.</p>
             <div className="gm-rooms">
               {game.rooms.map((room) => {
                 const inRoom = game.bundles.filter((b) => b.room === room);
