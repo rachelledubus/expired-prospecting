@@ -72,6 +72,15 @@ the top of the page.
 - Storylines are in `questBoard.storylines` in `lib/games-data.ts`. A step with `legacy` shares its box with the roadmap
   item of that text, so ticking it in either place stays in sync.
 
+## Alternate item acquisition routes
+
+- Material-gated quest and progression steps can declare `requiredItems`. The page then shows a folded **Ways to get required items** section directly under that step.
+- Acquisition routes live once in `GAME_ITEM_SOURCES` in `lib/games-data.ts`, so the same item shows the same options everywhere it is required.
+- Do not treat the normal crafting/farming route as the only route. When applicable, include useful alternatives such as monster drops, the Traveling Cart, permanent or rotating merchants, forage, fish ponds, treasure/reward sources, transmutation, recycling, and other valid acquisition methods.
+- Put the most practical repeatable route first, but keep earlier/luck-based routes visible when they could let the player satisfy a requirement before the usual unlock.
+- Keep this section collapsed by default so the progression page stays low-clutter; the player expands it only when they need help sourcing a requirement.
+- Mod-specific items should list only sources verified for that mod/version. If a mod item is not sold by the Traveling Cart or a merchant, do not imply that it is.
+
 ## Item lookup (search box on the Games page)
 
 - Type an item, fish or crop and it shows where to get it, the season, the time and the weather, with a link to the page.
