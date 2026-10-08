@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   GAMES,
+  GAME_ITEM_SOURCES,
   SEASONS,
   bundleItemKey,
   completionCustomItemsKey,
@@ -25,6 +26,7 @@ import {
   type GameProgressPatch,
   type GameQuestBucket,
   type GameQuestStep,
+  type GameRequiredItem,
   type GameStoryline,
   type Season,
 } from "@/lib/games-data";
@@ -84,6 +86,53 @@ function Check({
         {sub && <span className="gm-sub">{sub}</span>}
       </span>
     </label>
+  );
+}
+
+const SOURCE_KIND_LABELS: Record<string, string> = {
+  best: "Best first",
+  craft: "Craft",
+  mining: "Mining",
+  drop: "Drop",
+  merchant: "Merchant",
+  "traveling-cart": "Traveling Cart",
+  forage: "Forage",
+  reward: "Reward",
+  other: "Other",
+};
+
+function RequiredItemSources({ items }: { items?: GameRequiredItem[] }) {
+  if (!items?.length) return null;
+
+  return (
+    <details className="gm-item-sources">
+      <summary>Ways to get required items</summary>
+      <div className="gm-item-sources-list">
+        {items.map((item) => {
+          const sources = GAME_ITEM_SOURCES[item.name] ?? [];
+          return (
+            <div className="gm-item-source" key={`${item.name}:${item.qty ?? ""}:${item.note ?? ""}`}>
+              <div className="gm-item-source-name">
+                <b>{item.qty ? `${item.qty}× ` : ""}{item.name}</b>
+                {item.note && <span>{item.note}</span>}
+              </div>
+              {sources.length > 0 ? (
+                <div className="gm-item-source-routes">
+                  {sources.map((source, index) => (
+                    <div className="gm-item-source-route" key={`${source.kind}:${index}`}>
+                      <em>{SOURCE_KIND_LABELS[source.kind] ?? source.kind}</em>
+                      <span>{source.text}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="gm-item-source-empty">No alternate route notes added yet.</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 
@@ -367,6 +416,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             {details.map((detail) => <span key={detail}>{detail}</span>)}
           </div>
         )}
+        <RequiredItemSources items={step.requiredItems} />
         {step.why && <p className="gm-why"><b>Why it matters:</b> {step.why}</p>}
         {mode !== "compact" && nextStep && <p className="gm-next-preview"><b>After this:</b> {nextStep.label}</p>}
         <div className="gm-quest-actions">
@@ -445,6 +495,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             {current.step.location && <p className="gm-note">📍 {current.step.location}</p>}
             {current.bucket === "waiting" && current.reason && <p className="gm-note">🔒 {current.reason}</p>}
             {current.step.reward && <p className="gm-note"><b>Unlocks:</b> {current.step.reward}</p>}
+            <RequiredItemSources items={current.step.requiredItems} />
             {current.step.why && <p className="gm-note">{current.step.why}</p>}
           </>
         ) : null}
@@ -824,16 +875,18 @@ function BundleView({
                 const r = item.ref;
                 const k = itemKey(r.gameId, r.phaseId, r.groupLabel, r.text);
                 return (
-                  <Check
-                    key={item.label}
-                    label={item.label}
-                    sub={[
-                      item.how ? `How: ${item.how}` : "",
-                      item.why ? `Why: ${item.why}` : "",
-                    ].filter(Boolean).join("  •  ") || undefined}
-                    checked={!!storyProg.checks[k]}
-                    onChange={(v) => setStoryCheck(k, v)}
-                  />
+                  <div className="gm-progression-item" key={item.label}>
+                    <Check
+                      label={item.label}
+                      sub={[
+                        item.how ? `How: ${item.how}` : "",
+                        item.why ? `Why: ${item.why}` : "",
+                      ].filter(Boolean).join("  •  ") || undefined}
+                      checked={!!storyProg.checks[k]}
+                      onChange={(v) => setStoryCheck(k, v)}
+                    />
+                    <RequiredItemSources items={item.requiredItems} />
+                  </div>
                 );
               })}
             </div>
