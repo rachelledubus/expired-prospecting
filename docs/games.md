@@ -37,6 +37,16 @@ the top of the page.
 - Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
   Sorcery events is not confirmed.
 
+## Farm & Progression after Community Center completion
+
+- Once every Community Center bundle is complete, the tab automatically changes from a seasonal bundle tracker into a **post–Community Center progression dashboard**.
+- The main view becomes: **Next major unlock — Ginger Island**, **Power progression**, **SVE expansion — Lance & the Highlands**, **Post-CC world unlocks**, and **Later unlocks — keep on the radar**.
+- The first unchecked milestone across those sections is surfaced as **DO NEXT** at the top, so the tab answers what to work on rather than showing old bundle chores.
+- These post-CC milestones reuse the exact Story & Quests checkbox keys wherever possible. Checking Willy's Boat, Volcano Floor 10, Lance/Highlands, Galaxy Sword, Grandpa's Shed, Nexus, etc. in either tab updates the same saved progress.
+- Completed milestones collapse under **Completed here** inside each section.
+- The old farm/mining foundation tracker is kept under **Earlier farm & mining milestones** and the finished bundles are kept under **Completed Community Center archive**. Neither dominates the active page.
+- Completing all bundles also marks the Community Center-complete prerequisite steps in the Ginger Island and SVE post-CC storylines so the guide does not continue telling the player to finish a milestone that is already done.
+
 ## Community Center tracker
 
 - Tabs for Spring, Summer, Fall, Winter and **Any season**. Each tab lists the items you can collect in that season,
