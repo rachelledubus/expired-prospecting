@@ -28,6 +28,8 @@ import {
   type GameQuestStep,
   type GameRequiredItem,
   type GameStoryline,
+  type ProgressionItem,
+  type ProgressionSection,
   type Season,
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
@@ -733,6 +735,51 @@ function BundleView({
   const bundlesDone = game.bundles.filter(complete).length;
   const pct = game.bundles.length ? Math.round((bundlesDone / game.bundles.length) * 100) : 0;
 
+  const communityCenterComplete = game.bundles.length > 0 && bundlesDone === game.bundles.length;
+  const storyById = new Map(storyGame.questBoard.storylines.map((story) => [story.id, story]));
+
+  const resolveProgressionItem = (item: ProgressionItem) => {
+    if (item.questRef) {
+      const story = storyById.get(item.questRef.storylineId);
+      const step = story?.steps.find((candidate) => candidate.id === item.questRef?.stepId);
+      if (!story || !step) return null;
+      return {
+        key: questStepKey(storyGame, story, step),
+        how: item.how ?? step.how,
+        why: item.why ?? step.why,
+        requiredItems: item.requiredItems ?? step.requiredItems,
+        location: step.location,
+        reward: step.reward,
+      };
+    }
+    if (item.ref) {
+      return {
+        key: itemKey(item.ref.gameId, item.ref.phaseId, item.ref.groupLabel, item.ref.text),
+        how: item.how,
+        why: item.why,
+        requiredItems: item.requiredItems,
+        location: undefined as string | undefined,
+        reward: undefined as string | undefined,
+      };
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (!communityCenterComplete) return;
+    const completedMilestones = [
+      { storylineId: "ginger-island-access", stepId: "cc-or-joja" },
+      { storylineId: "sve-post-cc-areas", stepId: "cc-complete" },
+    ];
+    for (const ref of completedMilestones) {
+      const story = storyById.get(ref.storylineId);
+      const step = story?.steps.find((candidate) => candidate.id === ref.stepId);
+      if (!story || !step) continue;
+      const k = questStepKey(storyGame, story, step);
+      if (!storyProg.checks[k]) setStoryCheck(k, true);
+    }
+  }, [communityCenterComplete, storyGame, storyProg.checks, setStoryCheck]);
+
   const remaining = (v: View) =>
     game.bundles.reduce(
       (n, b) => (complete(b) ? n : n + b.items.filter((i) => inView(i, v) && !prog.checks[key(b, i)]).length),
@@ -818,28 +865,77 @@ function BundleView({
     );
   };
 
+  const renderProgressionSection = (section: ProgressionSection, postMode = false) => {
+    const entries = section.items
+      .map((item) => ({ item, resolved: resolveProgressionItem(item) }))
+      .filter((entry): entry is { item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
+    const incomplete = entries.filter(({ resolved }) => !storyProg.checks[resolved.key]);
+    const completed = entries.filter(({ resolved }) => !!storyProg.checks[resolved.key]);
+    const visibleEntries = postMode ? incomplete : entries;
+
+    const renderItem = ({ item, resolved }: (typeof entries)[number]) => (
+      <div className="gm-progression-item" key={item.label}>
+        <Check
+          label={item.label}
+          sub={[
+            resolved.how ? `How: ${resolved.how}` : "",
+            resolved.location ? `📍 ${resolved.location}` : "",
+            resolved.why ? `Why: ${resolved.why}` : "",
+            resolved.reward ? `Unlocks: ${resolved.reward}` : "",
+          ].filter(Boolean).join("  •  ") || undefined}
+          checked={!!storyProg.checks[resolved.key]}
+          onChange={(v) => setStoryCheck(resolved.key, v)}
+        />
+        <RequiredItemSources items={resolved.requiredItems} />
+      </div>
+    );
+
+    return (
+      <section key={section.id} className={postMode ? "gm-post-section" : undefined}>
+        <div className="label">{section.title} · {completed.length}/{entries.length}</div>
+        <div className="gm-card gm-progression-card">
+          {section.note && <p className="gm-note">{section.note}</p>}
+          {visibleEntries.length > 0 ? visibleEntries.map(renderItem) : (
+            <p className="gm-stage-complete">✓ Everything in this section is complete.</p>
+          )}
+          {postMode && completed.length > 0 && (
+            <details className="gm-fold gm-post-completed">
+              <summary>Completed here · {completed.length}</summary>
+              {completed.map(renderItem)}
+            </details>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const postEntries = (game.postCompletion ?? [])
+    .flatMap((section) => section.items.map((item) => ({ section, item, resolved: resolveProgressionItem(item) })))
+    .filter((entry): entry is { section: ProgressionSection; item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
+  const nextPostEntry = postEntries.find(({ resolved }) => !storyProg.checks[resolved.key]);
+  const postDone = postEntries.filter(({ resolved }) => !!storyProg.checks[resolved.key]).length;
+  const postPct = postEntries.length ? Math.round((postDone / postEntries.length) * 100) : 0;
+
   return (
     <>
-      <p className="gm-mods">{game.mods}</p>
+      <p className="gm-mods">{communityCenterComplete ? "Post–Community Center • Ginger Island • farm power • mod unlocks" : game.mods}</p>
 
       <div className="gm-context-card gm-farm-context">
         <div>
-          <span className="gm-context-label">Current season</span>
+          <span className="gm-context-label">Current date</span>
           <b>{storyDate ? `${storyDate.season} ${storyDate.day}, Year ${storyDate.year}` : now}</b>
         </div>
         <div>
           <span className="gm-context-label">Community Center</span>
-          <b>{bundlesDone}/{game.bundles.length} bundles</b>
+          <b>{communityCenterComplete ? "✓ Complete" : `${bundlesDone}/${game.bundles.length} bundles`}</b>
         </div>
-        {daysLeft !== null && (
-          <div>
-            <span className="gm-context-label">Season window</span>
-            <b>{daysLeft} {daysLeft === 1 ? "day" : "days"} left</b>
-          </div>
-        )}
+        <div>
+          <span className="gm-context-label">{communityCenterComplete ? "Current stage" : "Season window"}</span>
+          <b>{communityCenterComplete ? "Island + late-game expansion" : daysLeft !== null ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left` : "In progress"}</b>
+        </div>
       </div>
 
-      {seasonalItems.length > 0 && (
+      {!communityCenterComplete && seasonalItems.length > 0 && (
         <section>
           <div className="label">⏰ Do before {now} ends</div>
           <div className="gm-card gm-season-urgent">
@@ -861,94 +957,128 @@ function BundleView({
         </section>
       )}
 
-      {game.progression?.map((section) => {
-        const doneN = section.items.filter((item) => {
-          const r = item.ref;
-          return !!storyProg.checks[itemKey(r.gameId, r.phaseId, r.groupLabel, r.text)];
-        }).length;
-        return (
-          <section key={section.id}>
-            <div className="label">{section.title} · {doneN}/{section.items.length}</div>
-            <div className="gm-card gm-progression-card">
-              {section.note && <p className="gm-note">{section.note}</p>}
-              {section.items.map((item) => {
-                const r = item.ref;
-                const k = itemKey(r.gameId, r.phaseId, r.groupLabel, r.text);
+      {communityCenterComplete ? (
+        <>
+          <section className="gm-post-hero">
+            <div className="label">Your post-Community Center focus</div>
+            <div className="gm-card gm-post-focus">
+              <div className="gm-post-focus-head">
+                <div>
+                  <span className="gm-context-label">Overall post-CC progression</span>
+                  <strong>{postDone}/{postEntries.length} milestones</strong>
+                </div>
+                <b>{postPct}%</b>
+              </div>
+              <div className="gm-bar" aria-hidden="true"><i style={{ width: `${postPct}%` }} /></div>
+              {nextPostEntry ? (
+                <div className="gm-next-unlock">
+                  <span>DO NEXT</span>
+                  <b>{nextPostEntry.item.label}</b>
+                  {nextPostEntry.resolved.how && <p>{nextPostEntry.resolved.how}</p>}
+                  {nextPostEntry.resolved.location && <p>📍 {nextPostEntry.resolved.location}</p>}
+                  <RequiredItemSources items={nextPostEntry.resolved.requiredItems} />
+                </div>
+              ) : (
+                <p className="gm-stage-complete">✓ Your tracked post-Community Center progression is complete.</p>
+              )}
+            </div>
+          </section>
+
+          {game.postCompletion?.map((section) => renderProgressionSection(section, true))}
+
+          <details className="gm-fold-card gm-foundation-archive">
+            <summary>Earlier farm & mining milestones</summary>
+            <p className="gm-note">These still share your original saved checkboxes, but they are no longer the main focus at this stage.</p>
+            {game.progression?.map((section) => renderProgressionSection(section))}
+          </details>
+
+          <details className="gm-fold-card gm-cc-archive">
+            <summary>Completed Community Center archive · {bundlesDone}/{game.bundles.length}</summary>
+            <p className="gm-note">Your bundle history is preserved here. You should not need this for normal play anymore.</p>
+            <div className="gm-rooms">
+              {game.rooms.map((room) => {
+                const inRoom = game.bundles.filter((b) => b.room === room);
+                const d = inRoom.filter(complete).length;
                 return (
-                  <div className="gm-progression-item" key={item.label}>
-                    <Check
-                      label={item.label}
-                      sub={[
-                        item.how ? `How: ${item.how}` : "",
-                        item.why ? `Why: ${item.why}` : "",
-                      ].filter(Boolean).join("  •  ") || undefined}
-                      checked={!!storyProg.checks[k]}
-                      onChange={(v) => setStoryCheck(k, v)}
-                    />
-                    <RequiredItemSources items={item.requiredItems} />
-                  </div>
+                  <span key={room} className={"gm-room" + (d === inRoom.length ? " done" : "")}>
+                    {room} <b>{d}/{inRoom.length}</b>
+                  </span>
                 );
               })}
             </div>
-          </section>
-        );
-      })}
+            {game.bundles.map((bundle) => {
+              const d = doneCount(bundle);
+              return (
+                <div className="gm-archive-bundle" key={bundle.id}>
+                  <span>{bundle.room}</span>
+                  <b>✓ {bundle.name}</b>
+                  <em>{d}/{bundle.need}</em>
+                </div>
+              );
+            })}
+          </details>
+        </>
+      ) : (
+        <>
+          {game.progression?.map((section) => renderProgressionSection(section))}
 
-      <div className="label">Community Center</div>
-      <div className="gm-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-      <div className="gm-overall">
-        <span>{bundlesDone} of {game.bundles.length} bundles complete</span>
-        <span>{pct}%</span>
-      </div>
-      <div className="gm-rooms">
-        {game.rooms.map((room) => {
-          const inRoom = game.bundles.filter((b) => b.room === room);
-          const d = inRoom.filter(complete).length;
-          return (
-            <span key={room} className={"gm-room" + (d === inRoom.length ? " done" : "")}>
-              {room} <b>{d}/{inRoom.length}</b>
-            </span>
-          );
-        })}
-      </div>
+          <div className="label">Community Center</div>
+          <div className="gm-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+          <div className="gm-overall">
+            <span>{bundlesDone} of {game.bundles.length} bundles complete</span>
+            <span>{pct}%</span>
+          </div>
+          <div className="gm-rooms">
+            {game.rooms.map((room) => {
+              const inRoom = game.bundles.filter((b) => b.room === room);
+              const d = inRoom.filter(complete).length;
+              return (
+                <span key={room} className={"gm-room" + (d === inRoom.length ? " done" : "")}>
+                  {room} <b>{d}/{inRoom.length}</b>
+                </span>
+              );
+            })}
+          </div>
 
-      <div className="label">Items by season</div>
-      <div className="gm-tabs" role="tablist" aria-label="Season">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={view === t.id}
-            className={"gm-tab" + (view === t.id ? " on" : "")}
-            onClick={() => setView(t.id)}
-          >
-            <span>{t.label}</span>
-            <b>{remaining(t.id)}</b>
-            {t.id === now && <em>now</em>}
-          </button>
-        ))}
-      </div>
-      <div className="gm-viewrow">
-        <p className="gm-note">{viewNote}</p>
-        {!storyDate && view !== "any" && view !== now && (
-          <button type="button" className="gm-pill ghost" onClick={() => setField(seasonKey(game.id), view)}>
-            It is {view} in game now
-          </button>
-        )}
-      </div>
+          <div className="label">Items by season</div>
+          <div className="gm-tabs" role="tablist" aria-label="Season">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={view === t.id}
+                className={"gm-tab" + (view === t.id ? " on" : "")}
+                onClick={() => setView(t.id)}
+              >
+                <span>{t.label}</span>
+                <b>{remaining(t.id)}</b>
+                {t.id === now && <em>now</em>}
+              </button>
+            ))}
+          </div>
+          <div className="gm-viewrow">
+            <p className="gm-note">{viewNote}</p>
+            {!storyDate && view !== "any" && view !== now && (
+              <button type="button" className="gm-pill ghost" onClick={() => setField(seasonKey(game.id), view)}>
+                It is {view} in game now
+              </button>
+            )}
+          </div>
 
-      {visible.length === 0 && <p className="gm-note">Nothing to gather here.</p>}
-      {openBundles.map(renderBundle)}
-      {doneBundles.length > 0 && (
-        <details className="gm-fold gm-done-bundles">
-          <summary>Completed bundles · {doneBundles.length}</summary>
-          {doneBundles.map(renderBundle)}
-        </details>
+          {visible.length === 0 && <p className="gm-note">Nothing to gather here.</p>}
+          {openBundles.map(renderBundle)}
+          {doneBundles.length > 0 && (
+            <details className="gm-fold gm-done-bundles">
+              <summary>Completed bundles · {doneBundles.length}</summary>
+              {doneBundles.map(renderBundle)}
+            </details>
+          )}
+
+          <div className="gm-foot-actions"><CopyButton getText={remainingText} /></div>
+          <ul className="gm-ul gm-footnotes">{game.footnotes.map((t) => <li key={t}>{t}</li>)}</ul>
+        </>
       )}
-
-      <div className="gm-foot-actions"><CopyButton getText={remainingText} /></div>
-      <ul className="gm-ul gm-footnotes">{game.footnotes.map((t) => <li key={t}>{t}</li>)}</ul>
     </>
   );
 }
