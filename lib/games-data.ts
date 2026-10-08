@@ -28,6 +28,168 @@ export type GameQuestBucket = "deadline" | "now" | "toward" | "waiting";
 export type GameImportance = "required" | "recommended" | "optional";
 export type ProgressionRef = { gameId: string; phaseId: string; groupLabel: string; text: string };
 
+export type GameItemSourceKind =
+  | "best"
+  | "craft"
+  | "mining"
+  | "drop"
+  | "merchant"
+  | "traveling-cart"
+  | "forage"
+  | "reward"
+  | "other";
+
+export type GameItemSource = {
+  kind: GameItemSourceKind;
+  text: string;
+};
+
+export type GameRequiredItem = {
+  name: string;
+  qty?: number;
+  note?: string;
+};
+
+export const GAME_ITEM_SOURCES: Record<string, GameItemSource[]> = {
+  Wood: [
+    { kind: "best", text: "Chop trees and branches; this is usually the fastest free source." },
+    { kind: "merchant", text: "Robin sells Wood at the Carpenter's Shop." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+    { kind: "other", text: "Fishing treasure, Woodskip Fish Ponds, the Wood Chipper, and some Bookseller trades can also provide Wood." },
+  ],
+  Stone: [
+    { kind: "best", text: "Break rocks on the farm, in the Mines, Quarry, Skull Cavern, or other mining areas." },
+    { kind: "merchant", text: "Robin sells Stone at the Carpenter's Shop." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+    { kind: "drop", text: "Stone Golems and some slimes can drop Stone; fishing treasure and Artifact Spots can also yield it." },
+  ],
+  Hardwood: [
+    { kind: "best", text: "Secret Woods stumps are a reliable daily source once you can enter; Mahogany Trees are another renewable source." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+    { kind: "other", text: "Mystery Boxes, Woodskip Fish Ponds, Bookseller trades, and some pet gifts can also provide Hardwood." },
+  ],
+  Coal: [
+    { kind: "best", text: "Mine rocks or farm Dust Sprites in the frozen Mines." },
+    { kind: "merchant", text: "Clint sells Coal at the Blacksmith." },
+    { kind: "craft", text: "A Charcoal Kiln turns Wood into Coal." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  Clay: [
+    { kind: "best", text: "Hoe dirt and Artifact Spots; Clay Nodes become another farmable source later." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Copper Bar": [
+    { kind: "craft", text: "Smelt 5 Copper Ore + 1 Coal in a Furnace." },
+    { kind: "drop", text: "Shadow Brutes and Shadow Shamans can rarely drop Copper Bars." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Iron Bar": [
+    { kind: "craft", text: "Smelt 5 Iron Ore + 1 Coal in a Furnace." },
+    { kind: "craft", text: "At Mining 4, Transmute (Fe) converts 3 Copper Bars into 1 Iron Bar." },
+    { kind: "drop", text: "Shadow Brutes and Shadow Shamans can rarely drop Iron Bars." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Gold Bar": [
+    { kind: "craft", text: "Smelt 5 Gold Ore + 1 Coal in a Furnace." },
+    { kind: "craft", text: "At Mining 7, Transmute (Au) converts 2 Iron Bars into 1 Gold Bar." },
+    { kind: "drop", text: "Dust Sprites, Squid Kids, Shadow Brutes, and Shadow Shamans can rarely drop Gold Bars." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Iridium Ore": [
+    { kind: "best", text: "Iridium Nodes in Skull Cavern are the main repeatable source once you can reach them." },
+    { kind: "drop", text: "Purple Slimes, Iridium Bats, Iridium Crabs, and Iridium Golems can drop Iridium Ore." },
+    { kind: "other", text: "Magma/Omni Geodes, Golden Coconuts, fishing treasure, panning, meteorites, and the Statue of Perfection can also provide it." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Iridium Bar": [
+    { kind: "craft", text: "Smelt 5 Iridium Ore + 1 Coal in a Furnace." },
+    { kind: "drop", text: "Purple Slimes, Iridium Bats, Shadow Brutes, and Shadow Shamans can rarely drop Iridium Bars." },
+    { kind: "other", text: "Golden Fishing Treasure Chests, Skull Cavern treasure rooms, the Prize Machine, and some Desert Festival trades can also give bars." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Refined Quartz": [
+    { kind: "craft", text: "Smelt Quartz or Fire Quartz in a Furnace." },
+    { kind: "other", text: "Recycle Broken Glasses or Broken CDs in a Recycling Machine." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Battery Pack": [
+    { kind: "best", text: "Collect from Lightning Rods after thunderstorms." },
+    { kind: "other", text: "Solar Panels, Stingray Fish Ponds, rare Skull Cavern crates, and some mail gifts can also provide Battery Packs." },
+    { kind: "drop", text: "Iridium Bats can rarely drop Battery Packs." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Prismatic Shard": [
+    { kind: "best", text: "Hunt Iridium Nodes and Mystic Stones, especially during Skull Cavern runs." },
+    { kind: "drop", text: "Several monsters can very rarely drop one after the relevant mine progression is reached." },
+    { kind: "other", text: "Omni Geodes, fishing treasure, meteorites, Skull Cavern treasure rooms, and the Volcano's first top-floor chest can also yield one." },
+    { kind: "merchant", text: "Emily can trade one during the Desert Festival for Calico Eggs." },
+  ],
+  Slime: [
+    { kind: "drop", text: "Kill Slimes; Slime Balls and a Slimejack Fish Pond are renewable alternatives." },
+    { kind: "merchant", text: "Krobus sells Slime on Mondays once you can shop with him." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Solar Essence": [
+    { kind: "drop", text: "Ghosts, Metal Heads, Haunted Skulls, Squid Kids, Mummies, and Iridium Bats can drop Solar Essence." },
+    { kind: "merchant", text: "Krobus sells a limited number each day once you can shop with him." },
+    { kind: "other", text: "A Sunfish Fish Pond can also produce Solar Essence." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Void Essence": [
+    { kind: "drop", text: "Shadow Brutes, Shadow Shamans, Shadow Snipers, Haunted Skulls, Serpents, and Spiders can drop Void Essence." },
+    { kind: "merchant", text: "Krobus sells a limited number each day once you can shop with him." },
+    { kind: "other", text: "A Void Salmon Fish Pond can also produce Void Essence." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Bat Wing": [
+    { kind: "drop", text: "Kill Bats in the Mines and other combat areas." },
+    { kind: "merchant", text: "Krobus sells Bat Wings on Sundays once you can shop with him." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  "Bug Meat": [
+    { kind: "drop", text: "Bugs, Cave Flies, Grubs, and their mutant versions are the main source." },
+    { kind: "traveling-cart", text: "Can appear in the Traveling Cart's random stock." },
+  ],
+  Starfruit: [
+    { kind: "best", text: "Grow Starfruit Seeds; Sandy sells the seeds at the Oasis once the Desert is accessible." },
+    { kind: "traveling-cart", text: "Starfruit Seeds can appear at the Traveling Cart." },
+    { kind: "reward", text: "Gunther gives one Starfruit Seed after the relevant Museum donation milestone." },
+    { kind: "other", text: "The Greenhouse and Ginger Island let you grow Starfruit outside Summer; a Seed Maker can multiply your own seed supply." },
+  ],
+  "Monster Mushroom": [
+    { kind: "drop", text: "Highlands Sprites drop Fungus Seeds; grow the seeds into Monster Mushrooms." },
+    { kind: "other", text: "Once you have one Monster Mushroom, a Seed Maker can make more Fungus Seeds." },
+  ],
+  "Slime Berry": [
+    { kind: "drop", text: "Highlands Slimes drop Slime Seeds; grow the seeds into Slime Berries." },
+    { kind: "other", text: "Once you have one Slime Berry, a Seed Maker can make more Slime Seeds." },
+  ],
+  "Monster Fruit": [
+    { kind: "drop", text: "Wilderness Golems in the Highlands drop Stalk Seeds; grow the seeds into Monster Fruit." },
+    { kind: "other", text: "Once you have one Monster Fruit, a Seed Maker can make more Stalk Seeds." },
+  ],
+  "Void Root": [
+    { kind: "drop", text: "Shadow monsters in the Highlands Cavern can drop Void Seeds; grow them into Void Root." },
+    { kind: "forage", text: "After Krobus's 10-heart progression, Void Root can also appear as forage in the Crystal Cavern." },
+    { kind: "other", text: "Once you have one Void Root, a Seed Maker can make more Void Seeds." },
+  ],
+  "Mountain Mistbloom": [
+    { kind: "forage", text: "Forage it in Ridge Forest during rainy weather." },
+    { kind: "drop", text: "Mistbloom Foxes can provide it, and Serperial drops several at once." },
+  ],
+  "Sweet Gem Berry": [
+    { kind: "traveling-cart", text: "Buy Rare Seeds from the Traveling Cart; they are especially dependable in Spring and Summer." },
+    { kind: "other", text: "Grow Rare Seeds in Fall or indoors, then use a Seed Maker on Sweet Gem Berries to make more Rare Seeds." },
+  ],
+  Ruby: [
+    { kind: "mining", text: "Mine Ruby Nodes or Gem Nodes; panning and Fishing Treasure Chests are alternate sources." },
+  ],
+  Raisins: [
+    { kind: "craft", text: "Put 5 Grapes in a Dehydrator and collect the Raisins the next day." },
+    { kind: "merchant", text: "Pierre sells the Dehydrator recipe; the Mushroom Farm Cave starts with a Dehydrator, and the Prize Machine can also award one." },
+  ],
+};
+
 export type GameQuestStep = {
   id: string;
   label: string;
@@ -35,6 +197,8 @@ export type GameQuestStep = {
   location?: string;
   reward?: string;
   why?: string;
+  /** Items consumed or required by this step. The UI expands every known acquisition route from GAME_ITEM_SOURCES. */
+  requiredItems?: GameRequiredItem[];
   bucket: GameQuestBucket;
   priority?: number;
   importance?: GameImportance;
@@ -80,6 +244,8 @@ export type ProgressionItem = {
   label: string;
   how?: string;
   why?: string;
+  /** Materials needed for this progression item, with alternate acquisition routes shown in the UI. */
+  requiredItems?: GameRequiredItem[];
   ref: ProgressionRef;
 };
 
@@ -305,6 +471,7 @@ const communityCenter: BundleGame = {
           label: "Upgrade Axe to Steel",
           how: "At Clint's Blacksmith, upgrade the Axe to Copper first (5 Copper Bars + 2,000g), then Steel (5 Iron Bars + 5,000g). Clint keeps the tool while upgrading it.",
           why: "Unlocks the north entrance from The Ridge into Ridge Forest.",
+          requiredItems: [{ name: "Copper Bar", qty: 5 }, { name: "Iron Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Axe to Steel" },
         },
       ],
@@ -327,6 +494,7 @@ const communityCenter: BundleGame = {
         {
           label: "Upgrade Pickaxe to Copper",
           how: "Bring your Pickaxe, 5 Copper Bars, and 2,000g to Clint's Blacksmith and choose Tool Upgrade.",
+          requiredItems: [{ name: "Copper Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p1", groupLabel: "Main Progression", text: "Upgrade Pickaxe to Copper" },
         },
         {
@@ -367,6 +535,7 @@ const communityCenter: BundleGame = {
         {
           label: "Upgrade Pickaxe to Steel",
           how: "After the Copper Pickaxe, bring it plus 5 Iron Bars and 5,000g to Clint's Blacksmith and choose Tool Upgrade.",
+          requiredItems: [{ name: "Iron Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Mining Progression", text: "Upgrade Pickaxe to Steel when affordable" },
         },
         {
@@ -399,17 +568,20 @@ const communityCenter: BundleGame = {
         {
           label: "Upgrade Pickaxe to Gold",
           how: "After the Steel Pickaxe, bring it plus 5 Gold Bars and 10,000g to Clint's Blacksmith and choose Tool Upgrade.",
+          requiredItems: [{ name: "Gold Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Upgrade Pickaxe to Gold" },
         },
         {
           label: "Upgrade Pickaxe to Iridium",
           how: "After the Gold Pickaxe, bring it plus 5 Iridium Bars and 25,000g to Clint's Blacksmith. This is a hard access requirement for SVE Grandpa's Shed.",
           why: "Lets you clear Grandpa's Shed access debris and speeds up late-game mining.",
+          requiredItems: [{ name: "Iridium Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade Pickaxe to Iridium" },
         },
         {
           label: "Upgrade important tools toward Iridium",
           how: "Upgrade only the tools you actually use most. Each Iridium tool upgrade at Clint's requires the Gold version of that tool, 5 Iridium Bars, and 25,000g.",
+          requiredItems: [{ name: "Iridium Bar", qty: 5, note: "per tool" }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade important tools toward Iridium" },
         },
       ],
@@ -422,6 +594,7 @@ const communityCenter: BundleGame = {
         {
           label: "Build a Silo",
           how: "At Robin's Carpenter's Shop, choose Construct Farm Buildings. A Silo costs 100g + 100 Stone + 10 Clay + 5 Copper Bars and takes 2 days to build.",
+          requiredItems: [{ name: "Stone", qty: 100 }, { name: "Clay", qty: 10 }, { name: "Copper Bar", qty: 5 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p2", groupLabel: "Farm", text: "Build a Silo" },
         },
         {
@@ -442,6 +615,7 @@ const communityCenter: BundleGame = {
         {
           label: "Mostly Quality Sprinklers or better",
           how: "Quality Sprinklers unlock at Farming 6 and cost 1 Iron Bar + 1 Gold Bar + 1 Refined Quartz each. Replace hand-watered crop sections until most of your main field is automated.",
+          requiredItems: [{ name: "Iron Bar", qty: 1, note: "per Quality Sprinkler" }, { name: "Gold Bar", qty: 1, note: "per Quality Sprinkler" }, { name: "Refined Quartz", qty: 1, note: "per Quality Sprinkler" }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p4", groupLabel: "Farm Infrastructure", text: "Have mostly Quality Sprinklers or better" },
         },
         {
@@ -480,7 +654,8 @@ const communityCenter: BundleGame = {
         },
         {
           label: "Obtain an Iridium Bar",
-          how: "Smelt 5 Iridium Ore + 1 Coal in a Furnace for 8 in-game hours. Skull Cavern is the main early source of larger amounts of Iridium Ore.",
+          how: "Smelting is the standard route, but you do not have to wait for it if another valid source gives you a bar first.",
+          requiredItems: [{ name: "Iridium Bar", qty: 1 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Obtain an Iridium Bar" },
         },
         {
@@ -490,13 +665,15 @@ const communityCenter: BundleGame = {
         },
         {
           label: "Work toward the Galaxy Sword",
-          how: "Your actual requirement is 1 Prismatic Shard plus Desert access. Skull Cavern is the most practical place to hunt for one once your combat setup is ready; Mystic Stones, Omni Geodes, fishing treasure, and some monster drops can also produce one.",
+          how: "Your actual requirement is 1 Prismatic Shard plus Desert access. Any valid source of the shard counts.",
+          requiredItems: [{ name: "Prismatic Shard", qty: 1 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p5", groupLabel: "Regular Progression", text: "Work toward the Galaxy Sword" },
         },
         {
           label: "Obtain the Galaxy Sword",
           how: "Take 1 Prismatic Shard to the Three Pillars in the northeast Calico Desert. Hold the shard in your hands and walk onto the center tile between the pillars. The shard is consumed and you receive the Galaxy Sword. You do not need the Dwarvish Translation Guide to do this.",
           why: "Needed for SVE's later Nexus questline.",
+          requiredItems: [{ name: "Prismatic Shard", qty: 1 }],
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Obtain Galaxy Sword" },
         },
         {
@@ -2042,7 +2219,8 @@ export const GAMES: Game[] = [
             {
               id: "boat-materials",
               label: "Gather 200 Hardwood, 5 Iridium Bars, and 5 Battery Packs",
-              how: "The hull needs 200 Hardwood, the anchor needs 5 Iridium Bars, and the ticket stand needs 5 Battery Packs.",
+              how: "The hull needs 200 Hardwood, the anchor needs 5 Iridium Bars, and the ticket stand needs 5 Battery Packs. Any valid acquisition source counts.",
+              requiredItems: [{ name: "Hardwood", qty: 200 }, { name: "Iridium Bar", qty: 5 }, { name: "Battery Pack", qty: 5 }],
               bucket: "toward",
               priority: 54,
             },
@@ -2713,7 +2891,8 @@ export const GAMES: Game[] = [
             {
               id: "marlons-boat",
               label: "Complete Marlon's Boat",
-              how: "Bring 100 Void Essence, 80 Solar Essence, 50 Slime, 40 Bat Wings, and 30 Bug Meat.",
+              how: "Bring 100 Void Essence, 80 Solar Essence, 50 Slime, 40 Bat Wings, and 30 Bug Meat. Farming monsters is not your only option; use any source below that is available in your save.",
+              requiredItems: [{ name: "Void Essence", qty: 100 }, { name: "Solar Essence", qty: 80 }, { name: "Slime", qty: 50 }, { name: "Bat Wing", qty: 40 }, { name: "Bug Meat", qty: 30 }],
               location: "Adventurer's Guild",
               bucket: "toward",
               priority: 63,
@@ -2731,7 +2910,8 @@ export const GAMES: Game[] = [
             {
               id: "monster-crops",
               label: "Complete Lance's Monster Crops quest",
-              how: "Grow and turn in one Monster Mushroom, Slime Berry, Monster Fruit, and Void Root. Their seeds come from Highlands monsters and the crops are season-specific.",
+              how: "Turn in one Monster Mushroom, Slime Berry, Monster Fruit, and Void Root. Use the source list below instead of assuming every item has to come from one specific drop.",
+              requiredItems: [{ name: "Monster Mushroom", qty: 1 }, { name: "Slime Berry", qty: 1 }, { name: "Monster Fruit", qty: 1 }, { name: "Void Root", qty: 1 }],
               location: "The Highlands",
               bucket: "toward",
               priority: 62,
@@ -2843,7 +3023,8 @@ export const GAMES: Game[] = [
             {
               id: "railroad-boulder",
               label: "Remove the Railroad boulder and unlock the Summit",
-              how: "After obtaining the Skull Key, complete Clint's Railroad Boulder quest: 20 Iridium Ore and 20 Coal.",
+              how: "After obtaining the Skull Key, complete Clint's Railroad Boulder quest: 20 Iridium Ore and 20 Coal. The quest only cares that you have the materials, not which valid source supplied them.",
+              requiredItems: [{ name: "Iridium Ore", qty: 20 }, { name: "Coal", qty: 20 }],
               location: "Railroad",
               bucket: "toward",
               requiresProgress: [
@@ -2856,7 +3037,8 @@ export const GAMES: Game[] = [
             {
               id: "galaxy-sword",
               label: "Obtain the Galaxy Sword",
-              how: "Get 1 Prismatic Shard, take it to the Three Pillars in the northeast Calico Desert, hold it, and step onto the center tile between the pillars. The shard is consumed and becomes the Galaxy Sword.",
+              how: "Get 1 Prismatic Shard from any valid source, take it to the Three Pillars in the northeast Calico Desert, hold it, and step onto the center tile between the pillars. The shard is consumed and becomes the Galaxy Sword.",
+              requiredItems: [{ name: "Prismatic Shard", qty: 1 }],
               location: "Northeast Calico Desert — Three Pillars",
               bucket: "toward",
               requiresProgress: [
@@ -3042,7 +3224,8 @@ export const GAMES: Game[] = [
             {
               id: "starfruit",
               label: "Gather 200 Starfruit for Aurora Vineyard",
-              how: "Grow or otherwise acquire 200 Starfruit. Starfruit can be grown in Summer, the Greenhouse, or on Ginger Island; keep the full stack for the Aurora Vineyard quest instead of selling it.",
+              how: "Acquire 200 Starfruit and keep the full stack for the Aurora Vineyard quest instead of selling it.",
+              requiredItems: [{ name: "Starfruit", qty: 200 }],
               bucket: "toward",
               priority: 42,
             },
@@ -3111,7 +3294,8 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 600 Stone, 150 Hardwood, 50 Iron Bars, and 20 Battery Packs",
-              how: "Stockpile all four materials for Robin's Grandpa's Shed restoration. Smelt Iron Bars from 5 Iron Ore + 1 Coal each; Battery Packs come from Lightning Rods after storms or other later-game sources.",
+              how: "Stockpile all four materials for Robin's Grandpa's Shed restoration. Any valid acquisition route counts.",
+              requiredItems: [{ name: "Stone", qty: 600 }, { name: "Hardwood", qty: 150 }, { name: "Iron Bar", qty: 50 }, { name: "Battery Pack", qty: 20 }],
               bucket: "toward",
               priority: 43,
             },
@@ -3217,7 +3401,8 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 300 Wood, 10 Iron Bars, and 5 Gold Bars",
-              how: "Collect 300 Wood, smelt 10 Iron Bars, and smelt 5 Gold Bars. Keep the full amounts for the Ridgeside minecart donation box.",
+              how: "Gather the full Ridgeside minecart donation. You can use any valid source for the materials.",
+              requiredItems: [{ name: "Wood", qty: 300 }, { name: "Iron Bar", qty: 10 }, { name: "Gold Bar", qty: 5 }],
               bucket: "toward",
               priority: 72,
             },
@@ -3619,7 +3804,8 @@ export const GAMES: Game[] = [
             {
               id: "second-chance",
               label: "Complete A Second Chance",
-              how: "After the quest is active, collect 25 Mountain Mistbloom, 10 Sweet Gem Berries, and 5 Rubies.",
+              how: "After the quest is active, collect the full material set. Use whichever valid sources are available first.",
+              requiredItems: [{ name: "Mountain Mistbloom", qty: 25 }, { name: "Sweet Gem Berry", qty: 10 }, { name: "Ruby", qty: 5 }],
               bucket: "toward",
               priority: 66,
             },
@@ -3666,7 +3852,8 @@ export const GAMES: Game[] = [
             {
               id: "materials",
               label: "Gather 60 Hardwood, 100 Stone, and 50 Iron Bars",
-              how: "Collect exactly 60 Hardwood, 100 Stone, and 50 Iron Bars for the Ridgeside Greenhouse quest; keep them for the donation box in Lenny's office.",
+              how: "Collect exactly 60 Hardwood, 100 Stone, and 50 Iron Bars for the Ridgeside Greenhouse quest; any valid source counts.",
+              requiredItems: [{ name: "Hardwood", qty: 60 }, { name: "Stone", qty: 100 }, { name: "Iron Bar", qty: 50 }],
               bucket: "toward",
               priority: 54,
             },
@@ -3872,7 +4059,8 @@ export const GAMES: Game[] = [
             {
               id: "orchard-bridge",
               label: "Complete Repair the Orchard Bridge",
-              how: "Gather 200 Wood and 20 Hardwood for Rosa's non-expiring Special Order.",
+              how: "Gather 200 Wood and 20 Hardwood for Rosa's non-expiring Special Order; any valid source counts.",
+              requiredItems: [{ name: "Wood", qty: 200 }, { name: "Hardwood", qty: 20 }],
               bucket: "toward",
               priority: 63,
               reward: "Easy access to Cherry Orchard",
@@ -3889,6 +4077,7 @@ export const GAMES: Game[] = [
               id: "luma-raisins",
               label: "Bring raisins into the Orchard Cottage",
               how: "Take Raisins into the cottage when the quest is active.",
+              requiredItems: [{ name: "Raisins", qty: 1 }],
               location: "Cherry Orchard Cottage",
               bucket: "now",
               priority: 63,
