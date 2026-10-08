@@ -246,7 +246,10 @@ export type ProgressionItem = {
   why?: string;
   /** Materials needed for this progression item, with alternate acquisition routes shown in the UI. */
   requiredItems?: GameRequiredItem[];
-  ref: ProgressionRef;
+  /** Legacy/farm progression checkbox to reuse. Use exactly one of ref or questRef. */
+  ref?: ProgressionRef;
+  /** Story & Quests step to reuse so both tabs share one checkbox. */
+  questRef?: { storylineId: string; stepId: string };
 };
 
 export type ProgressionSection = {
@@ -312,6 +315,8 @@ export type BundleGame = {
   bundles: Bundle[];
   footnotes: string[];
   progression?: ProgressionSection[];
+  /** Replaces the bundle-gathering dashboard once every Community Center bundle is complete. */
+  postCompletion?: ProgressionSection[];
 };
 
 export type CompletionCategory = {
@@ -680,6 +685,163 @@ const communityCenter: BundleGame = {
           label: "Progress Skull Cavern / reach Floor 100 if desired",
           how: "Use bombs, staircases, speed/luck food, and early starts to descend quickly. Floor 100 is a milestone/quest target; Skull Cavern itself has no final bottom floor.",
           ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Progress Skull Cavern / reach Floor 100 if desired" },
+        },
+      ],
+    },
+  ],
+  postCompletion: [
+    {
+      id: "post-cc-island",
+      title: "Next major unlock — Ginger Island",
+      note: "This is the highest-value post–Community Center chain. Work straight down it; each checkbox is shared with Story & Quests.",
+      items: [
+        {
+          label: "Read Willy's invitation and inspect the broken boat",
+          questRef: { storylineId: "ginger-island-access", stepId: "willy-letter" },
+        },
+        {
+          label: "Gather Willy's boat materials",
+          questRef: { storylineId: "ginger-island-access", stepId: "boat-materials" },
+        },
+        {
+          label: "Repair all three parts of Willy's Boat",
+          questRef: { storylineId: "ginger-island-access", stepId: "repair-boat" },
+        },
+        {
+          label: "Sleep through the boat-repair cutscene",
+          questRef: { storylineId: "ginger-island-access", stepId: "overnight-repair" },
+        },
+        {
+          label: "Reach Ginger Island",
+          questRef: { storylineId: "ginger-island-access", stepId: "arrive" },
+        },
+        {
+          label: "Open Island North",
+          questRef: { storylineId: "ginger-island-access", stepId: "north" },
+        },
+        {
+          label: "Reach Volcano Floor 10 and unlock the Forge",
+          questRef: { storylineId: "ginger-island-volcano", stepId: "floor-10" },
+        },
+      ],
+    },
+    {
+      id: "post-cc-power",
+      title: "Power progression",
+      note: "These unlock stronger combat, faster resource gathering, and multiple late-game mod chains.",
+      items: [
+        {
+          label: "Obtain the Galaxy Sword",
+          questRef: { storylineId: "sve-nexus", stepId: "galaxy-sword" },
+        },
+        {
+          label: "Upgrade the Pickaxe to Iridium",
+          ref: { gameId: "stardew-mega-mod", phaseId: "p6", groupLabel: "Vanilla/SVE", text: "Upgrade Pickaxe to Iridium" },
+        },
+        {
+          label: "Remove the Railroad boulder and unlock the Summit",
+          questRef: { storylineId: "sve-nexus", stepId: "railroad-boulder" },
+        },
+        {
+          label: "Gain access to Grandpa's ruined Shed",
+          questRef: { storylineId: "sve-grandpa-shed", stepId: "enter-ruins" },
+        },
+        {
+          label: "Restore Grandpa's Shed",
+          questRef: { storylineId: "sve-grandpa-shed", stepId: "restore" },
+        },
+      ],
+    },
+    {
+      id: "post-cc-sve",
+      title: "SVE expansion — Lance & the Highlands",
+      note: "The Volcano unlock feeds directly into this chain. This is where the Highlands mining areas and later SVE world expansion begin.",
+      items: [
+        {
+          label: "Meet Lance at the Volcano Forge",
+          questRef: { storylineId: "sve-highlands", stepId: "meet-lance" },
+        },
+        {
+          label: "Reach 2 hearts with Lance",
+          questRef: { storylineId: "sve-highlands", stepId: "two-hearts" },
+        },
+        {
+          label: "Complete Marlon's Boat",
+          questRef: { storylineId: "sve-highlands", stepId: "marlons-boat" },
+        },
+        {
+          label: "Enter the Highlands",
+          questRef: { storylineId: "sve-highlands", stepId: "enter-highlands" },
+        },
+        {
+          label: "Complete Lance's Monster Crops quest",
+          questRef: { storylineId: "sve-highlands", stepId: "monster-crops" },
+        },
+        {
+          label: "Enter the Highlands Crystal Cavern",
+          questRef: { storylineId: "sve-highlands-caverns", stepId: "crystal-cavern" },
+        },
+        {
+          label: "Unlock the Highlands Dwarf Shop",
+          questRef: { storylineId: "sve-highlands-caverns", stepId: "dwarf-shop" },
+        },
+        {
+          label: "Find the Diamond Cavern",
+          questRef: { storylineId: "sve-highlands-caverns", stepId: "diamond-cavern" },
+        },
+      ],
+    },
+    {
+      id: "post-cc-world",
+      title: "Post-CC world unlocks",
+      note: "Useful areas and systems that only become relevant after the Community Center. Do these around your main Island/Highlands progression instead of treating them as urgent.",
+      items: [
+        {
+          label: "Visit Junimo Woods",
+          questRef: { storylineId: "sve-post-cc-areas", stepId: "junimo-woods" },
+        },
+        {
+          label: "Complete Dark Talisman",
+          questRef: { storylineId: "sve-post-cc-areas", stepId: "dark-talisman" },
+        },
+        {
+          label: "Complete Goblin Problem and return the Magic Ink",
+          questRef: { storylineId: "sve-post-cc-areas", stepId: "magic-ink" },
+        },
+        {
+          label: "Visit Sprite Spring",
+          questRef: { storylineId: "sve-post-cc-areas", stepId: "sprite-spring" },
+        },
+        {
+          label: "Repair the Ginger Island Farmhouse",
+          questRef: { storylineId: "ginger-island-west", stepId: "farmhouse" },
+        },
+        {
+          label: "Unlock the Island Trader",
+          questRef: { storylineId: "ginger-island-west", stepId: "trader" },
+        },
+      ],
+    },
+    {
+      id: "post-cc-later",
+      title: "Later unlocks — keep on the radar",
+      note: "These matter, but they should not distract you from Ginger Island, combat power, and the Highlands first.",
+      items: [
+        {
+          label: "Become eligible for Aurora Vineyard",
+          questRef: { storylineId: "sve-aurora", stepId: "unlock-quest" },
+        },
+        {
+          label: "Unlock the Enchanted Grove / Nexus",
+          questRef: { storylineId: "sve-nexus", stepId: "nexus-part3" },
+        },
+        {
+          label: "Enter the Crimson Badlands",
+          questRef: { storylineId: "sve-nexus", stepId: "badlands" },
+        },
+        {
+          label: "Reach the Iridium Quarry",
+          questRef: { storylineId: "sve-iridium-quarry", stepId: "enter" },
         },
       ],
     },
