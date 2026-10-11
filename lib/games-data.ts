@@ -423,6 +423,104 @@ export function knownCheckKeys(game: Game): Set<string> {
 }
 
 /** Every text-field key a game can have. */
+/**
+ * Canonical save key for a live quest-board step. Kept in the data layer so
+ * server-side progress reconciliation and the UI resolve the exact same box.
+ */
+export function questStepCheckKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
+  if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
+  const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
+  return questKey(game.id, owner.storylineId, owner.stepId);
+}
+
+/**
+ * Bring a save forward to the furthest progress it already proves.
+ *
+ * Rules are deliberately conservative:
+ * - A checked later step backfills earlier steps in that SAME storyline.
+ * - Explicit cross-story requires prerequisites are backfilled recursively.
+ * - Explicit farm/progression prerequisites are backfilled.
+ * - No unrelated storyline, friendship target, optional side story, or
+ *   completion collectible is guessed from another checkbox.
+ */
+export function reconcileCheckedProgress(game: Game, progress: GameProgress): GameProgress {
+  if (isBundleGame(game) || isCompletionGame(game)) return progress;
+
+  const checks: Record<string, true> = { ...progress.checks };
+  let changed = false;
+
+  type Entry = { story: GameStoryline; step: GameQuestStep; index: number };
+  const byRef = new Map<string, Entry>();
+
+  game.questBoard.storylines.forEach((story) => {
+    story.steps.forEach((step, index) => {
+      byRef.set(`${story.id}:${step.id}`, { story, step, index });
+    });
+  });
+
+  const visiting = new Set<string>();
+
+  const markProgressRef = (ref: ProgressionRef) => {
+    const key = itemKey(ref.gameId, ref.phaseId, ref.groupLabel, ref.text);
+    if (!checks[key]) {
+      checks[key] = true;
+      changed = true;
+    }
+  };
+
+  const markEntry = (entry: Entry) => {
+    const ref = `${entry.story.id}:${entry.step.id}`;
+    if (visiting.has(ref)) return;
+    visiting.add(ref);
+
+    // Storyline cards are authored in progression order. If a later step is
+    // checked, every earlier step in that same card has already happened.
+    for (let i = 0; i <= entry.index; i += 1) {
+      const prior = entry.story.steps[i];
+      const key = questStepCheckKey(game, entry.story, prior);
+      if (!checks[key]) {
+        checks[key] = true;
+        changed = true;
+      }
+
+      for (const required of prior.requires ?? []) {
+        const dependency = byRef.get(required);
+        if (dependency) markEntry(dependency);
+      }
+      for (const required of prior.requiresProgress ?? []) markProgressRef(required.ref);
+
+      if (prior.social?.startAfterStepId) {
+        const dependency = byRef.get(`${entry.story.id}:${prior.social.startAfterStepId}`);
+        if (dependency) markEntry(dependency);
+      }
+      if (prior.social?.startAfterProgress) markProgressRef(prior.social.startAfterProgress);
+    }
+
+    visiting.delete(ref);
+  };
+
+  // Seed reconciliation from everything the player has already checked.
+  for (const entry of byRef.values()) {
+    if (checks[questStepCheckKey(game, entry.story, entry.step)]) markEntry(entry);
+  }
+
+  // The tracked save has completed the Community Center. Keep the two story
+  // milestones aligned even if individual boxes in the archived tracker are stale.
+  const farmTracker = GAMES.find((candidate): candidate is BundleGame =>
+    isBundleGame(candidate) && candidate.id === "community-center"
+  );
+  if (game.id === "stardew-mega-mod" && farmTracker?.postCompletionActive) {
+    for (const required of [
+      "ginger-island-access:cc-or-joja",
+      "sve-post-cc-areas:cc-complete",
+    ]) {
+      const dependency = byRef.get(required);
+      if (dependency) markEntry(dependency);
+    }
+  }
+
+  return changed ? { checks, fields: { ...progress.fields } } : progress;
+}
 export function knownFieldKeys(game: Game): Set<string> {
   if (isCompletionGame(game)) {
     const keys = new Set<string>();
