@@ -13,7 +13,7 @@ import {
   isCompletionGame,
   itemKey,
   mainQuestKey,
-  questStepCheckKey as questStepKey,
+  questKey,
   saveKey,
   seasonKey,
   weatherKey,
@@ -187,12 +187,30 @@ function shiftGameDate(d: ParsedGameDate, days: number): string {
   return formatGameDate(SEASON_NAMES[Math.floor((t % 112) / 28)], (t % 28) + 1, Math.floor(t / 112) + 1);
 }
 
+function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
+  if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
+  const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
+  return questKey(game.id, owner.storylineId, owner.stepId);
+}
+
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
   const shownDate = gameDate ?? parseGameDate(game.saveDefault) ?? { season: "Spring", day: 1, year: 1, totalDay: 1 };
   const weather = prog.fields[weatherKey(game.id)] ?? "sunny";
   const pinnedStory = prog.fields[mainQuestKey(game.id)] ?? "";
+  const postCommunityCenter = !!GAMES.find(
+    (candidate) => isBundleGame(candidate) && candidate.id === "community-center",
+  )?.postCompletionActive;
+  const activeStorylines = game.questBoard.storylines.filter(
+    (story) => !(postCommunityCenter && story.archiveAfterCommunityCenter),
+  );
+  const earlierStageStories = postCommunityCenter
+    ? game.questBoard.storylines.filter((story) => story.archiveAfterCommunityCenter)
+    : [];
+  const isStepDone = (story: GameStoryline, step: GameQuestStep) =>
+    (postCommunityCenter && !!step.satisfiedAfterCommunityCenter) ||
+    !!prog.checks[questStepKey(game, story, step)];
 
   type QuestRow = {
     story: GameStoryline;
@@ -205,19 +223,19 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   };
 
   const questRows = useMemo<QuestRow[]>(() => {
-    const storyById = new Map(game.questBoard.storylines.map((story) => [story.id, story]));
+    const storyById = new Map(activeStorylines.map((story) => [story.id, story]));
     const isRefDone = (ref: string) => {
       const split = ref.indexOf(":");
       if (split < 0) return false;
       const story = storyById.get(ref.slice(0, split));
       if (!story) return false;
       const step = story.steps.find((s) => s.id === ref.slice(split + 1));
-      return !!step && !!prog.checks[questStepKey(game, story, step)];
+      return !!step && isStepDone(story, step);
     };
 
     const rows: QuestRow[] = [];
-    for (const story of game.questBoard.storylines) {
-      const index = story.steps.findIndex((step) => !prog.checks[questStepKey(game, story, step)]);
+    for (const story of activeStorylines) {
+      const index = story.steps.findIndex((step) => !isStepDone(story, step));
       if (index < 0) continue;
 
       const step = story.steps[index];
@@ -261,7 +279,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       });
     }
     return rows;
-  }, [game, prog, gameDate, weather]);
+  }, [game, prog, gameDate, weather, postCommunityCenter]);
 
   const socialRows = useMemo(() => {
     const rows: Array<{
@@ -275,10 +293,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       score: number;
     }> = [];
 
-    for (const story of game.questBoard.storylines) {
+    for (const story of activeStorylines) {
       const socialStep = story.steps.find((step) => {
         if (!step.social) return false;
-        return !prog.checks[questStepKey(game, story, step)];
+        return !isStepDone(story, step);
       });
       if (!socialStep?.social) continue;
 
@@ -288,7 +306,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         : undefined;
       const startStepOk =
         !social.startAfterStepId ||
-        (!!startStep && !!prog.checks[questStepKey(game, story, startStep)]);
+        (!!startStep && isStepDone(story, startStep));
       const startProgressOk =
         !social.startAfterProgress ||
         !!prog.checks[
@@ -320,7 +338,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     }
 
     return rows.sort((a, b) => b.score - a.score || a.npc.localeCompare(b.npc));
-  }, [game, prog]);
+  }, [game, prog, postCommunityCenter]);
 
   const scoreRow = (row: QuestRow) => {
     const bucketScore = row.bucket === "deadline" ? 500 : row.bucket === "now" ? 400 : row.bucket === "toward" ? 250 : 0;
@@ -354,22 +372,22 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   const towardRows = coreRows.filter((row) => row.bucket === "toward");
   const waitingRows = coreRows.filter((row) => row.bucket === "waiting");
   const optionalRows = rankedRows.filter((row) => row.importance === "optional" && row.bucket !== "deadline");
-  const completedStories = game.questBoard.storylines.filter((story) =>
-    story.steps.every((step) => !!prog.checks[questStepKey(game, story, step)]),
+  const completedStories = activeStorylines.filter((story) =>
+    story.steps.every((step) => isStepDone(story, step)),
   );
-  const majorStories = game.questBoard.storylines.filter((story) => story.importance === "required");
+  const majorStories = activeStorylines.filter((story) => story.importance === "required");
 
   const questStats = useMemo(() => {
     let qDone = 0;
     let qTotal = 0;
-    for (const story of game.questBoard.storylines) {
+    for (const story of activeStorylines) {
       for (const step of story.steps) {
         qTotal += 1;
-        if (prog.checks[questStepKey(game, story, step)]) qDone += 1;
+        if (isStepDone(story, step)) qDone += 1;
       }
     }
     return { done: qDone, total: qTotal };
-  }, [game, prog]);
+  }, [game, prog, postCommunityCenter]);
   const pct = questStats.total ? Math.round((questStats.done / questStats.total) * 100) : 0;
 
   const importanceLabel = (importance: QuestRow["importance"]) =>
@@ -429,17 +447,18 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </div>
         {mode === "full" && (
           <details className="gm-rest">
-            <summary>Storyline path · {story.steps.filter((s) => !!prog.checks[questStepKey(game, story, s)]).length}/{story.steps.length}</summary>
+            <summary>Storyline path · {story.steps.filter((s) => isStepDone(story, s)).length}/{story.steps.length}</summary>
             {story.note && <p className="gm-note">{story.note}</p>}
             {story.steps.map((s, idx) => {
               const k = questStepKey(game, story, s);
               const isCurrent = idx === row.index;
-              const isDone = !!prog.checks[k];
+              const stageDone = postCommunityCenter && !!s.satisfiedAfterCommunityCenter;
+              const isDone = stageDone || !!prog.checks[k];
               return (
                 <div className={isCurrent ? "gm-path-step current" : "gm-path-step"} key={s.id}>
                   <span>{isDone ? "✓" : isCurrent ? "→" : "·"}</span>
                   <span>{s.label}</span>
-                  {isDone && (
+                  {isDone && !stageDone && (
                     <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
                       Undo
                     </button>
@@ -455,7 +474,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
 
   const renderMajorStory = (story: GameStoryline) => {
     const current = questRows.find((row) => row.story.id === story.id);
-    const doneCount = story.steps.filter((step) => !!prog.checks[questStepKey(game, story, step)]).length;
+    const doneCount = story.steps.filter((step) => isStepDone(story, step)).length;
     const complete = doneCount === story.steps.length;
     const status = complete
       ? "Complete"
@@ -500,7 +519,8 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           {story.note && <p className="gm-note">{story.note}</p>}
           {story.steps.map((step, idx) => {
             const k = questStepKey(game, story, step);
-            const isDone = !!prog.checks[k];
+            const stageDone = postCommunityCenter && !!step.satisfiedAfterCommunityCenter;
+            const isDone = stageDone || !!prog.checks[k];
             const isCurrent = current?.step.id === step.id;
             return (
               <div className={"gm-major-path-step" + (isCurrent ? " current" : "") + (isDone ? " done" : "")} key={step.id}>
@@ -509,7 +529,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
                   <b>{step.label}</b>
                   {isCurrent && step.how && <span>{step.how}</span>}
                 </div>
-                {isDone && (
+                {isDone && !stageDone && (
                   <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
                     Undo
                   </button>
@@ -551,6 +571,13 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             <option value="snow">Snow</option>
           </select>
         </div>
+        {postCommunityCenter && (
+          <div className="gm-weather-block">
+            <span className="gm-context-label">Current progression stage</span>
+            <b>Post-Community Center</b>
+            <span className="gm-note">Ginger Island + current mod storylines</span>
+          </div>
+        )}
       </div>
 
       {socialRows.length > 0 && (
@@ -649,6 +676,16 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         </details>
       )}
 
+      {earlierStageStories.length > 0 && (
+        <details className="gm-card gm-fold-card">
+          <summary>📦 Earlier-stage archive · {earlierStageStories.length}</summary>
+          <p className="gm-note">These belonged to the pre-Community-Center/Year 1 stage and no longer compete with your current progression.</p>
+          <ul className="gm-ul">
+            {earlierStageStories.map((story) => <li key={story.id}>{story.title}</li>)}
+          </ul>
+        </details>
+      )}
+
       {completedStories.length > 0 && (
         <details className="gm-card gm-fold-card">
           <summary>✅ Completed Storylines · {completedStories.length}</summary>
@@ -658,12 +695,15 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
               <summary>{story.title}</summary>
               {story.steps.map((step) => {
                 const k = questStepKey(game, story, step);
+                const stageDone = postCommunityCenter && !!step.satisfiedAfterCommunityCenter;
                 return (
                   <div className="gm-completed-step" key={step.id}>
                     <span>✓ {step.label}</span>
-                    <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
-                      Undo
-                    </button>
+                    {!stageDone && (
+                      <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                        Undo
+                      </button>
+                    )}
                   </div>
                 );
               })}

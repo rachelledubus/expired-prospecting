@@ -5,7 +5,6 @@ import {
   emptyProgress,
   knownCheckKeys,
   knownFieldKeys,
-  reconcileCheckedProgress,
   seasonKey,
   type Game,
   type GameProgress,
@@ -78,24 +77,7 @@ async function readState(game: Game): Promise<State> {
 }
 
 export async function loadProgress(game: Game): Promise<GameProgress> {
-  // Reading the guide also repairs stale progression: downstream checked
-  // milestones backfill the prerequisites they prove were already completed.
-  // Persist the repaired version so every device sees the same current state.
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    const state = await readState(game);
-    const reconciled = reconcileCheckedProgress(game, state.progress);
-    if (reconciled === state.progress) return state.progress;
-
-    const conditions = state.etag ? { onlyIfMatch: state.etag } : state.exists ? {} : { onlyIfNew: true };
-    const result = await store().setJSON(blobKey(game.id), reconciled, conditions);
-    if (result.modified) return reconciled;
-    await sleep(20 + Math.random() * 60 * (attempt + 1));
-  }
-
-  // If another device kept writing during reconciliation, return the latest
-  // safely reconciled view without risking an unconditional overwrite.
-  const latest = await readState(game);
-  return reconcileCheckedProgress(game, latest.progress);
+  return (await readState(game)).progress;
 }
 
 const MAX_FIELD_LENGTH = 200;
@@ -168,10 +150,9 @@ export async function applyPatch(game: Game, patch: GameProgressPatch): Promise<
       else progress.fields[k] = v;
     }
 
-    const reconciled = patch.reset ? progress : reconcileCheckedProgress(game, progress);
     const conditions = state.etag ? { onlyIfMatch: state.etag } : state.exists ? {} : { onlyIfNew: true };
-    const result = await s.setJSON(blobKey(game.id), reconciled, conditions);
-    if (result.modified) return reconciled;
+    const result = await s.setJSON(blobKey(game.id), progress, conditions);
+    if (result.modified) return progress;
     await sleep(20 + Math.random() * 60 * (attempt + 1));
   }
   throw new Error("Could not save: other changes kept arriving first.");

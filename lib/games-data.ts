@@ -207,6 +207,8 @@ export type GameQuestStep = {
   why?: string;
   /** Items consumed or required by this step. The UI expands every known acquisition route from GAME_ITEM_SOURCES. */
   requiredItems?: GameRequiredItem[];
+  /** This milestone is already satisfied by the current save's completed Community Center stage. */
+  satisfiedAfterCommunityCenter?: boolean;
   bucket: GameQuestBucket;
   priority?: number;
   importance?: GameImportance;
@@ -245,6 +247,8 @@ export type GameStoryline = {
   mod: string;
   note?: string;
   importance?: GameImportance;
+  /** Keep the saved keys, but remove this earlier-stage card from the active guide after Community Center completion. */
+  archiveAfterCommunityCenter?: boolean;
   steps: GameQuestStep[];
 };
 
@@ -423,117 +427,6 @@ export function knownCheckKeys(game: Game): Set<string> {
 }
 
 /** Every text-field key a game can have. */
-/**
- * Canonical save key for a live quest-board step. Kept in the data layer so
- * server-side progress reconciliation and the UI resolve the exact same box.
- */
-export function questStepCheckKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
-  if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
-  const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
-  return questKey(game.id, owner.storylineId, owner.stepId);
-}
-
-/**
- * Bring a save forward to the furthest progress it already proves.
- *
- * Rules are deliberately conservative:
- * - A checked later step backfills earlier steps in that SAME storyline.
- * - Explicit cross-story requires prerequisites are backfilled recursively.
- * - Explicit farm/progression prerequisites are backfilled.
- * - No unrelated storyline, friendship target, optional side story, or
- *   completion collectible is guessed from another checkbox.
- */
-export function reconcileCheckedProgress(game: Game, progress: GameProgress): GameProgress {
-  if (isBundleGame(game) || isCompletionGame(game)) return progress;
-
-  const checks: Record<string, true> = { ...progress.checks };
-  const fields = { ...progress.fields };
-  let changed = false;
-
-  type Entry = { story: GameStoryline; step: GameQuestStep; index: number };
-  const byRef = new Map<string, Entry>();
-
-  game.questBoard.storylines.forEach((story) => {
-    story.steps.forEach((step, index) => {
-      byRef.set(`${story.id}:${step.id}`, { story, step, index });
-    });
-  });
-
-  const visiting = new Set<string>();
-
-  const markProgressRef = (ref: ProgressionRef) => {
-    const key = itemKey(ref.gameId, ref.phaseId, ref.groupLabel, ref.text);
-    if (!checks[key]) {
-      checks[key] = true;
-      changed = true;
-    }
-  };
-
-  const markEntry = (entry: Entry) => {
-    const ref = `${entry.story.id}:${entry.step.id}`;
-    if (visiting.has(ref)) return;
-    visiting.add(ref);
-
-    // Storyline cards are authored in progression order. If a later step is
-    // checked, every earlier step in that same card has already happened.
-    for (let i = 0; i <= entry.index; i += 1) {
-      const prior = entry.story.steps[i];
-      const key = questStepCheckKey(game, entry.story, prior);
-      if (!checks[key]) {
-        checks[key] = true;
-        changed = true;
-      }
-
-      for (const required of prior.requires ?? []) {
-        const dependency = byRef.get(required);
-        if (dependency) markEntry(dependency);
-      }
-      for (const required of prior.requiresProgress ?? []) markProgressRef(required.ref);
-
-      if (prior.social?.startAfterStepId) {
-        const dependency = byRef.get(`${entry.story.id}:${prior.social.startAfterStepId}`);
-        if (dependency) markEntry(dependency);
-      }
-      if (prior.social?.startAfterProgress) markProgressRef(prior.social.startAfterProgress);
-    }
-
-    visiting.delete(ref);
-  };
-
-  // Seed reconciliation from everything the player has already checked.
-  for (const entry of byRef.values()) {
-    if (checks[questStepCheckKey(game, entry.story, entry.step)]) markEntry(entry);
-  }
-
-  // The tracked save has completed the Community Center. Keep the two story
-  // milestones aligned even if individual boxes in the archived tracker are stale.
-  const farmTracker = GAMES.find((candidate): candidate is BundleGame =>
-    isBundleGame(candidate) && candidate.id === "community-center"
-  );
-  if (game.id === "stardew-mega-mod" && farmTracker?.postCompletionActive) {
-    for (const required of [
-      "ginger-island-access:cc-or-joja",
-      "sve-post-cc-areas:cc-complete",
-    ]) {
-      const dependency = byRef.get(required);
-      if (dependency) markEntry(dependency);
-    }
-  }
-
-  const pinned = fields[mainQuestKey(game.id)];
-  if (pinned) {
-    const pinnedStory = game.questBoard.storylines.find((story) => story.id === pinned);
-    const pinnedComplete =
-      !!pinnedStory &&
-      pinnedStory.steps.every((step) => !!checks[questStepCheckKey(game, pinnedStory, step)]);
-    if (!pinnedStory || pinnedComplete) {
-      delete fields[mainQuestKey(game.id)];
-      changed = true;
-    }
-  }
-
-  return changed ? { checks, fields } : progress;
-}
 export function knownFieldKeys(game: Game): Set<string> {
   if (isCompletionGame(game)) {
     const keys = new Set<string>();
@@ -2493,7 +2386,7 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Follow whichever storyline is actually available. Story, farm progression, and completion now live in one unified guide.",
+      text: "Your Community Center is complete. This guide now starts from your post-Community Center unlocks and uses your existing checked boxes to show the next unfinished step in each active storyline.",
       notLabel: "You do NOT need to:",
       not: [
         "Treat the guide like a hard gate",
@@ -2510,14 +2403,15 @@ export const GAMES: Game[] = [
           title: "Ginger Island — Boat & Arrival",
           mod: "Vanilla / unlock progression",
           importance: "required",
-          note: "This is the actual unlock chain for Ginger Island, from the Community Center/Joja finish through your first island access.",
+          note: "Your Community Center is already complete. This chain starts at Willy's invitation and carries you through first island access, Island North, and the Volcano route.",
           steps: [
             {
               id: "cc-or-joja",
               label: "Complete the Community Center or Joja Warehouse route",
-              how: "The boat invitation only becomes available after the Community Center restoration cutscene or Joja Warehouse completion cutscene.",
+              how: "Already satisfied in your current save because the Community Center is complete.",
+              satisfiedAfterCommunityCenter: true,
               bucket: "toward",
-              priority: 54,
+              priority: 121,
               why: "Unlocks Willy's invitation to the Fish Shop back room.",
             },
             {
@@ -2526,7 +2420,7 @@ export const GAMES: Game[] = [
               how: "After the completion cutscene, Willy mails you an invitation. Enter the back room of the Fish Shop to inspect the broken boat.",
               location: "Fish Shop back room",
               bucket: "now",
-              priority: 54,
+              priority: 120,
             },
             {
               id: "boat-materials",
@@ -2534,7 +2428,7 @@ export const GAMES: Game[] = [
               how: "The hull needs 200 Hardwood, the anchor needs 5 Iridium Bars, and the ticket stand needs 5 Battery Packs. Any valid acquisition source counts.",
               requiredItems: [{ name: "Hardwood", qty: 200 }, { name: "Iridium Bar", qty: 5 }, { name: "Battery Pack", qty: 5 }],
               bucket: "toward",
-              priority: 54,
+              priority: 119,
             },
             {
               id: "repair-boat",
@@ -2542,7 +2436,7 @@ export const GAMES: Game[] = [
               how: "In the Fish Shop back room, interact with the broken hull, anchor, and ticket machine and donate the materials from the previous step to each repair point.",
               location: "Fish Shop back room",
               bucket: "now",
-              priority: 54,
+              priority: 118,
               legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Repair Willy’s Boat" },
             },
             {
@@ -2550,7 +2444,7 @@ export const GAMES: Game[] = [
               label: "Sleep and view the overnight boat-repair cutscene",
               how: "If another overnight cutscene takes priority, the boat-repair scene can be delayed by a day.",
               bucket: "now",
-              priority: 53,
+              priority: 117,
             },
             {
               id: "arrive",
@@ -2558,7 +2452,7 @@ export const GAMES: Game[] = [
               how: "After the overnight repair cutscene, return to the Fish Shop back room, use the boat ticket machine, pay 1,000g, and board Willy's boat.",
               location: "Fish Shop back room → Ginger Island",
               bucket: "now",
-              priority: 53,
+              priority: 116,
               reward: "Ginger Island unlocked",
               legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Reach Ginger Island" },
             },
@@ -2568,7 +2462,7 @@ export const GAMES: Game[] = [
               how: "Follow Leo into the jungle, then give the parrot in Leo's hut 1 Golden Walnut. This removes the turtle blocking Island North.",
               location: "Leo's hut / Island East",
               bucket: "now",
-              priority: 52,
+              priority: 115,
               reward: "Island North + Volcano route",
             },
           ],
@@ -2647,7 +2541,7 @@ export const GAMES: Game[] = [
           id: "ginger-island-volcano",
           title: "Ginger Island — Volcano & Forge",
           mod: "Vanilla / unlock progression",
-          importance: "recommended",
+          importance: "required",
           note: "The Volcano has exactly 10 floors; reaching Floor 10 unlocks direct Forge access on future days.",
           steps: [
             {
@@ -2656,7 +2550,7 @@ export const GAMES: Game[] = [
               how: "Use the Watering Can on the lava at the entrance to make a temporary path.",
               location: "Island North",
               bucket: "now",
-              priority: 46,
+              priority: 112,
               requires: ["ginger-island-access:north"],
               unlock: "Open Island North first",
               legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Progress Volcano Dungeon" },
@@ -2667,7 +2561,7 @@ export const GAMES: Game[] = [
               how: "Enter the Volcano with your Watering Can and climb all 10 floors in one run. Reaching the Caldera at Floor 10 gives you access to the Forge and the permanent entrance shortcut.",
               location: "Volcano Caldera",
               bucket: "toward",
-              priority: 46,
+              priority: 111,
               reward: "Forge access + permanent entrance shortcut on future days",
               legacy: { phaseId: "p7", groupLabel: "Ginger Island", text: "Reach Volcano Floor 10" },
             },
@@ -2719,6 +2613,7 @@ export const GAMES: Game[] = [
           title: "Andy — Year 1 Strawberry Seeds",
           mod: "Stardew Valley Expanded",
           importance: "optional",
+          archiveAfterCommunityCenter: true,
           note: "This is here only because the early event is Year 1 Spring-only and gives a useful reward. Andy's later friendship scenes are optional and are not part of core progression.",
           steps: [
             {
@@ -2748,6 +2643,7 @@ export const GAMES: Game[] = [
           title: "Sophia — Year 1 Vineyard Bonus",
           mod: "Stardew Valley Expanded",
           importance: "optional",
+          archiveAfterCommunityCenter: true,
           note: "Missable bonus only. This must never block the Scarlett/Pondwood progression chain.",
           steps: [
             {
@@ -3547,15 +3443,16 @@ export const GAMES: Game[] = [
           id: "sve-post-cc-areas",
           title: "SVE — Post-Community-Center Areas",
           mod: "Stardew Valley Expanded / Vanilla",
-          importance: "optional",
-          note: "Useful world unlocks after the Community Center. These are worth knowing about, but they do not gate your SVE Highlands/Nexus or Ridgeside/S&S campaigns.",
+          importance: "recommended",
+          note: "These are now current-stage world unlocks. Work them around Ginger Island and your active mod campaigns; they are no longer buried as early-game optional content.",
           steps: [
             {
               id: "cc-complete",
               label: "Finish the Community Center",
-              how: "Track the actual bundles in Farm & Progression. Check this milestone here once the Community Center restoration is complete.",
+              how: "Already satisfied in your current save.",
+              satisfiedAfterCommunityCenter: true,
               bucket: "toward",
-              priority: 32,
+              priority: 96,
             },
             {
               id: "junimo-woods",
@@ -3563,7 +3460,7 @@ export const GAMES: Game[] = [
               how: "After Community Center completion, use the ground warp in the southwest of Cindersap Forest, south of the Hat Mouse.",
               location: "Southwest Cindersap Forest",
               bucket: "now",
-              priority: 32,
+              priority: 95,
               reward: "Junimo Woods maze, shops, fishing and forage",
             },
             {
@@ -3572,7 +3469,7 @@ export const GAMES: Game[] = [
               how: "Trigger the Wizard's Railroad cutscene, talk to Krobus, enter the Mutant Bug Lair, retrieve the Dark Talisman, then use it at the Railroad cave.",
               location: "Railroad → Sewers → Mutant Bug Lair",
               bucket: "now",
-              priority: 31,
+              priority: 94,
               reward: "Witch's Swamp / Goblin Problem",
             },
             {
@@ -3581,7 +3478,7 @@ export const GAMES: Game[] = [
               how: "Give the Henchman Void Mayonnaise, enter the Witch's Hut, take the Magic Ink, and return it to the Wizard.",
               location: "Witch's Swamp / Wizard's Tower",
               bucket: "now",
-              priority: 31,
+              priority: 93,
               reward: "Wizard farm buildings + SVE Sprite Spring access",
             },
             {
@@ -3590,7 +3487,7 @@ export const GAMES: Game[] = [
               how: "After the Magic Ink quest, use the secret passage in the southeast of Forest West.",
               location: "Forest West",
               bucket: "now",
-              priority: 31,
+              priority: 92,
               reward: "Sprite Spring healing/buff area, forage, fishing, and later Nexus warp destination",
             },
           ],

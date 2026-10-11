@@ -37,14 +37,15 @@ the top of the page.
 - Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
   Sorcery events is not confirmed.
 
-## Automatic progress reconciliation
+## Current Story & Quests stage
 
-- The saved Story & Quests state is reconciled whenever the Games page loads and after checklist changes.
-- A checked later step automatically backfills earlier steps in the same storyline because reaching that milestone proves those steps already happened.
-- Explicit cross-story `requires`, farm/progression prerequisites, and social-start prerequisites are also backfilled recursively.
-- The sync does **not** guess unrelated optional storylines, collectibles, romance content, or completion goals.
-- If a pinned Main Quest is now fully complete, the stale pin is removed so automatic prioritization resumes from the player's current progression.
-- Reconciled checks are written back to the permanent Netlify Blob store, so phone and computer use the same corrected progression.
+- This personal save is now treated as **post–Community Center**.
+- The Community Center prerequisite steps in Ginger Island and SVE post-CC chains are shown as already satisfied by stage, without silently rewriting saved checkbox history.
+- The active dashboard is driven by the user's existing checked boxes: each storyline surfaces its first genuinely unfinished current-stage step.
+- Year 1-only bonus cards (Andy strawberry bonus and Sophia's Year 1 sprinkler bonus) are moved to an **Earlier-stage archive** so they stop competing with current progression.
+- Ginger Island Boat/Arrival is the highest-priority current unlock chain, followed by Volcano/Forge because it feeds Lance/Highlands and other late-game systems.
+- SVE's post-Community-Center world unlocks are promoted from optional clutter to current recommended progression.
+- Unrelated mod storylines are not marked complete or guessed; their existing checkboxes continue to decide exactly where each storyline resumes.
 
 ## Farm & Progression after Community Center completion
 
