@@ -205,7 +205,8 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   const weather = prog.fields[weatherKey(game.id)] ?? "sunny";
   const pinnedStory = prog.fields[mainQuestKey(game.id)] ?? "";
   const postCommunityCenter = !!GAMES.find(
-    (candidate) => isBundleGame(candidate) && candidate.id === "community-center",
+    (candidate): candidate is BundleGame =>
+      isBundleGame(candidate) && candidate.id === "community-center",
   )?.postCompletionActive;
   const activeStorylines = game.questBoard.storylines.filter(
     (story) => !(postCommunityCenter && story.archiveAfterCommunityCenter),
