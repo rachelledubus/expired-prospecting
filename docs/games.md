@@ -39,13 +39,13 @@ the top of the page.
 
 ## Current Story & Quests stage
 
-- This personal save is now treated as **post–Community Center**.
-- The Community Center prerequisite steps in Ginger Island and SVE post-CC chains are shown as already satisfied by stage, without silently rewriting saved checkbox history.
-- The active dashboard is driven by the user's existing checked boxes: each storyline surfaces its first genuinely unfinished current-stage step.
-- Year 1-only bonus cards (Andy strawberry bonus and Sophia's Year 1 sprinkler bonus) are moved to an **Earlier-stage archive** so they stop competing with current progression.
-- Ginger Island Boat/Arrival is the highest-priority current unlock chain, followed by Volcano/Forge because it feeds Lance/Highlands and other late-game systems.
-- SVE's post-Community-Center world unlocks are promoted from optional clutter to current recommended progression.
-- Unrelated mod storylines are not marked complete or guessed; their existing checkboxes continue to decide exactly where each storyline resumes.
+- The current save has completed the Community Center and the core Ginger Island foundation: boat/arrival, Island North, Volcano Forge, Island West, Island Farmhouse, Dig Site bridge, and Professor Snail.
+- SVE's post-Community-Center world unlocks are complete: Junimo Woods, Dark Talisman, Goblin Problem / Magic Ink, and Sprite Spring.
+- Sword & Sorcery has completed Mateo and Hector's required progression. The current campaign checkpoint is **waiting for Cirrus's introduction cutscene**; Cirrus's chapter is next.
+- Mateo's completion also means the Underforge/Artificer system is unlocked, but Artificer levels and actual weapon upgrades remain active until explicitly completed.
+- Unconfirmed Ginger Island utility upgrades (Island Trader, Resort, Parrot Express) remain active instead of being guessed complete.
+- Confirmed current-save milestones are represented directly in guide data and are not written into Netlify Blob checkbox history behind the user's back.
+- Existing checked boxes still determine progress for every other storyline and system.
 
 ## Farm & Progression after Community Center completion
 

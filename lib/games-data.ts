@@ -207,8 +207,8 @@ export type GameQuestStep = {
   why?: string;
   /** Items consumed or required by this step. The UI expands every known acquisition route from GAME_ITEM_SOURCES. */
   requiredItems?: GameRequiredItem[];
-  /** This milestone is already satisfied by the current save's completed Community Center stage. */
-  satisfiedAfterCommunityCenter?: boolean;
+  /** This milestone is confirmed complete in the user's current save and should not reappear as active work. */
+  currentSaveComplete?: boolean;
   bucket: GameQuestBucket;
   priority?: number;
   importance?: GameImportance;
@@ -707,8 +707,8 @@ const communityCenter: BundleGame = {
   postCompletion: [
     {
       id: "post-cc-island",
-      title: "Next major unlock — Ginger Island",
-      note: "This is the highest-value post–Community Center chain. Work straight down it; each checkbox is shared with Story & Quests.",
+      title: "Ginger Island foundation — completed",
+      note: "You have already reached the Volcano Forge, opened Island West and the farm, repaired the Dig Site bridge, and rescued Professor Snail. This section is retained as completed history.",
       items: [
         {
           label: "Read Willy's invitation and inspect the broken boat",
@@ -737,6 +737,41 @@ const communityCenter: BundleGame = {
         {
           label: "Reach Volcano Floor 10 and unlock the Forge",
           questRef: { storylineId: "ginger-island-volcano", stepId: "floor-10" },
+        },
+        {
+          label: "Open Island West",
+          questRef: { storylineId: "ginger-island-west", stepId: "west" },
+        },
+        {
+          label: "Repair the Island Farmhouse",
+          questRef: { storylineId: "ginger-island-west", stepId: "farmhouse" },
+        },
+        {
+          label: "Repair the Dig Site bridge",
+          questRef: { storylineId: "ginger-island-digsite", stepId: "bridge" },
+        },
+        {
+          label: "Rescue Professor Snail",
+          questRef: { storylineId: "ginger-island-digsite", stepId: "snail" },
+        },
+      ],
+    },
+    {
+      id: "post-cc-island-remaining",
+      title: "Ginger Island — remaining utility upgrades",
+      note: "These are the Island upgrades you have not explicitly confirmed yet, so they stay active rather than being guessed complete.",
+      items: [
+        {
+          label: "Unlock the Island Trader",
+          questRef: { storylineId: "ginger-island-west", stepId: "trader" },
+        },
+        {
+          label: "Build the Island Resort",
+          questRef: { storylineId: "ginger-island-resort", stepId: "resort" },
+        },
+        {
+          label: "Unlock the Parrot Express",
+          questRef: { storylineId: "ginger-island-express", stepId: "express" },
         },
       ],
     },
@@ -836,8 +871,8 @@ const communityCenter: BundleGame = {
     },
     {
       id: "post-cc-world",
-      title: "Post-CC world unlocks",
-      note: "Useful areas and systems that only become relevant after the Community Center. Do these around your main Island/Highlands progression instead of treating them as urgent.",
+      title: "Post-CC world unlocks — completed",
+      note: "Junimo Woods, Dark Talisman, Goblin Problem / Magic Ink, and Sprite Spring are already complete in your current save.",
       items: [
         {
           label: "Visit Junimo Woods",
@@ -854,14 +889,6 @@ const communityCenter: BundleGame = {
         {
           label: "Visit Sprite Spring",
           questRef: { storylineId: "sve-post-cc-areas", stepId: "sprite-spring" },
-        },
-        {
-          label: "Repair the Ginger Island Farmhouse",
-          questRef: { storylineId: "ginger-island-west", stepId: "farmhouse" },
-        },
-        {
-          label: "Unlock the Island Trader",
-          questRef: { storylineId: "ginger-island-west", stepId: "trader" },
         },
       ],
     },
@@ -2386,7 +2413,7 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Your Community Center is complete. This guide now starts from your post-Community Center unlocks and uses your existing checked boxes to show the next unfinished step in each active storyline.",
+      text: "Your Community Center and core Ginger Island unlocks are complete, and Sword & Sorcery is waiting on Cirrus's introduction. The guide now prioritizes only unfinished current-stage progression.",
       notLabel: "You do NOT need to:",
       not: [
         "Treat the guide like a hard gate",
@@ -2407,15 +2434,16 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "cc-or-joja",
+              currentSaveComplete: true,
               label: "Complete the Community Center or Joja Warehouse route",
               how: "Already satisfied in your current save because the Community Center is complete.",
-              satisfiedAfterCommunityCenter: true,
               bucket: "toward",
               priority: 121,
               why: "Unlocks Willy's invitation to the Fish Shop back room.",
             },
             {
               id: "willy-letter",
+              currentSaveComplete: true,
               label: "Read Willy's invitation and enter the Fish Shop back room",
               how: "After the completion cutscene, Willy mails you an invitation. Enter the back room of the Fish Shop to inspect the broken boat.",
               location: "Fish Shop back room",
@@ -2424,6 +2452,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "boat-materials",
+              currentSaveComplete: true,
               label: "Gather 200 Hardwood, 5 Iridium Bars, and 5 Battery Packs",
               how: "The hull needs 200 Hardwood, the anchor needs 5 Iridium Bars, and the ticket stand needs 5 Battery Packs. Any valid acquisition source counts.",
               requiredItems: [{ name: "Hardwood", qty: 200 }, { name: "Iridium Bar", qty: 5 }, { name: "Battery Pack", qty: 5 }],
@@ -2432,6 +2461,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "repair-boat",
+              currentSaveComplete: true,
               label: "Repair all three parts of Willy's Boat",
               how: "In the Fish Shop back room, interact with the broken hull, anchor, and ticket machine and donate the materials from the previous step to each repair point.",
               location: "Fish Shop back room",
@@ -2441,6 +2471,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "overnight-repair",
+              currentSaveComplete: true,
               label: "Sleep and view the overnight boat-repair cutscene",
               how: "If another overnight cutscene takes priority, the boat-repair scene can be delayed by a day.",
               bucket: "now",
@@ -2448,6 +2479,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "arrive",
+              currentSaveComplete: true,
               label: "Buy a 1,000g ticket and reach Ginger Island",
               how: "After the overnight repair cutscene, return to the Fish Shop back room, use the boat ticket machine, pay 1,000g, and board Willy's boat.",
               location: "Fish Shop back room → Ginger Island",
@@ -2458,6 +2490,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "north",
+              currentSaveComplete: true,
               label: "Give the first parrot 1 Golden Walnut to open Island North",
               how: "Follow Leo into the jungle, then give the parrot in Leo's hut 1 Golden Walnut. This removes the turtle blocking Island North.",
               location: "Leo's hut / Island East",
@@ -2476,6 +2509,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "west",
+              currentSaveComplete: true,
               label: "Spend 10 Golden Walnuts to open Island West",
               how: "Use the parrot upgrade that removes the sleeping turtle blocking the west path from Island South; pay the parrot 10 Golden Walnuts.",
               location: "Island South",
@@ -2488,6 +2522,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "farmhouse",
+              currentSaveComplete: true,
               label: "Spend 20 Golden Walnuts to repair the Island Farmhouse",
               how: "After Island West is open, find the ruined farmhouse and pay the nearby parrot 20 Golden Walnuts.",
               location: "Island West",
@@ -2516,6 +2551,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "bridge",
+              currentSaveComplete: true,
               label: "Spend 10 Golden Walnuts to repair the Dig Site bridge",
               how: "In Island North, use the parrot beside the broken bridge and pay 10 Golden Walnuts to restore access to the Dig Site.",
               location: "Island North",
@@ -2528,6 +2564,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "snail",
+              currentSaveComplete: true,
               label: "Bomb the blocked Mushroom Cave and rescue Professor Snail",
               how: "In the Dig Site, use a Bomb or another explosive on the boulder blocking the Mushroom Cave, then enter and talk to Professor Snail.",
               location: "Dig Site",
@@ -2546,6 +2583,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "enter",
+              currentSaveComplete: true,
               label: "Enter the Volcano Dungeon with a Watering Can",
               how: "Use the Watering Can on the lava at the entrance to make a temporary path.",
               location: "Island North",
@@ -2557,6 +2595,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "floor-10",
+              currentSaveComplete: true,
               label: "Reach Volcano Floor 10 and the Forge",
               how: "Enter the Volcano with your Watering Can and climb all 10 floors in one run. Reaching the Caldera at Floor 10 gives you access to the Forge and the permanent entrance shortcut.",
               location: "Volcano Caldera",
@@ -2745,6 +2784,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "meet",
+              currentSaveComplete: true,
               label: "Meet Mateo",
               how: "Travel to East Scarp and find Mateo's tent in the southeast part of the main East Scarp area. Talk to Mateo; then follow the Museum/Mines introduction events that appear next.",
               location: "East Scarp",
@@ -2755,6 +2795,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "intro1",
+              currentSaveComplete: true,
               label: "Watch Mateo Intro Part I at the Museum",
               how: "Museum, any time, any season, any weather.",
               bucket: "now",
@@ -2762,6 +2803,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "intro2",
+              currentSaveComplete: true,
               label: "Watch Mateo Intro Part II in the Mines",
               how: "Any time after Intro Part I once Marlon has given you the sword. There is no wait after Part I.",
               bucket: "now",
@@ -2769,6 +2811,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "two-hearts",
+              currentSaveComplete: true,
               label: "Reach 2 hearts with Mateo and see the Town event",
               social: {
                 "npc": "Mateo",
@@ -2784,6 +2827,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "four-hearts",
+              currentSaveComplete: true,
               label: "Reach 4 hearts with Mateo and see the Beach event",
               social: {
                 "npc": "Mateo",
@@ -2798,6 +2842,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "five-1",
+              currentSaveComplete: true,
               label: "See Mateo's 5-heart Part I",
               social: {
                 "npc": "Mateo",
@@ -2810,6 +2855,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "five-3",
+              currentSaveComplete: true,
               label: "See Mateo's 5-heart Part III",
               how: "Adventurer's Guild, 2–10 PM. Requires 5-heart Part I.",
               bucket: "now",
@@ -2817,6 +2863,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "six-1",
+              currentSaveComplete: true,
               label: "See Mateo's 6-heart Part I",
               social: {
                 "npc": "Mateo",
@@ -2831,6 +2878,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "six-2",
+              currentSaveComplete: true,
               label: "See Mateo's 6-heart Part II",
               how: "Cindersap Forest, 6 PM–midnight, rain, any season.",
               location: "Cindersap Forest",
@@ -2840,6 +2888,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "seven",
+              currentSaveComplete: true,
               label: "See Mateo's 7-heart Part I after meeting Krobus",
               social: {
                 "npc": "Mateo",
@@ -2855,6 +2904,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "seven-2",
+              currentSaveComplete: true,
               label: "See Mateo's 7-heart Part II",
               how: "Town, 8 PM–midnight, sunny, any day except Friday. Wait one week after Part I.",
               location: "Pelican Town",
@@ -2864,6 +2914,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "eight",
+              currentSaveComplete: true,
               label: "See Mateo's 8-heart Part I and accept the guild quest",
               social: {
                 "npc": "Mateo",
@@ -2879,6 +2930,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "guild-build",
+              currentSaveComplete: true,
               label: "Complete Mateo's quest to build the Coastal Adventurer's Guild",
               how: "Follow the quest journal issued by 8-heart Part I. The finished guild becomes Mateo's base in East Scarp.",
               location: "East Scarp beach",
@@ -2888,6 +2940,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "eight-2",
+              currentSaveComplete: true,
               label: "See Mateo's 8-heart Part II",
               how: "Return to East Scarp, 10 AM–6 PM, sunny after completing the guild quest.",
               location: "East Scarp",
@@ -2897,6 +2950,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "ten",
+              currentSaveComplete: true,
               label: "See Mateo's 10-heart Railroad event",
               social: {
                 "npc": "Mateo",
@@ -2922,6 +2976,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "unlock",
+              currentSaveComplete: true,
               label: "Unlock the Underforge and Artificer skill",
               how: "Complete Mateo's 10-heart progression. The Underforge is inside the Coastal Adventurer's Guild; use the Player's Handbook if your installed version gives the introduction as a follow-up event.",
               location: "Coastal Adventurer's Guild — Underforge",
@@ -3027,10 +3082,11 @@ export const GAMES: Game[] = [
           title: "Sword & Sorcery — Main Campaign",
           mod: "Sword & Sorcery / East Scarp",
           importance: "required",
-          note: "This is the campaign after Mateo. Exact event/quest details change across S&S updates, so use the in-game Player's Handbook for each chapter's precise trigger while this tracker keeps the chapter order and major unlocks straight.",
+          note: "Mateo and Hector are complete in your current save. Your campaign is now between Hector and Cirrus; the next tracked milestone is Cirrus's introduction cutscene.",
           steps: [
             {
               id: "hector-intro",
+              currentSaveComplete: true,
               label: "Unlock and meet Hector",
               how: "After Mateo's 10-heart progression event, complete Hector's seasonal quests if that setting is enabled, then enter the Railroad to trigger Hector's introduction.",
               location: "Railroad",
@@ -3042,6 +3098,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "hector-chapter",
+              currentSaveComplete: true,
               label: "Complete Hector's chapter through the 10-heart Part II event",
               social: {
                 "npc": "Hector",
@@ -3056,11 +3113,13 @@ export const GAMES: Game[] = [
             },
             {
               id: "cirrus-intro",
-              label: "Meet Cirrus when Hector's chapter introduces the next party member",
-              how: "Follow the Player's Handbook after finishing Hector's chapter rather than grinding unrelated East Scarp friendships.",
-              bucket: "now",
-              priority: 80,
-              reward: "Bard chapter begins",
+              label: "Wait for / trigger Cirrus's introduction cutscene",
+              how: "You have finished Hector's chapter and are at this exact campaign checkpoint. Let the next Sword & Sorcery story event introduce Cirrus; if it does not fire when expected, use the in-game Player's Handbook for your installed version's trigger instead of grinding more Hector friendship.",
+              bucket: "waiting",
+              priority: 125,
+              requires: ["sword-sorcery-campaign:hector-chapter"],
+              unlock: "Hector's chapter is complete — waiting for the Cirrus introduction cutscene",
+              reward: "Cirrus joins the campaign and the Bard chapter begins",
             },
             {
               id: "cirrus-chapter",
@@ -3105,6 +3164,7 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "start",
+              currentSaveComplete: true,
               label: "Start talking to and gifting Marlon",
               how: "Useful gifts: he loves Roots Platter, Slime Eggs, Life Elixir, Void Delight, and the Haste/Armor elixirs; he also likes Fried Mushroom, Purple Mushroom, Bomb, and Beer.",
               bucket: "toward",
@@ -3113,6 +3173,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "five-hearts",
+              currentSaveComplete: true,
               label: "Reach 5 hearts with Marlon",
               social: {
                 "npc": "Marlon",
@@ -3126,6 +3187,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "rusty-key",
+              currentSaveComplete: true,
               label: "Trigger Marlon's Rusty Key event",
               how: "Adventurer Summit, any season/weather once the Year 1 friendship requirement is met.",
               bucket: "now",
@@ -3134,6 +3196,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "meet-krobus",
+              currentSaveComplete: true,
               label: "Enter the Sewers and talk to Krobus",
               how: "Marlon's Rusty Key event introduces Krobus and gives sewer access; enter the Sewers and talk to him so the tracker has an explicit Mateo gate.",
               reward: "Krobus available + Mateo 7-heart prerequisite satisfied",
@@ -3448,14 +3511,15 @@ export const GAMES: Game[] = [
           steps: [
             {
               id: "cc-complete",
+              currentSaveComplete: true,
               label: "Finish the Community Center",
               how: "Already satisfied in your current save.",
-              satisfiedAfterCommunityCenter: true,
               bucket: "toward",
               priority: 96,
             },
             {
               id: "junimo-woods",
+              currentSaveComplete: true,
               label: "Visit Junimo Woods",
               how: "After Community Center completion, use the ground warp in the southwest of Cindersap Forest, south of the Hat Mouse.",
               location: "Southwest Cindersap Forest",
@@ -3465,6 +3529,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "dark-talisman",
+              currentSaveComplete: true,
               label: "Complete Dark Talisman",
               how: "Trigger the Wizard's Railroad cutscene, talk to Krobus, enter the Mutant Bug Lair, retrieve the Dark Talisman, then use it at the Railroad cave.",
               location: "Railroad → Sewers → Mutant Bug Lair",
@@ -3474,6 +3539,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "magic-ink",
+              currentSaveComplete: true,
               label: "Complete Goblin Problem and return the Magic Ink",
               how: "Give the Henchman Void Mayonnaise, enter the Witch's Hut, take the Magic Ink, and return it to the Wizard.",
               location: "Witch's Swamp / Wizard's Tower",
@@ -3483,6 +3549,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "sprite-spring",
+              currentSaveComplete: true,
               label: "Visit Sprite Spring",
               how: "After the Magic Ink quest, use the secret passage in the southeast of Forest West.",
               location: "Forest West",

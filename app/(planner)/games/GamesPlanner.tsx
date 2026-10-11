@@ -73,15 +73,17 @@ function Check({
   sub,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string;
   sub?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="gm-item">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       <span className="gm-box" aria-hidden="true" />
       <span className="gm-txt">
         <span className="gm-name">{label}</span>
@@ -209,8 +211,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     ? game.questBoard.storylines.filter((story) => story.archiveAfterCommunityCenter)
     : [];
   const isStepDone = (story: GameStoryline, step: GameQuestStep) =>
-    (postCommunityCenter && !!step.satisfiedAfterCommunityCenter) ||
-    !!prog.checks[questStepKey(game, story, step)];
+    !!step.currentSaveComplete || !!prog.checks[questStepKey(game, story, step)];
 
   type QuestRow = {
     story: GameStoryline;
@@ -452,7 +453,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             {story.steps.map((s, idx) => {
               const k = questStepKey(game, story, s);
               const isCurrent = idx === row.index;
-              const stageDone = postCommunityCenter && !!s.satisfiedAfterCommunityCenter;
+              const stageDone = !!s.currentSaveComplete;
               const isDone = stageDone || !!prog.checks[k];
               return (
                 <div className={isCurrent ? "gm-path-step current" : "gm-path-step"} key={s.id}>
@@ -519,7 +520,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           {story.note && <p className="gm-note">{story.note}</p>}
           {story.steps.map((step, idx) => {
             const k = questStepKey(game, story, step);
-            const stageDone = postCommunityCenter && !!step.satisfiedAfterCommunityCenter;
+            const stageDone = !!step.currentSaveComplete;
             const isDone = stageDone || !!prog.checks[k];
             const isCurrent = current?.step.id === step.id;
             return (
@@ -574,8 +575,8 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         {postCommunityCenter && (
           <div className="gm-weather-block">
             <span className="gm-context-label">Current progression stage</span>
-            <b>Post-Community Center</b>
-            <span className="gm-note">Ginger Island + current mod storylines</span>
+            <b>Established Ginger Island</b>
+            <span className="gm-note">Sword & Sorcery: waiting for Cirrus · current mod progression</span>
           </div>
         )}
       </div>
@@ -695,7 +696,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
               <summary>{story.title}</summary>
               {story.steps.map((step) => {
                 const k = questStepKey(game, story, step);
-                const stageDone = postCommunityCenter && !!step.satisfiedAfterCommunityCenter;
+                const stageDone = !!step.currentSaveComplete;
                 return (
                   <div className="gm-completed-step" key={step.id}>
                     <span>✓ {step.label}</span>
@@ -784,6 +785,9 @@ function BundleView({
         requiredItems: item.requiredItems ?? step.requiredItems,
         location: step.location,
         reward: step.reward,
+        bucket: step.bucket,
+        unlock: step.unlock,
+        currentSaveComplete: !!step.currentSaveComplete,
       };
     }
     if (item.ref) {
@@ -794,25 +798,13 @@ function BundleView({
         requiredItems: item.requiredItems,
         location: undefined as string | undefined,
         reward: undefined as string | undefined,
+        bucket: undefined as GameQuestBucket | undefined,
+        unlock: undefined as string | undefined,
+        currentSaveComplete: false,
       };
     }
     return null;
   };
-
-  useEffect(() => {
-    if (!communityCenterComplete) return;
-    const completedMilestones = [
-      { storylineId: "ginger-island-access", stepId: "cc-or-joja" },
-      { storylineId: "sve-post-cc-areas", stepId: "cc-complete" },
-    ];
-    for (const ref of completedMilestones) {
-      const story = storyById.get(ref.storylineId);
-      const step = story?.steps.find((candidate) => candidate.id === ref.stepId);
-      if (!story || !step) continue;
-      const k = questStepKey(storyGame, story, step);
-      if (!storyProg.checks[k]) setStoryCheck(k, true);
-    }
-  }, [communityCenterComplete, storyGame, storyProg.checks, setStoryCheck]);
 
   const remaining = (v: View) =>
     game.bundles.reduce(
@@ -903,8 +895,10 @@ function BundleView({
     const entries = section.items
       .map((item) => ({ item, resolved: resolveProgressionItem(item) }))
       .filter((entry): entry is { item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
-    const incomplete = entries.filter(({ resolved }) => !storyProg.checks[resolved.key]);
-    const completed = entries.filter(({ resolved }) => !!storyProg.checks[resolved.key]);
+    const isDone = (resolved: (typeof entries)[number]["resolved"]) =>
+      resolved.currentSaveComplete || !!storyProg.checks[resolved.key];
+    const incomplete = entries.filter(({ resolved }) => !isDone(resolved));
+    const completed = entries.filter(({ resolved }) => isDone(resolved));
     const visibleEntries = postMode ? incomplete : entries;
 
     const renderItem = ({ item, resolved }: (typeof entries)[number]) => (
@@ -916,8 +910,10 @@ function BundleView({
             resolved.location ? `📍 ${resolved.location}` : "",
             resolved.why ? `Why: ${resolved.why}` : "",
             resolved.reward ? `Unlocks: ${resolved.reward}` : "",
+            resolved.bucket === "waiting" && resolved.unlock ? `Waiting: ${resolved.unlock}` : "",
           ].filter(Boolean).join("  •  ") || undefined}
-          checked={!!storyProg.checks[resolved.key]}
+          checked={resolved.currentSaveComplete || !!storyProg.checks[resolved.key]}
+          disabled={resolved.currentSaveComplete}
           onChange={(v) => setStoryCheck(resolved.key, v)}
         />
         <RequiredItemSources items={resolved.requiredItems} />
@@ -946,13 +942,17 @@ function BundleView({
   const postEntries = (game.postCompletion ?? [])
     .flatMap((section) => section.items.map((item) => ({ section, item, resolved: resolveProgressionItem(item) })))
     .filter((entry): entry is { section: ProgressionSection; item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
-  const nextPostEntry = postEntries.find(({ resolved }) => !storyProg.checks[resolved.key]);
-  const postDone = postEntries.filter(({ resolved }) => !!storyProg.checks[resolved.key]).length;
+  const postEntryDone = (entry: (typeof postEntries)[number]) =>
+    entry.resolved.currentSaveComplete || !!storyProg.checks[entry.resolved.key];
+  const nextPostEntry =
+    postEntries.find((entry) => !postEntryDone(entry) && entry.resolved.bucket !== "waiting") ??
+    postEntries.find((entry) => !postEntryDone(entry));
+  const postDone = postEntries.filter(postEntryDone).length;
   const postPct = postEntries.length ? Math.round((postDone / postEntries.length) * 100) : 0;
 
   return (
     <>
-      <p className="gm-mods">{communityCenterComplete ? "Post–Community Center • Ginger Island • farm power • mod unlocks" : game.mods}</p>
+      <p className="gm-mods">{communityCenterComplete ? "Established Ginger Island • combat power • remaining Island utility • mod progression" : game.mods}</p>
 
       <div className="gm-context-card gm-farm-context">
         <div>
@@ -965,7 +965,7 @@ function BundleView({
         </div>
         <div>
           <span className="gm-context-label">{communityCenterComplete ? "Current stage" : "Season window"}</span>
-          <b>{communityCenterComplete ? "Island + late-game expansion" : daysLeft !== null ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left` : "In progress"}</b>
+          <b>{communityCenterComplete ? "Established Island + mod midgame" : daysLeft !== null ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left` : "In progress"}</b>
         </div>
       </div>
 
@@ -994,7 +994,7 @@ function BundleView({
       {communityCenterComplete ? (
         <>
           <section className="gm-post-hero">
-            <div className="label">Your post-Community Center focus</div>
+            <div className="label">Your current progression focus</div>
             <div className="gm-card gm-post-focus">
               <div className="gm-post-focus-head">
                 <div>
