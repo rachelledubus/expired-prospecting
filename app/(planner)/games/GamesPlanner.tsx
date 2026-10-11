@@ -13,7 +13,7 @@ import {
   isCompletionGame,
   itemKey,
   mainQuestKey,
-  questKey,
+  questStepCheckKey as questStepKey,
   saveKey,
   seasonKey,
   weatherKey,
@@ -185,12 +185,6 @@ const formatGameDate = (season: string, day: number, year: number) => `${season}
 function shiftGameDate(d: ParsedGameDate, days: number): string {
   const t = Math.max(0, d.totalDay - 1 + days);
   return formatGameDate(SEASON_NAMES[Math.floor((t % 112) / 28)], (t % 28) + 1, Math.floor(t / 112) + 1);
-}
-
-function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep): string {
-  if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
-  const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
-  return questKey(game.id, owner.storylineId, owner.stepId);
 }
 
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
