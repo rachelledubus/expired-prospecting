@@ -37,6 +37,10 @@ the top of the page.
 - Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
   Sorcery events is not confirmed.
 
+## Audit version baseline
+
+This audit targets the currently released content available in October 2026: SVE 1.15.11, Ridgeside Village 2.5.17, East Scarp Remastered 3.0.9, and Sword & Sorcery 2.3.10. A future mod update can add new storyline content, so "complete" means complete for these released versions rather than content that has not shipped yet.
+
 ## Progression completeness audit
 
 The progression database is intentionally scoped to **non-repeatable progression that changes the save**: main campaign chapters, permanent location/NPC unlocks, new skill systems, infrastructure, and major permanent-reward quests. Ordinary repeatable boards, generic cash/friendship errands, romance-only flavor scenes, and completion-collection items stay out unless they gate one of those systems.
@@ -45,7 +49,7 @@ Coverage added in the October 2026 completeness audit:
 
 - **Vanilla post-Community Center:** Missing Bundle/Movie Theater, Island Farm mailbox/obelisk, Volcano shortcuts, full Professor Snail Field Office completion, Qi's Walnut Room, Infinity weapon path, Mastery Cave, and the Giant Stump/Raccoon family chain.
 - **Sword & Sorcery:** Cirrus/Lion's Mane/Bardics, Roslin/Sorcery, Solomon, Dandelion/Paladin, 30-floor Deep Dark milestones, finale/epilogue, plus level-5/10 profession tracks for Artificer, Druidics, Bardics, Sorcery, and Paladin.
-- **Stardew Valley Expanded:** Fable Reef/First Slash after Lance, Henchman and the Dark Shrines, exact Void Soul Retrieval requirements, and exact Legendary Trio prerequisites/rewards. Existing Highlands, Caverns, Nexus, Badlands, Iridium Quarry, Treasure Cave, Aurora Vineyard, Grandpa's Shed, and post-CC world areas remain in place.
+- **Stardew Valley Expanded:** Fable Reef/First Slash after Lance, Henchman and the Dark Shrines, exact Void Soul Retrieval and Legendary Trio requirements, all current SVE permanent Special Powers, permanent-reward Special Orders, Winery, Premium Barn, Premium Coop, and the existing Highlands/Caverns/Nexus/Badlands/Iridium Quarry/Treasure Cave/Aurora Vineyard/Grandpa's Shed/post-CC world chains.
 - **Ridgeside Village:** the full Spirit Realm spine remains intact; post-Spirit-Realm Linked Fishes → Ridge Pond, Mythical Flower/Foxbloom, Ridgeside Obelisk, Summit Farm renovation tree, Mountain Duty/Mountain Mistblade, and the three Mystic Falls weapon-shop locations are tracked.
 - **East Scarp 3.x:** Rosa/Luma plus the Vintage Ruby Ring thread, Victoria → Slime Basement → Luma's slime chain, Aideen's permanent bouquet recipe, Jade's Fairy Pool/Fairy Ring chain, Lady Sheba unlock, Lighthouse Lantern Room, Eyvind's garden/Void Goats/late story, Josephine/Oliver → Kataryna, plus conditional Tristan and Meadow Cottage routes.
 - **SVE farm-map branches:** Frontier Farm's minecarts, Desert shortcut, and Bridge Magic plus Grandpa's Farm's Stone Bridge, Grandpa's Grove, and late land expansion are retained as optional conditional cards, so they never enter main Story Progress on saves using a different farm map.
