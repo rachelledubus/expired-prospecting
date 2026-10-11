@@ -6025,10 +6025,10 @@ export const GAMES: Game[] = [
         },
         {
           id: "undreya",
-          title: "Undreya — Abandoned House",
+          title: "Ridgeside — Lost Princess / Undreya",
           mod: "Ridgeside Village",
-          importance: "optional",
-          note: "A real standalone Ridgeside subplot with a permanent NPC/activity unlock, but it does not gate the Spirit Realm main story.",
+          importance: "recommended",
+          note: "This is Ridgeside's Lost Princess storyline, not just an Abandoned House introduction. The three-event chain introduces Pipo/Lil Acorn, reveals Undreya, then reunites her with Sari and the Verde royal party.",
           steps: [
             {
               id: "first-event",
@@ -6065,7 +6065,7 @@ export const GAMES: Game[] = [
               gate: { weather: ["sunny"] },
               bucket: "now",
               priority: 40,
-              reward: "Completes the Abandoned House introduction chain; Undreya's full social/gifting setup is available",
+              reward: "Lost Princess revealed • Sari, Pipo and Lil Acorn remain around Undreya • full hide-and-seek/gifting state available",
             },
           ],
         },
