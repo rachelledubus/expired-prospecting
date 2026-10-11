@@ -300,10 +300,12 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
 
     for (const story of activeStorylines) {
       const currentRow = questRows.find((row) => row.story.id === story.id);
-      if (!currentRow || currentRow.bucket === "waiting" || !currentRow.step.social) continue;
+      if (!currentRow || currentRow.bucket === "waiting") continue;
 
       const socialStep = currentRow.step;
       const social = socialStep.social;
+      if (!social) continue;
+
       const startStep = social.startAfterStepId
         ? story.steps.find((step) => step.id === social.startAfterStepId)
         : undefined;
