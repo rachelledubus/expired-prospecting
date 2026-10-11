@@ -447,6 +447,7 @@ export function reconcileCheckedProgress(game: Game, progress: GameProgress): Ga
   if (isBundleGame(game) || isCompletionGame(game)) return progress;
 
   const checks: Record<string, true> = { ...progress.checks };
+  const fields = { ...progress.fields };
   let changed = false;
 
   type Entry = { story: GameStoryline; step: GameQuestStep; index: number };
@@ -519,7 +520,19 @@ export function reconcileCheckedProgress(game: Game, progress: GameProgress): Ga
     }
   }
 
-  return changed ? { checks, fields: { ...progress.fields } } : progress;
+  const pinned = fields[mainQuestKey(game.id)];
+  if (pinned) {
+    const pinnedStory = game.questBoard.storylines.find((story) => story.id === pinned);
+    const pinnedComplete =
+      !!pinnedStory &&
+      pinnedStory.steps.every((step) => !!checks[questStepCheckKey(game, pinnedStory, step)]);
+    if (!pinnedStory || pinnedComplete) {
+      delete fields[mainQuestKey(game.id)];
+      changed = true;
+    }
+  }
+
+  return changed ? { checks, fields } : progress;
 }
 export function knownFieldKeys(game: Game): Set<string> {
   if (isCompletionGame(game)) {
