@@ -385,14 +385,39 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   const questStats = useMemo(() => {
     let qDone = 0;
     let qTotal = 0;
+    let current = 0;
+
     for (const story of activeStorylines) {
-      for (const step of story.steps) {
+      if ((story.importance ?? "recommended") === "optional") continue;
+
+      const firstIncomplete = story.steps.findIndex((step) => !isStepDone(story, step));
+      const currentRow = questRows.find((row) => row.story.id === story.id);
+      const hasProgress = story.steps.some((step) => isStepDone(story, step));
+      const complete = firstIncomplete < 0;
+
+      // A storyline enters Story Progress once the player has started it,
+      // it has a currently actionable checkpoint, or it is already complete.
+      // Future blocked storylines stay out of the denominator until reached.
+      const reached =
+        complete ||
+        hasProgress ||
+        (!!currentRow && currentRow.bucket !== "waiting");
+
+      if (!reached) continue;
+
+      const revealThrough = complete ? story.steps.length - 1 : firstIncomplete;
+      for (let index = 0; index <= revealThrough; index += 1) {
+        const step = story.steps[index];
+        if (!step) continue;
         qTotal += 1;
         if (isStepDone(story, step)) qDone += 1;
       }
+
+      if (!complete) current += 1;
     }
-    return { done: qDone, total: qTotal };
-  }, [game, prog, postCommunityCenter]);
+
+    return { done: qDone, total: qTotal, current };
+  }, [game, prog, postCommunityCenter, questRows]);
   const pct = questStats.total ? Math.round((questStats.done / questStats.total) * 100) : 0;
 
   const importanceLabel = (importance: QuestRow["importance"]) =>
@@ -634,8 +659,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         <section className="gm-progress-panel">
           <div className="gm-panel-label">📊 Story Progress</div>
           <div className="gm-bar"><i style={{ width: `${pct}%` }} /></div>
-          <p className="gm-overview-number">{questStats.done} / {questStats.total} tracked steps</p>
+          <p className="gm-overview-number">{questStats.done} / {questStats.total} tracked story steps</p>
+          <p className="gm-note">The tracked total grows as each storyline reveals its next checkpoint; future blocked steps are not counted early.</p>
           <div className="gm-mini-stats">
+            <span><b>{questStats.current}</b> current checkpoints</span>
             <span><b>{availableRows.length}</b> available</span>
             <span><b>{towardRows.length}</b> work toward</span>
             <span><b>{waitingRows.length}</b> waiting</span>
