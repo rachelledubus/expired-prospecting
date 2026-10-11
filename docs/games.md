@@ -37,6 +37,19 @@ the top of the page.
 - Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
   Sorcery events is not confirmed.
 
+## Progression completeness audit
+
+The progression database is intentionally scoped to **non-repeatable progression that changes the save**: main campaign chapters, permanent location/NPC unlocks, new skill systems, infrastructure, and major permanent-reward quests. Ordinary repeatable boards, generic cash/friendship errands, romance-only flavor scenes, and completion-collection items stay out unless they gate one of those systems.
+
+Coverage added in the October 2026 completeness audit:
+
+- **Vanilla post-Community Center:** Missing Bundle/Movie Theater, Island Farm mailbox/obelisk, Volcano shortcuts, full Professor Snail Field Office completion, Qi's Walnut Room, Infinity weapon path, Mastery Cave, and the Giant Stump/Raccoon family chain.
+- **Sword & Sorcery:** Cirrus/Lion's Mane/Bardics, Roslin/Sorcery, Solomon, Dandelion/Paladin, 30-floor Deep Dark milestones, finale/epilogue, plus level-5/10 profession tracks for Artificer, Druidics, Bardics, Sorcery, and Paladin.
+- **Stardew Valley Expanded:** Fable Reef/First Slash after Lance, Henchman and the Dark Shrines, exact Void Soul Retrieval requirements, and exact Legendary Trio prerequisites/rewards. Existing Highlands, Caverns, Nexus, Badlands, Iridium Quarry, Treasure Cave, Aurora Vineyard, Grandpa's Shed, and post-CC world areas remain in place.
+- **Ridgeside Village:** the full Spirit Realm spine remains intact; post-Spirit-Realm Linked Fishes → Ridge Pond, Mythical Flower/Foxbloom, and the Ridgeside Obelisk are now tracked separately.
+- **East Scarp 3.x:** Rosa/Luma plus the Vintage Ruby Ring thread, Jade's Fairy Pool/Fairy Ring chain, Lady Sheba unlock, Lighthouse Lantern Room, Josephine/Oliver → Kataryna, plus conditional Tristan and Meadow Cottage routes.
+- Existing saved step IDs were preserved wherever they already existed. New steps only extend the graph; they do not reset the player's old checkboxes.
+
 ## Current Story & Quests stage
 
 - The current save has completed the Community Center and the core Ginger Island foundation: boat/arrival, Island North, Volcano Forge, Island West, Island Farmhouse, Dig Site bridge, and Professor Snail.
