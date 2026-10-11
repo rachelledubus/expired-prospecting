@@ -299,12 +299,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     }> = [];
 
     for (const story of activeStorylines) {
-      const socialStep = story.steps.find((step) => {
-        if (!step.social) return false;
-        return !isStepDone(story, step);
-      });
-      if (!socialStep?.social) continue;
+      const currentRow = questRows.find((row) => row.story.id === story.id);
+      if (!currentRow || currentRow.bucket === "waiting" || !currentRow.step.social) continue;
 
+      const socialStep = currentRow.step;
       const social = socialStep.social;
       const startStep = social.startAfterStepId
         ? story.steps.find((step) => step.id === social.startAfterStepId)
@@ -343,7 +341,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     }
 
     return rows.sort((a, b) => b.score - a.score || a.npc.localeCompare(b.npc));
-  }, [game, prog, postCommunityCenter]);
+  }, [game, prog, postCommunityCenter, questRows]);
 
   const scoreRow = (row: QuestRow) => {
     const bucketScore = row.bucket === "deadline" ? 500 : row.bucket === "now" ? 400 : row.bucket === "toward" ? 250 : 0;
