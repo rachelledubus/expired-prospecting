@@ -47,6 +47,15 @@ the top of the page.
 - Confirmed current-save milestones are represented directly in guide data and are not written into Netlify Blob checkbox history behind the user's back.
 - Existing checked boxes still determine progress for every other storyline and system.
 
+## Golden Walnut tracker
+
+- Farm & Progression now includes an exact **130 Golden Walnut** checklist grouped as General (6), Island East (11), Island West (52), Island North (49), and Island South/Southeast (12).
+- Fixed multi-walnut rewards are one checkbox with their awarded quantity (for example Gem Birds +5 or a Professor Snail collection +6).
+- Random capped sources are split into individual checkboxes so partial progress stays accurate: fishing 5, Island Farm harvests 5, Mussel Nodes 5, Volcano rocks 5, Volcano enemies 5, Volcano metal crates 5, and Pirate Cove darts 3.
+- The tracker calls out the seven walnuts Leo's parrot never hints: the Gem Bird Shrine south bush, the 3-walnut Banana altar reward, and the three darts wins.
+- Golden Walnut source checks persist in the existing Farm & Progression save. They do not silently infer which locations were found from walnuts already spent on island upgrades.
+- Confirmed current unlocks prove a minimum of 41 walnuts found (North 1 + West 10 + Farmhouse 20 + Dig Site 10), but source rows start unchecked until the player identifies them.
+
 ## Farm & Progression after Community Center completion
 
 - Once every Community Center bundle is complete, the tab automatically changes from a seasonal bundle tracker into a **post–Community Center progression dashboard**.

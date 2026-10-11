@@ -9,6 +9,7 @@ import {
   completionCustomItemsKey,
   completionItemKey,
   emptyProgress,
+  goldenWalnutKey,
   isBundleGame,
   isCompletionGame,
   itemKey,
@@ -27,6 +28,8 @@ import {
   type GameQuestBucket,
   type GameQuestStep,
   type GameRequiredItem,
+  type GoldenWalnutGroup,
+  type GoldenWalnutItem,
   type GameStoryline,
   type ProgressionItem,
   type ProgressionSection,
@@ -772,6 +775,17 @@ function BundleView({
 
   const communityCenterComplete = !!game.postCompletionActive || (game.bundles.length > 0 && bundlesDone === game.bundles.length);
   const storyById = new Map(storyGame.questBoard.storylines.map((story) => [story.id, story]));
+  const walnutGroups = game.goldenWalnuts ?? [];
+  const walnutKey = (group: GoldenWalnutGroup, item: GoldenWalnutItem) =>
+    goldenWalnutKey(game.id, group.id, item.id);
+  const walnutQty = (item: GoldenWalnutItem) => item.qty ?? 1;
+  const walnutFound = walnutGroups.reduce(
+    (sum, group) =>
+      sum + group.items.reduce((groupSum, item) => groupSum + (prog.checks[walnutKey(group, item)] ? walnutQty(item) : 0), 0),
+    0,
+  );
+  const walnutTotal = walnutGroups.reduce((sum, group) => sum + group.total, 0);
+  const walnutPct = walnutTotal ? Math.round((walnutFound / walnutTotal) * 100) : 0;
 
   const resolveProgressionItem = (item: ProgressionItem) => {
     if (item.questRef) {
@@ -939,6 +953,32 @@ function BundleView({
     );
   };
 
+  const renderWalnutGroup = (group: GoldenWalnutGroup) => {
+    const found = group.items.reduce(
+      (sum, item) => sum + (prog.checks[walnutKey(group, item)] ? walnutQty(item) : 0),
+      0,
+    );
+    return (
+      <details className="gm-card gm-fold-card gm-walnut-group" key={group.id}>
+        <summary>🥥 {group.title} · {found}/{group.total}</summary>
+        <div className="gm-walnut-list">
+          {group.items.map((item) => {
+            const qty = walnutQty(item);
+            return (
+              <Check
+                key={item.id}
+                label={`${item.label}${qty > 1 ? ` · +${qty}` : ""}`}
+                sub={`${item.how}${item.unhinted ? "  •  Leo's parrot does not hint this source." : ""}`}
+                checked={!!prog.checks[walnutKey(group, item)]}
+                onChange={(value) => setCheck(walnutKey(group, item), value)}
+              />
+            );
+          })}
+        </div>
+      </details>
+    );
+  };
+
   const postEntries = (game.postCompletion ?? [])
     .flatMap((section) => section.items.map((item) => ({ section, item, resolved: resolveProgressionItem(item) })))
     .filter((entry): entry is { section: ProgressionSection; item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
@@ -1017,6 +1057,32 @@ function BundleView({
               )}
             </div>
           </section>
+
+          {walnutGroups.length > 0 && (
+            <section className="gm-walnut-tracker">
+              <div className="label">Golden Walnut tracker · {walnutFound}/{walnutTotal}</div>
+              <div className="gm-card gm-post-focus">
+                <div className="gm-post-focus-head">
+                  <div>
+                    <span className="gm-context-label">Found from checked sources</span>
+                    <strong>{walnutFound} / {walnutTotal}</strong>
+                  </div>
+                  <b>{walnutPct}%</b>
+                </div>
+                <div className="gm-bar" aria-hidden="true"><i style={{ width: `${walnutPct}%` }} /></div>
+                <p className="gm-note">
+                  Your confirmed Island North + West + Farmhouse + Dig Site unlocks prove you have found at least 41 walnuts,
+                  but those purchases do not reveal which source locations you used, so this checklist does not pre-check specific walnuts.
+                </p>
+                <details className="gm-item-sources">
+                  <summary>Seven walnuts Leo's parrot never hints</summary>
+                  <p className="gm-note">Check the Gem Bird Shrine south bush (1), Banana altar (3), and all three Pirate Cove darts wins (3) when you are down to the last few.</p>
+                </details>
+                <p className="gm-note">Qi's Walnut Room opens at the 100-walnut door threshold; the maintained wiki notes the first walnut is offset internally, so this corresponds to 101 total walnuts actually found.</p>
+              </div>
+              <div className="gm-walnut-groups">{walnutGroups.map(renderWalnutGroup)}</div>
+            </section>
+          )}
 
           {game.postCompletion?.map((section) => renderProgressionSection(section, true))}
 

@@ -316,6 +316,23 @@ export type Bundle = {
 };
 
 /** A bundle tracker: items are grouped by the season they can be gotten in. */
+export type GoldenWalnutItem = {
+  id: string;
+  label: string;
+  how: string;
+  /** Number of walnuts granted by this one completed source. Defaults to 1. */
+  qty?: number;
+  /** Leo's parrot never gives a hint for this source. */
+  unhinted?: boolean;
+};
+
+export type GoldenWalnutGroup = {
+  id: string;
+  title: string;
+  total: number;
+  items: GoldenWalnutItem[];
+};
+
 export type BundleGame = {
   kind: "bundles";
   id: string;
@@ -327,6 +344,8 @@ export type BundleGame = {
   bundles: Bundle[];
   footnotes: string[];
   progression?: ProgressionSection[];
+  /** Exact 130-walnut source tracker for Ginger Island. */
+  goldenWalnuts?: GoldenWalnutGroup[];
   /** Personal-save stage override when the Community Center is complete in game even if tracker boxes are stale. */
   postCompletionActive?: boolean;
   /** Replaces the bundle-gathering dashboard once the Community Center stage is complete. */
@@ -386,6 +405,8 @@ export const mainQuestKey = (gameId: string) => `${gameId}|main-quest`;
 export const seasonKey = (gameId: string) => `${gameId}|season`;
 export const bundleItemKey = (gameId: string, bundleId: string, item: BundleItem) =>
   [gameId, bundleId, item.id ?? item.name].join("|");
+export const goldenWalnutKey = (gameId: string, groupId: string, itemId: string) =>
+  [gameId, "golden-walnut", groupId, itemId].join("|");
 export const completionItemKey = (gameId: string, categoryId: string, item: string) =>
   [gameId, "completion", categoryId, item].join("|");
 export const completionCustomItemsKey = (gameId: string, categoryId: string) => `${gameId}|completion|${categoryId}|custom-items`;
@@ -410,6 +431,9 @@ export function knownCheckKeys(game: Game): Set<string> {
   }
   if (isBundleGame(game)) {
     game.bundles.forEach((b) => b.items.forEach((i) => keys.add(bundleItemKey(game.id, b.id, i))));
+    game.goldenWalnuts?.forEach((group) =>
+      group.items.forEach((item) => keys.add(goldenWalnutKey(game.id, group.id, item.id))),
+    );
     return keys;
   }
   game.questBoard.storylines.forEach((story) =>
@@ -468,6 +492,146 @@ const communityCenter: BundleGame = {
     "Crab pots unlock at Fishing level 3 and need bait every day. Fruit trees need a clear 3 by 3 patch of ground.",
     "The notes use base game locations and shop prices. Mods can change a few of them.",
     "If a bundle needs fewer items than it lists, finishing it hides the rest.",
+  ],
+
+  goldenWalnuts: [
+    {
+      id: "general",
+      title: "General",
+      total: 6,
+      items: [
+        {
+          id: "golden-coconut",
+          label: "First Golden Coconut opened by Clint",
+          how: "Bring Golden Coconuts to Clint. The first one he cracks open awards 1 Golden Walnut.",
+        },
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `fishing-${i + 1}`,
+          label: `Fishing walnut ${i + 1} of 5`,
+          how: "Fish anywhere on Ginger Island. Fishing can award up to 5 Golden Walnuts total.",
+        })),
+      ],
+    },
+    {
+      id: "east",
+      title: "Island East",
+      total: 11,
+      items: [
+        { id: "jungle-path", label: "Bush on the path to Leo's hut", how: "Collect the walnut bush along the jungle path toward Leo's hut." },
+        { id: "banana-altar", label: "Banana altar by Leo's stairs", qty: 3, unhinted: true, how: "Place a Banana on the altar beside the stairs to Leo's hut. The gorilla rewards 3 walnuts at once." },
+        { id: "leo-tree", label: "Tree inside Leo's hut", how: "Hit the tree inside Leo's hut with an Axe." },
+        { id: "gem-shrine-bush", label: "Bush south of the Gem Bird Shrine", unhinted: true, how: "From Leo's stairs, follow the hidden path east toward the Gem Bird Shrine and collect the bush south of the shrine." },
+        { id: "gem-birds", label: "Complete the Gem Birds puzzle", qty: 5, how: "Place the four matching gems on the Gem Bird pedestals. Completing the puzzle awards 5 walnuts." },
+      ],
+    },
+    {
+      id: "west",
+      title: "Island West",
+      total: 52,
+      items: [
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `farm-harvest-${i + 1}`,
+          label: `Island Farm harvest walnut ${i + 1} of 5`,
+          how: "Harvest eligible non-regrowing crops on the Island Farm until all 5 random crop walnuts have appeared.",
+        })),
+        { id: "frog-melon", label: "Gourmand Frog — show a mature Melon", qty: 5, how: "Leave the mature Melon unharvested and show it to the Gourmand Frog. Reward: 5 walnuts." },
+        { id: "frog-wheat", label: "Gourmand Frog — show mature Wheat", qty: 5, how: "After the Melon request, leave mature Wheat unharvested and show it to the Gourmand Frog. Reward: 5 walnuts." },
+        { id: "frog-garlic", label: "Gourmand Frog — show mature Garlic", qty: 5, how: "After the Wheat request, leave mature Garlic unharvested and show it to the Gourmand Frog. Reward: 5 walnuts." },
+        { id: "journal-6", label: "Journal Scrap #6 dig spot", how: "After reading Journal Scrap #6, dig beside the curved palm southeast of the farm where the east and north cliffs meet." },
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `mussel-${i + 1}`,
+          label: `Mussel Node walnut ${i + 1} of 5`,
+          how: "Break Mussel Nodes on the Island West beach until all 5 random walnuts from this source have dropped.",
+        })),
+        { id: "shipwreck", label: "Hidden walnut inside the shipwreck", how: "Enter the hidden path at the west corner of the shipwreck and collect the walnut inside." },
+        { id: "mole", label: "Whack-a-mole walnut", how: "Trap the mole in one hole and hit it, or use an upgraded Watering Can to hit it directly." },
+        { id: "blue-starfish", label: "Blue starfish triangle dig spot", how: "Dig in the center of the blue starfish triangle on the beach south of the farm." },
+        { id: "starfish-diamond", label: "Starfish diamond dig spot", how: "Dig in the center of the starfish diamond near the tide pools." },
+        { id: "tide-x", label: "Tide-pool X dig spot", how: "Dig in the center of the X marked in the tide-pool sand." },
+        { id: "tide-indents", label: "Tide-pool indents dig spot", how: "Dig in the center of the diamond-shaped indents near the lower-left tide pool." },
+        { id: "pond-palm", label: "Walnut behind the palm west of the farm pond", how: "Walk behind the coconut tree by the pond west of the Island Farm." },
+        { id: "pirates-wife", label: "Complete The Pirate's Wife", qty: 5, how: "Finish Birdie's full Pirate's Wife quest chain. The final reward includes 5 Golden Walnuts." },
+        { id: "journal-4", label: "Journal Scrap #4 dig spot", how: "After reading Journal Scrap #4, dig in the sand north of Birdie's hut." },
+        { id: "qi-coast", label: "Bush below the cliff near Qi's Walnut Room", how: "Follow the western coast north toward Qi's Walnut Room and collect the bush below the cliff." },
+        { id: "beyond-qi", label: "Bush beyond Qi's Walnut Room", how: "Walk north past Qi's Walnut Room through the shallow ocean water to the hidden bush." },
+        { id: "tiger-drop", label: "Tiger Slime Grove combat walnut", how: "Defeat Tiger Slimes in the grove until the single combat walnut drops." },
+        { id: "tiger-tree", label: "Bush behind the Tiger Slime Grove mahogany tree", how: "Collect the walnut hidden behind the mahogany tree in Tiger Slime Grove." },
+        { id: "tiger-grass", label: "Tiger Slime Grove grass-circle dig spot", how: "Dig in the center of the grass circle in Tiger Slime Grove." },
+        { id: "express-bridge", label: "Bush west of the farm Parrot Express station", how: "Cross the bridge west from the farm station and collect the bush partly hidden by the southern wall." },
+        { id: "simon", label: "Complete the crystal Simon Says puzzle", qty: 3, how: "Complete the colored-crystal memory puzzle in the cave north of Tiger Slime Grove. Reward: 3 walnuts." },
+        { id: "east-cliff", label: "East cliff hidden-path bush", how: "Follow the cliff east of Tiger Slime Grove, clearing debris, until you reach the walnut bush." },
+        { id: "pebble-diamond", label: "Pebble-diamond dig spot by the farm station", how: "Dig in the center of the diamond-shaped pebbles east of the farm Parrot Express station." },
+        { id: "station-hidden", label: "Hidden path east/north of the farm station", how: "Follow the hidden path east and then north from the farm station to the walnut bush at the end." },
+        { id: "farm-overlook", label: "Farmhouse-overlook bush", how: "Go south along the cliff from the farm station, then bend east above the farmhouse to the bush." },
+      ],
+    },
+    {
+      id: "north",
+      title: "Island North",
+      total: 49,
+      items: [
+        { id: "entrance-stone", label: "Entrance stone-circle dig spot", how: "At the top of the Island North entrance stairs, turn west and dig in the center of the stone circle." },
+        { id: "entrance-grove", label: "Hidden grove west of the entrance", how: "At the top of the entrance stairs, take the hidden west passage to the walnut bush." },
+        { id: "flower-circle", label: "Flower-circle dig spot", how: "Move northeast from the entrance and dig in the center of the flower circle." },
+        { id: "ne-stone", label: "Northeast stone-circle dig spot", how: "Continue east from the flower circle and dig in the next stone circle." },
+        { id: "office-sand", label: "Sand southeast of the Field Office", how: "Dig the unusually textured sand southeast of the Island Field Office." },
+        { id: "dig-stone", label: "Dig Site north-step stone circle", how: "Climb the north steps of the Dig Site and dig in the stone circle." },
+        { id: "dig-west", label: "Bush west across the Dig Site bridge", how: "Go up the north Dig Site steps, cross west, and collect the walnut bush." },
+        { id: "dig-east-a", label: "Hidden east Dig Site path — walnut 1 of 2", how: "Take the hidden east cliff passage above the Dig Site, cross the bridge, and collect the first bush." },
+        { id: "dig-east-b", label: "Hidden east Dig Site path — walnut 2 of 2", how: "Continue across the same hidden east route and collect the second bush." },
+        { id: "large-animal", label: "Complete Professor Snail's Large Animal collection", qty: 6, how: "Finish the Large Animal fossil display at the Island Field Office. Reward: 6 walnuts." },
+        { id: "snake", label: "Complete Professor Snail's Snake collection", qty: 3, how: "Finish the Snake fossil display at the Island Field Office. Reward: 3 walnuts." },
+        { id: "frog", label: "Donate the Mummified Frog", how: "Donate a Mummified Frog to Professor Snail at the Island Field Office." },
+        { id: "bat", label: "Donate the Mummified Bat", how: "Donate a Mummified Bat to Professor Snail at the Island Field Office." },
+        { id: "flowers-survey", label: "Purple Flowers survey", how: "Answer 22 on the Island Field Office Purple Flowers survey." },
+        { id: "starfish-survey", label: "Purple Starfish survey", how: "Answer 18 on the Island Field Office Purple Starfish survey." },
+        { id: "volcano-se-tree", label: "Bush southeast of the Volcano entrance", how: "Collect the walnut bush hidden by a tree southeast of the Volcano entrance." },
+        { id: "volcano-east-sand", label: "Dig spot east of the Volcano entrance", how: "Dig inside the arc of stones between two bushes east of the Volcano entrance." },
+        { id: "slingshot-tree", label: "Slingshot walnut northeast of the Volcano", how: "Use a Slingshot to knock the walnut from the curved tree northeast of the Volcano entrance." },
+        { id: "journal-10", label: "Journal Scrap #10 dig spot", how: "After reading Journal Scrap #10, dig inside the loop of the curved palm southwest of the Volcano entrance." },
+        { id: "nw-stone", label: "Far-northwest stone-circle dig spot", how: "Dig in the far-northwest stone circle where Leo sometimes stands." },
+        { id: "nw-hidden", label: "Far-northwest hidden-passage bush", how: "Follow the west wall and take the hidden passage to the secluded walnut bush." },
+        { id: "lava-exit-a", label: "Volcano lava-river side area — walnut 1 of 2", how: "At the Volcano entrance, water a path far west and then south across the lava, exit into the side area, and collect the first bush." },
+        { id: "lava-exit-b", label: "Volcano lava-river side area — walnut 2 of 2", how: "Collect the second bush in the same hidden side area reached across the entrance lava river." },
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `volcano-rock-${i + 1}`,
+          label: `Volcano rock walnut ${i + 1} of 5`,
+          how: "Break rocks inside the Volcano Dungeon until all 5 rock-source walnuts have dropped.",
+        })),
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `volcano-enemy-${i + 1}`,
+          label: `Volcano enemy walnut ${i + 1} of 5`,
+          how: "Defeat enemies inside the Volcano Dungeon until all 5 combat-source walnuts have dropped.",
+        })),
+        ...Array.from({ length: 5 }, (_, i) => ({
+          id: `volcano-crate-${i + 1}`,
+          label: `Volcano metal-crate walnut ${i + 1} of 5`,
+          how: "Break metal crates inside the Volcano Dungeon until all 5 crate-source walnuts have dropped.",
+        })),
+        { id: "common-chest", label: "Volcano common-chest walnut", how: "Open common chests in the Volcano Dungeon until the one walnut from this source is found." },
+        { id: "rare-chest", label: "Volcano rare-chest walnut", how: "Open rare chests in the Volcano Dungeon until the one walnut from this source is found." },
+        { id: "forge-entry", label: "Forge entrance bush", how: "At Volcano Floor 10, collect the walnut bush at the Forge entrance." },
+        { id: "forge-exit", label: "Forge exit bush", how: "At Volcano Floor 10, collect the walnut bush at the Forge exit." },
+      ],
+    },
+    {
+      id: "south",
+      title: "Island South & Southeast",
+      total: 12,
+      items: [
+        { id: "north-stairs-route", label: "Hidden route behind the tree by the north stairs", how: "Climb toward Island North, turn east, then follow the hidden route south behind the tree to the walnut bush." },
+        { id: "star-pool", label: "Fish the starfish-shaped tide pool", how: "After building the Island Resort, fish the starfish-shaped tide pool in Island Southeast. The first successful source gives 1 walnut." },
+        { id: "yellow-starfish", label: "Yellow starfish-diamond dig spot", how: "After building the Island Resort, dig in the center of the yellow starfish diamond in Island Southeast." },
+        { id: "mermaid", label: "Complete the Mermaid flute-block puzzle", qty: 5, how: "On a rainy day after the Resort is built, tune the five Flute Blocks from the stone clues and run past them left to right. Reward: 5 walnuts." },
+        ...Array.from({ length: 3 }, (_, i) => ({
+          id: `darts-${i + 1}`,
+          label: `Pirate Cove darts win ${i + 1} of 3`,
+          how: "On a clear even-numbered night after 8 PM, win another round of darts in Pirate Cove.",
+          unhinted: true,
+        })),
+        { id: "pirate-barrels", label: "Pirate Cove barrel-area dig spot", how: "Dig the exposed sand among the barrels east of the water in Pirate Cove." },
+      ],
+    },
   ],
   progression: [
     {
