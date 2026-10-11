@@ -37,6 +37,15 @@ the top of the page.
 - Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
   Sorcery events is not confirmed.
 
+## Automatic progress reconciliation
+
+- The saved Story & Quests state is reconciled whenever the Games page loads and after checklist changes.
+- A checked later step automatically backfills earlier steps in the same storyline because reaching that milestone proves those steps already happened.
+- Explicit cross-story `requires`, farm/progression prerequisites, and social-start prerequisites are also backfilled recursively.
+- The sync does **not** guess unrelated optional storylines, collectibles, romance content, or completion goals.
+- If a pinned Main Quest is now fully complete, the stale pin is removed so automatic prioritization resumes from the player's current progression.
+- Reconciled checks are written back to the permanent Netlify Blob store, so phone and computer use the same corrected progression.
+
 ## Farm & Progression after Community Center completion
 
 - Once every Community Center bundle is complete, the tab automatically changes from a seasonal bundle tracker into a **post–Community Center progression dashboard**.
