@@ -372,15 +372,32 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         .filter((row) => row.importance === "optional" && row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
         .slice(0, 2);
 
-  const deadlineRows = rankedRows.filter((row) => row.bucket === "deadline");
-  const availableRows = coreRows.filter((row) => row.bucket === "now");
-  const towardRows = coreRows.filter((row) => row.bucket === "toward");
-  const waitingRows = coreRows.filter((row) => row.bucket === "waiting");
-  const optionalRows = rankedRows.filter((row) => row.importance === "optional" && row.bucket !== "deadline");
+  const allDeadlineRows = rankedRows.filter((row) => row.bucket === "deadline");
+  const allAvailableRows = coreRows.filter((row) => row.bucket === "now");
+  const allTowardRows = coreRows.filter((row) => row.bucket === "toward");
+  const allWaitingRows = coreRows.filter((row) => row.bucket === "waiting");
+  const allOptionalRows = rankedRows.filter((row) => row.importance === "optional" && row.bucket !== "deadline");
+
+  // Main Quest / Play This Next own the detailed presentation for promoted checkpoints.
+  // Do not echo those same story checkpoints again in every lower list.
+  const promotedStoryIds = new Set(
+    [mainRow, ...sideRows].filter((row): row is QuestRow => !!row).map((row) => row.story.id),
+  );
+  const deadlineRows = allDeadlineRows.filter((row) => !promotedStoryIds.has(row.story.id));
+  const availableRows = allAvailableRows.filter((row) => !promotedStoryIds.has(row.story.id));
+  const towardRows = allTowardRows.filter((row) => !promotedStoryIds.has(row.story.id));
+  const waitingRows = allWaitingRows.filter((row) => !promotedStoryIds.has(row.story.id));
+  const optionalRows = allOptionalRows.filter((row) => !promotedStoryIds.has(row.story.id));
+  const visibleSocialRows = socialRows.filter((row) => !promotedStoryIds.has(row.story.id));
+
   const completedStories = activeStorylines.filter((story) =>
     story.steps.every((step) => isStepDone(story, step)),
   );
-  const majorStories = activeStorylines.filter((story) => story.importance === "required");
+  const majorStories = activeStorylines.filter(
+    (story) =>
+      story.importance === "required" &&
+      !story.steps.every((step) => isStepDone(story, step)),
+  );
 
   const questStats = useMemo(() => {
     let qDone = 0;
@@ -479,23 +496,38 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           <details className="gm-rest">
             <summary>Storyline path · {story.steps.filter((s) => isStepDone(story, s)).length}/{story.steps.length}</summary>
             {story.note && <p className="gm-note">{story.note}</p>}
-            {story.steps.map((s, idx) => {
-              const k = questStepKey(game, story, s);
-              const isCurrent = idx === row.index;
-              const stageDone = !!s.currentSaveComplete;
-              const isDone = stageDone || !!prog.checks[k];
-              return (
-                <div className={isCurrent ? "gm-path-step current" : "gm-path-step"} key={s.id}>
-                  <span>{isDone ? "✓" : isCurrent ? "→" : "·"}</span>
-                  <span>{s.label}</span>
-                  {isDone && !stageDone && (
-                    <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
-                      Undo
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {story.steps
+              .filter((s) => !isStepDone(story, s))
+              .map((s, idx) => {
+                const originalIndex = story.steps.findIndex((candidate) => candidate.id === s.id);
+                const isCurrent = originalIndex === row.index;
+                return (
+                  <div className={isCurrent ? "gm-path-step current" : "gm-path-step"} key={s.id}>
+                    <span>{isCurrent ? "→" : "·"}</span>
+                    <span>{s.label}</span>
+                  </div>
+                );
+              })}
+            {story.steps.some((s) => isStepDone(story, s)) && (
+              <details className="gm-fold gm-completed-path">
+                <summary>Completed · {story.steps.filter((s) => isStepDone(story, s)).length}</summary>
+                {story.steps.filter((s) => isStepDone(story, s)).map((s) => {
+                  const k = questStepKey(game, story, s);
+                  const stageDone = !!s.currentSaveComplete;
+                  return (
+                    <div className="gm-path-step done" key={s.id}>
+                      <span>✓</span>
+                      <span>{s.label}</span>
+                      {!stageDone && (
+                        <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                          Undo
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </details>
+            )}
           </details>
         )}
       </article>
@@ -531,42 +563,46 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             <i style={{ width: `${story.steps.length ? Math.round((doneCount / story.steps.length) * 100) : 0}%` }} />
           </div>
         </div>
-        {complete ? (
-          <p className="gm-note">Storyline complete. You can still open the full path below and undo any step.</p>
-        ) : current ? (
-          <>
-            <p className="gm-major-next"><b>Next:</b> {current.step.label}</p>
-            {current.step.how && <p className="gm-note"><b>How:</b> {current.step.how}</p>}
-            {current.step.location && <p className="gm-note">📍 {current.step.location}</p>}
-            {current.bucket === "waiting" && current.reason && <p className="gm-note">🔒 {current.reason}</p>}
-            {current.step.reward && <p className="gm-note"><b>Unlocks:</b> {current.step.reward}</p>}
-            <RequiredItemSources items={current.step.requiredItems} />
-            {current.step.why && <p className="gm-note">{current.step.why}</p>}
-          </>
+        {current ? (
+          <p className="gm-major-next">
+            <b>{promotedStoryIds.has(story.id) ? "Active above:" : "Next:"}</b> {current.step.label}
+          </p>
         ) : null}
         <details className="gm-major-path">
           <summary>Full storyline · {doneCount}/{story.steps.length}</summary>
           {story.note && <p className="gm-note">{story.note}</p>}
-          {story.steps.map((step, idx) => {
-            const k = questStepKey(game, story, step);
-            const stageDone = !!step.currentSaveComplete;
-            const isDone = stageDone || !!prog.checks[k];
+          {story.steps.filter((step) => !isStepDone(story, step)).map((step, idx) => {
             const isCurrent = current?.step.id === step.id;
             return (
-              <div className={"gm-major-path-step" + (isCurrent ? " current" : "") + (isDone ? " done" : "")} key={step.id}>
-                <span className="gm-major-path-mark">{isDone ? "✓" : isCurrent ? "→" : idx + 1}</span>
+              <div className={"gm-major-path-step" + (isCurrent ? " current" : "")} key={step.id}>
+                <span className="gm-major-path-mark">{isCurrent ? "→" : idx + 1}</span>
                 <div>
                   <b>{step.label}</b>
-                  {isCurrent && step.how && <span>{step.how}</span>}
+                  {isCurrent && !promotedStoryIds.has(story.id) && step.how && <span>{step.how}</span>}
                 </div>
-                {isDone && !stageDone && (
-                  <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
-                    Undo
-                  </button>
-                )}
               </div>
             );
           })}
+          {doneCount > 0 && (
+            <details className="gm-fold gm-completed-path">
+              <summary>Completed · {doneCount}</summary>
+              {story.steps.filter((step) => isStepDone(story, step)).map((step) => {
+                const k = questStepKey(game, story, step);
+                const stageDone = !!step.currentSaveComplete;
+                return (
+                  <div className="gm-major-path-step done" key={step.id}>
+                    <span className="gm-major-path-mark">✓</span>
+                    <div><b>{step.label}</b></div>
+                    {!stageDone && (
+                      <button type="button" className="gm-inline-undo" onClick={() => setCheck(k, false)}>
+                        Undo
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </details>
+          )}
         </details>
       </article>
     );
@@ -610,7 +646,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         )}
       </div>
 
-      {socialRows.length > 0 && (
+      {visibleSocialRows.length > 0 && (
         <section className="gm-social-section">
           <div className="label">💬 Talk to Today · {socialRows.length}</div>
           <div className="gm-card gm-social-card">
@@ -663,9 +699,9 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           <p className="gm-note">The tracked total grows as each storyline reveals its next checkpoint; future blocked steps are not counted early.</p>
           <div className="gm-mini-stats">
             <span><b>{questStats.current}</b> current checkpoints</span>
-            <span><b>{availableRows.length}</b> available</span>
-            <span><b>{towardRows.length}</b> work toward</span>
-            <span><b>{waitingRows.length}</b> waiting</span>
+            <span><b>{allAvailableRows.length}</b> available</span>
+            <span><b>{allTowardRows.length}</b> work toward</span>
+            <span><b>{allWaitingRows.length}</b> waiting</span>
             <span><b>{completedStories.length}</b> stories done</span>
           </div>
         </section>
@@ -933,7 +969,7 @@ function BundleView({
     );
   };
 
-  const renderProgressionSection = (section: ProgressionSection, postMode = false) => {
+  const renderProgressionSection = (section: ProgressionSection, postMode = false, excludeKey?: string) => {
     const entries = section.items
       .map((item) => ({ item, resolved: resolveProgressionItem(item) }))
       .filter((entry): entry is { item: ProgressionItem; resolved: NonNullable<ReturnType<typeof resolveProgressionItem>> } => !!entry.resolved);
@@ -941,7 +977,9 @@ function BundleView({
       resolved.currentSaveComplete || !!storyProg.checks[resolved.key];
     const incomplete = entries.filter(({ resolved }) => !isDone(resolved));
     const completed = entries.filter(({ resolved }) => isDone(resolved));
-    const visibleEntries = postMode ? incomplete : entries;
+    const visibleEntries = postMode
+      ? incomplete.filter(({ resolved }) => resolved.key !== excludeKey)
+      : entries;
 
     const renderItem = ({ item, resolved }: (typeof entries)[number]) => (
       <div className="gm-progression-item" key={item.label}>
@@ -962,6 +1000,8 @@ function BundleView({
       </div>
     );
 
+    if (postMode && visibleEntries.length === 0) return null;
+
     return (
       <section key={section.id} className={postMode ? "gm-post-section" : undefined}>
         <div className="label">{section.title} · {completed.length}/{entries.length}</div>
@@ -970,12 +1010,7 @@ function BundleView({
           {visibleEntries.length > 0 ? visibleEntries.map(renderItem) : (
             <p className="gm-stage-complete">✓ Everything in this section is complete.</p>
           )}
-          {postMode && completed.length > 0 && (
-            <details className="gm-fold gm-post-completed">
-              <summary>Completed here · {completed.length}</summary>
-              {completed.map(renderItem)}
-            </details>
-          )}
+
         </div>
       </section>
     );
@@ -1112,7 +1147,26 @@ function BundleView({
             </section>
           )}
 
-          {game.postCompletion?.map((section) => renderProgressionSection(section, true))}
+          {game.postCompletion?.map((section) =>
+            renderProgressionSection(section, true, nextPostEntry?.resolved.key),
+          )}
+
+          {postDone > 0 && (
+            <details className="gm-card gm-fold-card gm-post-completed">
+              <summary>✅ Completed post-CC milestones · {postDone}</summary>
+              <p className="gm-note">Finished milestones stay out of the active sections. Open this only to review or undo one.</p>
+              {postEntries.filter(postEntryDone).map(({ item, resolved }) => (
+                <div className="gm-completed-step" key={`${resolved.key}:${item.label}`}>
+                  <span>✓ {item.label}</span>
+                  {!resolved.currentSaveComplete && (
+                    <button type="button" className="gm-inline-undo" onClick={() => setStoryCheck(resolved.key, false)}>
+                      Undo
+                    </button>
+                  )}
+                </div>
+              ))}
+            </details>
+          )}
 
           <details className="gm-fold-card gm-foundation-archive">
             <summary>Earlier farm & mining milestones</summary>
