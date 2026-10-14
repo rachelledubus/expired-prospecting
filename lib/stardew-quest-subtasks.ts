@@ -2,7 +2,7 @@
 export type StardewQuestSubtask = { id: string; label: string; how?: string };
 
 /** Keys are `storylineId:stepId`. Subtask IDs are stable once published to preserve checkmarks. */
-export const STARDew_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
+export const STARDEW_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
   "ginger-island-field-office:large-animal": [
     {
       "id": "part-1",
@@ -534,7 +534,7 @@ export const STARDew_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
     },
     {
       "id": "part-4",
-      "label": "Meet Marlon's friendship requirement"
+      "label": "Reach at least 4 hearts with Marlon"
     },
     {
       "id": "part-5",
@@ -552,7 +552,7 @@ export const STARDew_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
     },
     {
       "id": "part-3",
-      "label": "Defeat the target that drops the third required spoil"
+      "label": "Defeat the target that drops the Gold Slime Egg"
     },
     {
       "id": "part-4",
@@ -657,7 +657,7 @@ export const STARDew_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
     {
       "id": "part-6",
       "label": "Collect Pale Candelabrum",
-      "how": "Water the statue inside the Phantom Greenhouse."
+      "how": "First unlock the Phantom Greenhouse through the parallel Ridgeside greenhouse storyline; then water the statue inside."
     },
     {
       "id": "part-7",
