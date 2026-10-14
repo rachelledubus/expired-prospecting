@@ -564,9 +564,11 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           </div>
         </div>
         {current ? (
-          <p className="gm-major-next">
-            <b>{promotedStoryIds.has(story.id) ? "Active above:" : "Next:"}</b> {current.step.label}
-          </p>
+          promotedStoryIds.has(story.id) ? (
+            <p className="gm-note">Current checkpoint is already shown in the dashboard above.</p>
+          ) : (
+            <p className="gm-major-next"><b>Next:</b> {current.step.label}</p>
+          )
         ) : null}
         <details className="gm-major-path">
           <summary>Full storyline · {doneCount}/{story.steps.length}</summary>
@@ -648,13 +650,13 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
 
       {visibleSocialRows.length > 0 && (
         <section className="gm-social-section">
-          <div className="label">💬 Talk to Today · {socialRows.length}</div>
+          <div className="label">💬 Talk to Today · {visibleSocialRows.length}</div>
           <div className="gm-card gm-social-card">
             <p className="gm-note">
               These are the friendships currently gating progression or a personal goal. Talk to them when convenient; gifts are optional unless you want to speed it up.
             </p>
             <div className="gm-social-list">
-              {socialRows.map((row, index) => (
+              {visibleSocialRows.map((row, index) => (
                 <div className="gm-social-row" key={`${row.story.id}:${row.npc}`}>
                   <span className="gm-social-rank">{index + 1}</span>
                   <div className="gm-social-copy">
