@@ -36,6 +36,7 @@ import {
   type Season,
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
+import { STARDew_QUEST_SUBTASKS, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
 
@@ -196,6 +197,37 @@ function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuest
   if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
   const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
   return questKey(game.id, owner.storylineId, owner.stepId);
+}
+
+/** Keep intermediate progress independent from existing quest/storyline completion keys. */
+function getQuestSubtasks(story: GameStoryline, step: GameQuestStep): StardewQuestSubtask[] {
+  const curated = STARDew_QUEST_SUBTASKS[`${story.id}:${step.id}`];
+  if (curated?.length) return curated;
+
+  // A materials list should be checkable one ingredient at a time even if
+  // the quest data has not yet been given a custom route.
+  if (step.requiredItems && step.requiredItems.length > 1) {
+    return step.requiredItems.map((item, index) => ({
+      id: `material-${index + 1}`,
+      label: `Collect ${item.qty ?? 1} × ${item.name}`,
+      how: item.note,
+    }));
+  }
+
+  // Friendships have two distinct accomplishments: hearts and the event.
+  // Do not force event steps on simple friendship-only milestones.
+  if (step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)) {
+    return [
+      { id: "friendship", label: `Reach ${step.social.hearts} hearts with ${step.social.npc}` },
+      { id: "event", label: "Trigger and watch the required story event", how: step.how },
+    ];
+  }
+  return [];
+}
+
+function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep, subtask: StardewQuestSubtask) {
+  // Deliberately namespaced: unchanged main quest keys preserve historical progress.
+  return questKey(game.id, story.id, `${step.id}:subtask:${subtask.id}`);
 }
 
 function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
@@ -451,6 +483,9 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
     const key = questStepKey(game, story, step);
     const nextStep = story.steps[row.index + 1];
     const weatherNeed = weatherLabel(step);
+    const subtasks = getQuestSubtasks(story, step);
+    const completedSubtasks = subtasks.filter((task) => !!prog.checks[questSubtaskKey(game, story, step, task)]);
+    const pendingSubtasks = subtasks.filter((task) => !prog.checks[questSubtaskKey(game, story, step, task)]);
     const details = [
       step.location ? `📍 ${step.location}` : "",
       row.bucket === "waiting" ? `🔒 ${row.reason}` : "",
@@ -468,10 +503,42 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         <h3>{story.title}</h3>
         <Check
           label={step.label}
-          sub={step.how ? `How: ${step.how}` : undefined}
-          checked={!!prog.checks[key]}
+          sub={subtasks.length ? "Mark the overall objective done after finishing the smaller actions below." : step.how ? `How: ${step.how}` : undefined}
+          checked={isStepDone(story, step)}
           onChange={(v) => setCheck(key, v)}
         />
+        {subtasks.length > 0 && !isStepDone(story, step) && (
+          <div className="gm-subtasks" style={{ margin: "8px 0 12px 16px", paddingLeft: 12, borderLeft: "2px solid var(--border, #aab2be)" }}>
+            <p className="gm-note"><b>Do these as you go · {completedSubtasks.length}/{subtasks.length}</b></p>
+            {step.how && <p className="gm-note">{step.how}</p>}
+            {story.id === "vanilla-movie-theater" && step.id === "missing-bundle" && (
+              <p className="gm-note"><b>Only 5 of the 6 options are required.</b> Check whichever five you donate, then finish the main objective.</p>
+            )}
+            {pendingSubtasks.map((task) => (
+              <Check
+                key={task.id}
+                label={task.label}
+                sub={task.how}
+                checked={false}
+                onChange={(v) => setCheck(questSubtaskKey(game, story, step, task), v)}
+              />
+            ))}
+            {completedSubtasks.length > 0 && (
+              <details className="gm-fold gm-completed-path">
+                <summary>Completed actions · {completedSubtasks.length}</summary>
+                {completedSubtasks.map((task) => (
+                  <Check
+                    key={task.id}
+                    label={task.label}
+                    sub={task.how}
+                    checked={true}
+                    onChange={(v) => setCheck(questSubtaskKey(game, story, step, task), v)}
+                  />
+                ))}
+              </details>
+            )}
+          </div>
+        )>
         {details.length > 0 && (
           <div className="gm-quest-facts">
             {details.map((detail) => <span key={detail}>{detail}</span>)}
