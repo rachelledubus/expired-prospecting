@@ -201,7 +201,7 @@ function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuest
 
 /** Keep intermediate progress independent from existing quest/storyline completion keys. */
 function getQuestSubtasks(story: GameStoryline, step: GameQuestStep): StardewQuestSubtask[] {
-  const curated = STARDew_QUEST_SUBTASKS[`${story.id}:${step.id}`];
+  const curated = STARDEW_QUEST_SUBTASKS[`${story.id}:${step.id}`];
   if (curated?.length) return curated;
 
   // A materials list should be checkable one ingredient at a time even if
