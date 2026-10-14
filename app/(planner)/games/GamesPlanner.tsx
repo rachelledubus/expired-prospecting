@@ -36,7 +36,7 @@ import {
   type Season,
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
-import { STARDew_QUEST_SUBTASKS, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
+import { STARDEW_QUEST_SUBTASKS, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
 
