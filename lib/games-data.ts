@@ -1,3 +1,5 @@
+import { STARDEW_QUEST_SUBTASKS } from "./stardew-quest-subtasks";
+
 // Game progression checklists for the /games planner page.
 // To add a game: append one object to GAMES. It gets its own chip on the page and its own saved progress.
 // Phases and boxes are matched to saved progress by text, so renaming a box un-checks it.
@@ -441,6 +443,20 @@ export function knownCheckKeys(game: Game): Set<string> {
       if (!step.legacy) {
         const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
         keys.add(questKey(game.id, owner.storylineId, owner.stepId));
+      }
+
+      // The UI saves incremental subtasks under the storyline's own key (not progressKey).
+      // They must be accepted here or the progress API silently discards the checkmarks.
+      const curated = STARDEW_QUEST_SUBTASKS[`${story.id}:${step.id}`];
+      const subtaskIds = curated?.length
+        ? curated.map((part) => part.id)
+        : (step.requiredItems?.length ?? 0) > 1
+          ? step.requiredItems!.map((_, index) => `material-${index + 1}`)
+          : step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)
+            ? ["friendship", "event"]
+            : [];
+      for (const subtaskId of subtaskIds) {
+        keys.add(questKey(game.id, story.id, `${step.id}:subtask:${subtaskId}`));
       }
     }),
   );
