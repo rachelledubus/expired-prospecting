@@ -2577,7 +2577,7 @@ export const GAMES: Game[] = [
     saveLabel: "Current save",
     saveDefault: "Spring 10, Year 1",
     rule: {
-      text: "Your current save is anchored at completed core Ginger Island + Hector complete / Cirrus pending. The guide now contains the major future unlock/story spine for vanilla post-CC, SVE, Ridgeside, East Scarp, and Sword & Sorcery, while progressively revealing only reached checkpoints.",
+      text: "Your saved checkmarks determine what appears next. The main view only shows actionable quests, and the full guide keeps optional stories, requirements, completed content, and the late-game progression map available when you want it.",
       notLabel: "You do NOT need to:",
       not: [
         "Treat the guide like a hard gate",
