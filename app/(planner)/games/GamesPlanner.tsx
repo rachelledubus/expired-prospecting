@@ -246,8 +246,16 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
   const earlierStageStories = postCommunityCenter
     ? game.questBoard.storylines.filter((story) => story.archiveAfterCommunityCenter)
     : [];
+  const jioMarried = !!prog.checks[questKey(game.id, "jio-romance", "marry")];
+  const cirrusIntroduced = !!prog.checks[questKey(game.id, "sword-sorcery-campaign", "cirrus-intro")];
+  const fableReefVisited = !!prog.checks[questKey(game.id, "lance-first-slash", "visit-fable-reef")];
+  const highlandsUnlocked = !!prog.checks[questKey(game.id, "sve-highlands", "enter-highlands")];
   const isStepDone = (story: GameStoryline, step: GameQuestStep) =>
-    !!step.currentSaveComplete || !!prog.checks[questStepKey(game, story, step)];
+    !!step.currentSaveComplete ||
+    !!prog.checks[questStepKey(game, story, step)] ||
+    // Fable Reef is gated by Lance's 8-heart event. Don't force users to re-check that prerequisite
+    // when they have already checked a visit to Fable Reef. The original stored check is unchanged.
+    (story.id === "lance-first-slash" && step.id === "eight-hearts" && fableReefVisited);
 
   type QuestRow = {
     story: GameStoryline;
@@ -712,10 +720,24 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
           <div className="gm-weather-block">
             <span className="gm-context-label">Current progression stage</span>
             <b>Established Ginger Island</b>
-            <span className="gm-note">Sword & Sorcery: waiting for Cirrus · current mod progression</span>
+            <span className="gm-note">{cirrusIntroduced ? "Sword & Sorcery: Cirrus introduced · continue the campaign" : "Sword & Sorcery: waiting for Cirrus"}</span>
           </div>
         )}
       </div>
+
+      <section className="gm-card" style={{ margin: "16px 0", padding: "16px" }}>
+        <div className="gm-panel-label">🌱 Welcome back to the Valley</div>
+        <p className="gm-note">
+          Your progress is saved. {jioMarried ? "Married to Jio" : "Relationship progress tracked"}
+          {highlandsUnlocked ? " · Highlands unlocked" : ""}
+          {fableReefVisited ? " · Fable Reef visited" : ""}
+          {cirrusIntroduced ? " · Cirrus introduced" : ""}.
+        </p>
+        <p className="gm-note">
+          No need to catch up on everything. Pick one main quest below; the rest can wait.
+          {jioMarried ? " Lance's 10-heart scenes are optional dating content, not required story progression." : ""}
+        </p>
+      </section>
 
       {visibleSocialRows.length > 0 && (
         <section className="gm-social-section">
