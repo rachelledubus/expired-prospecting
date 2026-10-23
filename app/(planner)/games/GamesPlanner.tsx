@@ -230,7 +230,9 @@ function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQu
   return questKey(game.id, story.id, `${step.id}:subtask:${subtask.id}`);
 }
 
-function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGame>) {
+function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps<ChecklistGame> & { onOpenFarm: () => void }) {
+  const [playMode, setPlayMode] = useState<"story" | "explore" | "quick">("story");
+  const [showAllQuests, setShowAllQuests] = useState(false);
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
   const shownDate = gameDate ?? parseGameDate(game.saveDefault) ?? { season: "Spring", day: 1, year: 1, totalDay: 1 };
@@ -394,18 +396,35 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
 
   const rankedRows = [...questRows].sort((a, b) => scoreRow(b) - scoreRow(a));
   const coreRows = rankedRows.filter((row) => row.importance !== "optional");
+
+  // Play mode offers actionable, weather-appropriate checkpoints; it does not rewrite quest progress.
+  const readyRows = coreRows.filter((row) => row.bucket !== "waiting" && row.todayOk);
+  const moodScore = (row: QuestRow) => {
+    const base = scoreRow(row);
+    const text = `${row.story.title} ${row.step.label} ${row.step.location ?? ""}`;
+    if (playMode === "story") return base + (row.importance === "required" ? 700 : 0);
+    if (playMode === "explore") return base +
+      (/island|highlands|cavern|reef|badlands|realm|ridge|nexus|volcano|dungeon|forest/i.test(text) ? 520 : 0) +
+      (/explore|enter|visit|unlock|discover|find|travel|open|reach/i.test(row.step.label) ? 180 : 0);
+
+    const shortTask = !row.step.requiredItems?.length && !row.step.social &&
+      !/collect \d|gather \d|reach \d+ hearts|build|upgrade|slay \d/i.test(row.step.label);
+    return base + (row.bucket === "now" ? 350 : 0) +
+      (shortTask ? 420 : 0) +
+      (/visit|talk|meet|read|check|enter|see|receive|inspect/i.test(row.step.label) ? 120 : 0);
+  };
+  const playRows = [...readyRows].sort((a, b) => moodScore(b) - moodScore(a));
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
   const mainRow =
-    pinnedRow ??
-    coreRows.find((row) => row.bucket !== "waiting" && row.todayOk) ??
+    (pinnedRow && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
+    playRows[0] ??
     coreRows.find((row) => row.bucket !== "waiting") ??
-    rankedRows.find((row) => row.bucket !== "waiting" && row.todayOk) ??
     rankedRows.find((row) => row.bucket !== "waiting") ??
     rankedRows[0];
 
-  const coreSideRows = coreRows
-    .filter((row) => row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
-    .slice(0, 4);
+  const coreSideRows = (showAllQuests ? readyRows : playRows)
+    .filter((row) => row.story.id !== mainRow?.story.id)
+    .slice(0, showAllQuests ? 4 : 2);
   const sideRows = coreSideRows.length
     ? coreSideRows
     : rankedRows
@@ -728,18 +747,31 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       <section className="gm-card" style={{ margin: "16px 0", padding: "16px" }}>
         <div className="gm-panel-label">🌱 Welcome back to the Valley</div>
         <p className="gm-note">
-          Your progress is saved. {jioMarried ? "Married to Jio" : "Relationship progress tracked"}
-          {highlandsUnlocked ? " · Highlands unlocked" : ""}
+          Your progress is saved: {jioMarried ? "married to Jio" : "relationship progress tracked"}
+          {highlandsUnlocked ? " · Highlands explored" : ""}
           {fableReefVisited ? " · Fable Reef visited" : ""}
           {cirrusIntroduced ? " · Cirrus introduced" : ""}.
         </p>
-        <p className="gm-note">
-          No need to catch up on everything. Pick one main quest below; the rest can wait.
-          {jioMarried ? " Lance's 10-heart scenes are optional dating content, not required story progression." : ""}
-        </p>
+        <p className="gm-note">No need to clear your journal. Choose what sounds fun and play one quest at a time.</p>
+        <div className="gm-chips" role="group" aria-label="What do you feel like doing?">
+          <button type="button" className={"gm-chip" + (playMode === "story" ? " on" : "")}
+            aria-pressed={playMode === "story"} onClick={() => setPlayMode("story")}>📖 Main story</button>
+          <button type="button" className={"gm-chip" + (playMode === "explore" ? " on" : "")}
+            aria-pressed={playMode === "explore"} onClick={() => setPlayMode("explore")}>🧭 Explore</button>
+          <button type="button" className={"gm-chip" + (playMode === "quick" ? " on" : "")}
+            aria-pressed={playMode === "quick"} onClick={() => setPlayMode("quick")}>✨ Quick win</button>
+          <button type="button" className="gm-chip" onClick={onOpenFarm}>🌾 Farm projects</button>
+        </div>
+        <p className="gm-note">One recommended quest and up to two alternatives. Blocked tasks are hidden from this view.</p>
+        {jioMarried && <p className="gm-note">Lance's 10-heart scenes are optional romantic content, not required for the Highlands or Fable Reef.</p>}
+        {fableReefVisited && !prog.checks[questKey(game.id, "sve-highlands", "first-slash")] && (
+          <p className="gm-note">Inferred milestone: visiting Fable Reef confirms Lance's earlier 8-heart unlock. Your original checkmark has not been changed.</p>
+        )}
+        <button type="button" className="gm-pill" onClick={() => setShowAllQuests((v) => !v)}
+          aria-expanded={showAllQuests}>{showAllQuests ? "Hide full quest tracker" : "Browse all questlines and completed quests"}</button>
       </section>
 
-      {visibleSocialRows.length > 0 && (
+      {showAllQuests && visibleSocialRows.length > 0 && (
         <section className="gm-social-section">
           <div className="label">💬 Talk to Today · {visibleSocialRows.length}</div>
           <div className="gm-card gm-social-card">
@@ -776,16 +808,16 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
       <div className="label">Dashboard</div>
       <div className="gm-dashboard">
         <section className="gm-main-panel">
-          <div className="gm-panel-label">🎯 Main Quest</div>
+          <div className="gm-panel-label">🎯 {showAllQuests ? "Main Quest" : "Your one focus"}</div>
           {mainRow ? renderQuest(mainRow, "main") : <p className="gm-note">You are caught up on the tracked storylines.</p>}
         </section>
 
         <section className="gm-next-panel">
-          <div className="gm-panel-label">▶ Play This Next</div>
+          <div className="gm-panel-label">▶ {showAllQuests ? "Play This Next" : "Other things you could do"}</div>
           {sideRows.length ? sideRows.map((row) => renderQuest(row, "compact")) : <p className="gm-note">No extra side objectives need your attention right now.</p>}
         </section>
 
-        <section className="gm-progress-panel">
+        {showAllQuests && <section className="gm-progress-panel">
           <div className="gm-panel-label">📊 Story Progress</div>
           <div className="gm-bar"><i style={{ width: `${pct}%` }} /></div>
           <p className="gm-overview-number">{questStats.done} / {questStats.total} tracked story steps</p>
@@ -797,9 +829,10 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
             <span><b>{allWaitingRows.length}</b> waiting</span>
             <span><b>{completedStories.length}</b> stories done</span>
           </div>
-        </section>
+        </section>}
       </div>
 
+      {showAllQuests && <>
       <p className="gm-guide-rule">{game.rule.text}</p>
 
       <section>
@@ -879,7 +912,7 @@ function ChecklistView({ game, prog, setCheck, setField }: ViewProps<ChecklistGa
         <div className="gm-sublabel">When nothing urgent is available</div>
         <ul className="gm-ul">{game.guide.early.map((t) => <li key={t}>{t}</li>)}</ul>
       </details>
-
+      </>}
 
     </>
   );
@@ -1860,7 +1893,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
           ) : isCompletionGame(game) ? (
             <CompletionView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
-            <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+            <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}
 
           {lastCheck && (
