@@ -1804,6 +1804,24 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             </div>
           )}
 
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 16 }}>
+            <button
+              type="button"
+              className="gm-pill"
+              onClick={copySavedProgress}
+              disabled={!loaded || status === "saving" || status === "error" || status === "signedout" || copyProgressStatus === "copying"}
+            >
+              {copyProgressStatus === "copying" ? "Copying..." : "Copy saved progress (all tabs)"}
+            </button>
+            <span className="gm-small" role="status">
+              {copyProgressStatus === "copied"
+                ? "Copied! Paste it into our chat so I can organize your actual remaining quests."
+                : copyProgressStatus === "error"
+                  ? "Could not copy. Make sure you're logged in and your changes have saved, then try again."
+                  : "Read-only. Does not change or reset your checkboxes."}
+            </span>
+          </div>
+
           <Lookup />
 
           {isBundleGame(game) ? (
@@ -1831,24 +1849,6 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               </button>
             </div>
           )}
-
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 16 }}>
-            <button
-              type="button"
-              className="gm-pill"
-              onClick={copySavedProgress}
-              disabled={!loaded || status === "saving" || status === "error" || status === "signedout" || copyProgressStatus === "copying"}
-            >
-              {copyProgressStatus === "copying" ? "Copying..." : "Copy saved progress (all tabs)"}
-            </button>
-            <span className="gm-small" role="status">
-              {copyProgressStatus === "copied"
-                ? "Copied! Paste it into our chat so I can organize your actual remaining quests."
-                : copyProgressStatus === "error"
-                  ? "Could not copy. Make sure you're logged in and your changes have saved, then try again."
-                  : "Read-only. Does not change or reset your checkboxes."}
-            </span>
-          </div>
 
           <div className="gm-foot">
             <span className="gm-small" aria-live="polite">
