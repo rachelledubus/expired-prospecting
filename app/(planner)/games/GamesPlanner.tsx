@@ -263,14 +263,6 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
           : "Coming up soon. Keep a little free time for Calico Egg challenges and the festival's rotating attractions.",
       };
     }
-    if (postCommunityCenter && day >= 20 && day <= 22) {
-      return {
-        name: "🎉 SVE Community Day · the 22nd",
-        details: day === 22
-          ? "Today the Community Center hosts villagers from across the valley. A convenient, low-pressure way to socialize and catch up."
-          : "Community Day is coming up on the 22nd. The restored Community Center fills with visitors for the day.",
-      };
-    }
     if (season === "Summer" && day >= 18 && day <= 21) {
       return {
         name: "🎣 Trout Derby · Summer 20–21",
@@ -285,6 +277,14 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
         details: day >= 12
           ? "SquidFest is on at the Beach. Catch Squid to reach prize tiers, with no need to pause other farm work."
           : "SquidFest starts soon at the Beach. Bring your fishing rod for the two-day squid-catching challenge.",
+      };
+    }
+    if (postCommunityCenter && day >= 20 && day <= 22) {
+      return {
+        name: "🎉 SVE Community Day · the 22nd",
+        details: day === 22
+          ? "Today the Community Center hosts villagers from across the valley. A convenient, low-pressure way to socialize and catch up."
+          : "Community Day is coming up on the 22nd. The restored Community Center fills with visitors for the day.",
       };
     }
     return null;
