@@ -252,6 +252,43 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   const cirrusIntroduced = !!prog.checks[questKey(game.id, "sword-sorcery-campaign", "cirrus-intro")];
   const fableReefVisited = !!prog.checks[questKey(game.id, "lance-first-slash", "visit-fable-reef")];
   const highlandsUnlocked = !!prog.checks[questKey(game.id, "sve-highlands", "enter-highlands")];
+  const busRepaired = !!prog.checks[itemKey(game.id, "p5", "Regular Progression", "Repair the Bus")];
+  const seasonalSpotlight = (() => {
+    const { season, day } = shownDate;
+    if (season === "Spring" && day >= 12 && day <= 17 && busRepaired) {
+      return {
+        name: "🏜 Desert Festival · Spring 15–17",
+        details: day >= 15
+          ? "It's happening now! Take the bus to Calico Desert for Calico Egg challenges, temporary shops, races, Emily's outfits, and Skull Cavern activities. Calico Eggs expire when the festival ends."
+          : "Coming up soon. Keep a little free time for Calico Egg challenges and the festival's rotating attractions.",
+      };
+    }
+    if (postCommunityCenter && day >= 20 && day <= 22) {
+      return {
+        name: "🎉 SVE Community Day · the 22nd",
+        details: day === 22
+          ? "Today the Community Center hosts villagers from across the valley. A convenient, low-pressure way to socialize and catch up."
+          : "Community Day is coming up on the 22nd. The restored Community Center fills with visitors for the day.",
+      };
+    }
+    if (season === "Summer" && day >= 18 && day <= 21) {
+      return {
+        name: "🎣 Trout Derby · Summer 20–21",
+        details: day >= 20
+          ? "It's on! Fish for Rainbow Trout in the river near Marnie's Ranch and trade Golden Tags for prizes."
+          : "The Trout Derby is nearly here. Visit the Cindersap Forest river near Marnie's Ranch on the 20th or 21st.",
+      };
+    }
+    if (season === "Winter" && day >= 10 && day <= 13) {
+      return {
+        name: "🦑 SquidFest · Winter 12–13",
+        details: day >= 12
+          ? "SquidFest is on at the Beach. Catch Squid to reach prize tiers, with no need to pause other farm work."
+          : "SquidFest starts soon at the Beach. Bring your fishing rod for the two-day squid-catching challenge.",
+      };
+    }
+    return null;
+  })();
   const isStepDone = (story: GameStoryline, step: GameQuestStep) =>
     !!step.currentSaveComplete ||
     !!prog.checks[questStepKey(game, story, step)] ||
@@ -753,6 +790,9 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
           {cirrusIntroduced ? " · Cirrus introduced" : ""}.
         </p>
         <p className="gm-note">No need to clear your journal. Choose what sounds fun and play one quest at a time.</p>
+        {seasonalSpotlight && (
+          <p className="gm-note"><b>{seasonalSpotlight.name}:</b> {seasonalSpotlight.details}</p>
+        )}
         <div className="gm-chips" role="group" aria-label="What do you feel like doing?">
           <button type="button" className={"gm-chip" + (playMode === "story" ? " on" : "")}
             aria-pressed={playMode === "story"} onClick={() => setPlayMode("story")}>📖 Main story</button>
