@@ -1584,6 +1584,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const [status, setStatus] = useState<Status>(loaded ? "idle" : "loadfail");
   const [armed, setArmed] = useState(false);
   const [lastCheck, setLastCheck] = useState<{ gameId: string; key: string; value: boolean } | null>(null);
+  const [copyProgressStatus, setCopyProgressStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
 
   const game = GAMES.find((g) => g.id === gameId) ?? GAMES[0];
   const prog = progress[game.id] ?? emptyProgress();
@@ -1737,6 +1738,30 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
     queue(game.id, { reset: true });
   };
 
+  // Read-only export of the latest server-saved checks from every Stardew tab.
+  // Nothing is changed or reset by copying. The portal session protects the API.
+  const copySavedProgress = async () => {
+    if (!loaded || status === "saving" || status === "error" || status === "signedout") return;
+    setCopyProgressStatus("copying");
+    try {
+      const saved: Record<string, GameProgress> = {};
+      for (const g of GAMES) {
+        const res = await fetch(`/api/games/progress?game=${encodeURIComponent(g.id)}`, { cache: "no-store" });
+        if (res.redirected && new URL(res.url).pathname.startsWith("/login")) throw new Error("Signed out");
+        const data = await res.json();
+        if (!res.ok || data?.ok !== true) throw new Error("Progress unavailable");
+        saved[g.id] = data.progress as GameProgress;
+      }
+      const copied = await copyToClipboard(JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        games: saved,
+      }, null, 2));
+      setCopyProgressStatus(copied ? "copied" : "error");
+    } catch {
+      setCopyProgressStatus("error");
+    }
+  };
+
   const statusText =
     status === "saving"
       ? "Saving..."
@@ -1806,6 +1831,24 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               </button>
             </div>
           )}
+
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 16 }}>
+            <button
+              type="button"
+              className="gm-pill"
+              onClick={copySavedProgress}
+              disabled={!loaded || status === "saving" || status === "error" || status === "signedout" || copyProgressStatus === "copying"}
+            >
+              {copyProgressStatus === "copying" ? "Copying..." : "Copy saved progress (all tabs)"}
+            </button>
+            <span className="gm-small" role="status">
+              {copyProgressStatus === "copied"
+                ? "Copied! Paste it into our chat so I can organize your actual remaining quests."
+                : copyProgressStatus === "error"
+                  ? "Could not copy. Make sure you're logged in and your changes have saved, then try again."
+                  : "Read-only. Does not change or reset your checkboxes."}
+            </span>
+          </div>
 
           <div className="gm-foot">
             <span className="gm-small" aria-live="polite">
