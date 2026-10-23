@@ -4134,7 +4134,6 @@ export const GAMES: Game[] = [
               social: {
                 "npc": "Lance",
                 "hearts": 10,
-                "startAfterStepId": "eight-hearts",
                 "why": "Optional romantic scene; not required to explore Fable Reef."
               },
               how: "Optional dating content: Lance stops at 8 hearts without a bouquet. Giving him a bouquet unlocks 9–10 hearts even while married to Jio, but this begins another romantic relationship and may trigger jealousy.",
