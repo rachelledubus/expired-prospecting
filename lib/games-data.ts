@@ -5604,10 +5604,11 @@ export const GAMES: Game[] = [
           title: "Ridgeside — Old Lucky Foxtail Charm Secret",
           mod: "Ridgeside Village",
           importance: "optional",
-          note: "An easy-to-miss hidden scene involving the farmer's grandmother. The charm can come from Lorenzo's 1-heart event or the Foxbloom Foxes, so not receiving it from Lorenzo does not necessarily block the secret.",
+          note: "Completed in your current save: you already saw the Old Lucky Foxtail Charm secret event with your grandmother. This story is archived rather than suggested as new content.",
           steps: [
             {
               id: "charm",
+              currentSaveComplete: true,
               label: "Obtain an Old Lucky Foxtail Charm",
               how: "Watch Lorenzo's 1-heart event or obtain a charm from the Foxbloom Foxes in the Ridge Forest.",
               location: "Ridgeside / Ridge Forest",
@@ -5617,6 +5618,7 @@ export const GAMES: Game[] = [
             },
             {
               id: "dream",
+              currentSaveComplete: true,
               label: "Sleep with the charm in your inventory to see the secret",
               how: "Keep the Old Lucky Foxtail Charm in your backpack when you go to bed. Watch the hidden event involving your grandmother.",
               bucket: "now",
