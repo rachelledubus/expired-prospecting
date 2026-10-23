@@ -1397,6 +1397,7 @@ function BundleView({
 function CompletionView({ game, prog, setCheck, setField }: ViewProps<CompletionGame>) {
   type CustomCompletionItem = { id: string; label: string; done: boolean };
   const [newCustom, setNewCustom] = useState<Record<string, string>>({});
+  const [showCompletedCategories, setShowCompletedCategories] = useState(false);
 
   const parseCustom = (categoryId: string): CustomCompletionItem[] => {
     const raw = prog.fields[completionCustomItemsKey(game.id, categoryId)];
@@ -1439,6 +1440,23 @@ function CompletionView({ game, prog, setCheck, setField }: ViewProps<Completion
   const overall = totalItems ? Math.round((totalDone / totalItems) * 100) : 0;
   const completed = categoryRows.filter((row) => row.total > 0 && row.done === row.total).length;
   const trackableCategories = categoryRows.filter((row) => row.total > 0).length;
+  // Surface progress you can still make, with nearly finished categories first.
+  // Completed categories remain available on demand, not deleted.
+  const visibleSections = game.sections
+    .map((section) => ({
+      ...section,
+      categories: section.categories
+        .filter((category) => {
+          const row = categoryRows.find((item) => item.category.id === category.id);
+          return showCompletedCategories || !row || row.total === 0 || row.done < row.total;
+        })
+        .sort((a, b) => {
+          const aRow = categoryRows.find((row) => row.category.id === a.id);
+          const bRow = categoryRows.find((row) => row.category.id === b.id);
+          return (bRow?.pct ?? 0) - (aRow?.pct ?? 0);
+        }),
+    }))
+    .filter((section) => section.categories.length > 0);
 
   const addCustom = (categoryId: string) => {
     const label = (newCustom[categoryId] ?? "").trim();
@@ -1483,8 +1501,16 @@ function CompletionView({ game, prog, setCheck, setField }: ViewProps<Completion
       <div className="gm-callout">
         <b>No manual quantities:</b> check the actual fish, artifact, recipe, shipment, goal, or unlock when you complete it. The totals calculate themselves.
       </div>
+      <p className="gm-note">Unfinished collections are shown first. Nearly complete collections appear at the top of each section.</p>
+      {completed > 0 && (
+        <button type="button" className="gm-pill"
+          aria-pressed={showCompletedCategories}
+          onClick={() => setShowCompletedCategories((current) => !current)}>
+          {showCompletedCategories ? "Hide completed categories" : `Show completed categories (${completed})`}
+        </button>
+      )}
 
-      {game.sections.map((section) => (
+      {visibleSections.map((section) => (
         <section key={section.id} className="gm-completion-section">
           <div className="label">{section.title}</div>
           {section.note && <p className="gm-note gm-section-note">{section.note}</p>}
