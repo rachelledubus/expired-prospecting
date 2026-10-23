@@ -231,7 +231,7 @@ function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQu
 }
 
 function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps<ChecklistGame> & { onOpenFarm: () => void }) {
-  const [playMode, setPlayMode] = useState<"story" | "explore" | "quick">("story");
+  const [playMode, setPlayMode] = useState<"story" | "explore" | "gather" | "quick">("story");
   const [showAllQuests, setShowAllQuests] = useState(false);
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
@@ -435,7 +435,13 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   const coreRows = rankedRows.filter((row) => row.importance !== "optional");
 
   // Play mode offers actionable, weather-appropriate checkpoints; it does not rewrite quest progress.
-  const readyRows = coreRows.filter((row) => row.bucket !== "waiting" && row.todayOk);
+  const coreReadyRows = coreRows.filter((row) => row.bucket !== "waiting" && row.todayOk);
+  const gatherReadyRows = rankedRows.filter((row) =>
+    row.bucket !== "waiting" && row.todayOk && !!row.step.requiredItems?.length,
+  );
+  // Gathering mode deliberately includes optional seasonal orders, but never blocked quests.
+  const readyRows = playMode === "gather" && gatherReadyRows.length
+    ? gatherReadyRows : coreReadyRows;
   const moodScore = (row: QuestRow) => {
     const base = scoreRow(row);
     const text = `${row.story.title} ${row.step.label} ${row.step.location ?? ""}`;
@@ -443,6 +449,9 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
     if (playMode === "explore") return base +
       (/island|highlands|cavern|reef|badlands|realm|ridge|nexus|volcano|dungeon|forest/i.test(text) ? 520 : 0) +
       (/explore|enter|visit|unlock|discover|find|travel|open|reach/i.test(row.step.label) ? 180 : 0);
+    if (playMode === "gather") return base +
+      (row.step.requiredItems?.length ? 750 : 0) +
+      (/order|collect|craft|gather|donate|deliver|repair|ingredients|recipe/i.test(text) ? 120 : 0);
 
     const shortTask = !row.step.requiredItems?.length && !row.step.social &&
       !/collect \d|gather \d|reach \d+ hearts|build|upgrade|slay \d/i.test(row.step.label);
@@ -453,7 +462,7 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   const playRows = [...readyRows].sort((a, b) => moodScore(b) - moodScore(a));
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
   const mainRow =
-    (pinnedRow && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
+    (pinnedRow && (playMode === "story" || showAllQuests) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
     playRows[0] ??
     coreRows.find((row) => row.bucket !== "waiting") ??
     rankedRows.find((row) => row.bucket !== "waiting") ??
@@ -798,6 +807,8 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
             aria-pressed={playMode === "story"} onClick={() => setPlayMode("story")}>📖 Main story</button>
           <button type="button" className={"gm-chip" + (playMode === "explore" ? " on" : "")}
             aria-pressed={playMode === "explore"} onClick={() => setPlayMode("explore")}>🧭 Explore</button>
+          <button type="button" className={"gm-chip" + (playMode === "gather" ? " on" : "")}
+            aria-pressed={playMode === "gather"} onClick={() => setPlayMode("gather")}>🌿 Gather & craft</button>
           <button type="button" className={"gm-chip" + (playMode === "quick" ? " on" : "")}
             aria-pressed={playMode === "quick"} onClick={() => setPlayMode("quick")}>✨ Quick win</button>
           <button type="button" className="gm-chip" onClick={onOpenFarm}>🌾 Farm projects</button>
