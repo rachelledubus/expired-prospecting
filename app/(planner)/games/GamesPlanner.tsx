@@ -466,7 +466,7 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   const playRows = [...readyRows].sort((a, b) => moodScore(b) - moodScore(a));
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
   const mainRow =
-    (pinnedRow && (playMode === "story" || playMode === "new" || showAllQuests) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
+    (pinnedRow && (playMode === "story" || showAllQuests || (playMode === "new" && pinnedRow.story.id.startsWith("new-"))) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
     playRows[0] ??
     coreRows.find((row) => row.bucket !== "waiting") ??
     rankedRows.find((row) => row.bucket !== "waiting") ??
