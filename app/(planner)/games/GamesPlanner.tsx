@@ -233,6 +233,7 @@ function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQu
 function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps<ChecklistGame> & { onOpenFarm: () => void }) {
   const [playMode, setPlayMode] = useState<"story" | "explore" | "gather" | "quick" | "new">("story");
   const [showAllQuests, setShowAllQuests] = useState(false);
+  const [selectedNewWorld, setSelectedNewWorld] = useState("new-age");
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
   const shownDate = gameDate ?? parseGameDate(game.saveDefault) ?? { season: "Spring", day: 1, year: 1, totalDay: 1 };
@@ -465,21 +466,24 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   };
   const playRows = [...readyRows].sort((a, b) => moodScore(b) - moodScore(a));
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
-  const mainRow =
-    (pinnedRow && (playMode === "story" || showAllQuests || (playMode === "new" && pinnedRow.story.id.startsWith("new-"))) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
-    playRows[0] ??
-    coreRows.find((row) => row.bucket !== "waiting") ??
-    rankedRows.find((row) => row.bucket !== "waiting") ??
-    rankedRows[0];
+  const mainRow = playMode === "new"
+    ? questRows.find((row) => row.story.id === selectedNewWorld)
+    : (pinnedRow && (playMode === "story" || showAllQuests) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
+      playRows[0] ??
+      coreRows.find((row) => row.bucket !== "waiting") ??
+      rankedRows.find((row) => row.bucket !== "waiting") ??
+      rankedRows[0];
 
   const coreSideRows = (showAllQuests ? readyRows : playRows)
     .filter((row) => row.story.id !== mainRow?.story.id)
     .slice(0, showAllQuests ? 4 : 2);
-  const sideRows = coreSideRows.length
-    ? coreSideRows
-    : rankedRows
-        .filter((row) => row.importance === "optional" && row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
-        .slice(0, 2);
+  const sideRows = playMode === "new"
+    ? []
+    : coreSideRows.length
+      ? coreSideRows
+      : rankedRows
+          .filter((row) => row.importance === "optional" && row.story.id !== mainRow?.story.id && row.bucket !== "waiting" && row.todayOk)
+          .slice(0, 2);
 
   const allDeadlineRows = rankedRows.filter((row) => row.bucket === "deadline");
   const allAvailableRows = coreRows.filter((row) => row.bucket === "now");
@@ -586,7 +590,7 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
         />
         {subtasks.length > 0 && !isStepDone(story, step) && (
           <details className="gm-subtasks" open={mode !== "compact"} style={{ margin: "8px 0 12px 16px", paddingLeft: 12, borderLeft: "2px solid var(--border, #aab2be)" }}>
-            <summary>Step-by-step checklist · {completedSubtasks.length}/{subtasks.length}</summary>
+            <summary>{mode === "compact" && pendingSubtasks.length ? `Next small action: ${pendingSubtasks[0].label}` : `Step-by-step actions · ${completedSubtasks.length}/${subtasks.length}`}</summary>
             <div style={{ paddingTop: 8 }}>
               {step.how && <p className="gm-note">{step.how}</p>}
               {story.id === "vanilla-movie-theater" && step.id === "missing-bundle" && (
@@ -819,61 +823,28 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
             aria-pressed={playMode === "quick"} onClick={() => setPlayMode("quick")}>✨ Quick win</button>
           <button type="button" className="gm-chip" onClick={onOpenFarm}>🌾 Farm projects</button>
         </div>
-        <p className="gm-note">One recommended quest and up to two alternatives. Blocked tasks are hidden from this view.</p>
+        {playMode === "new" ? (
+          <label className="gm-context-label">
+            Choose one expansion
+            <select
+              className="gm-input gm-sel"
+              value={selectedNewWorld}
+              onChange={(event) => setSelectedNewWorld(event.target.value)}
+              style={{ display: "block", marginTop: 6, maxWidth: "100%" }}
+            >
+              <option value="new-age">Adventurer's Guild Expanded</option>
+              <option value="new-sunberry">Sunberry Village</option>
+              <option value="new-vapius">Visit Mount Vapius</option>
+              <option value="new-distant">Distant Lands</option>
+            </select>
+          </label>
+        ) : <p className="gm-note">One recommended quest and up to two alternatives. Blocked tasks stay in the full tracker.</p>}
         {jioMarried && <p className="gm-note">Lance's 10-heart scenes are optional romantic content, not required for the Highlands or Fable Reef.</p>}
         {fableReefVisited && !prog.checks[questKey(game.id, "sve-highlands", "first-slash")] && (
           <p className="gm-note">Inferred milestone: visiting Fable Reef confirms Lance's earlier 8-heart unlock. Your original checkmark has not been changed.</p>
         )}
         <button type="button" className="gm-pill" onClick={() => setShowAllQuests((v) => !v)}
           aria-expanded={showAllQuests}>{showAllQuests ? "Hide full quest tracker" : "Browse all questlines and completed quests"}</button>
-      </section>
-
-      <section className="gm-card" style={{ margin: "16px 0", padding: "16px" }}>
-        <div className="gm-panel-label">🗺️ Your four new worlds · ready to explore</div>
-        <p className="gm-note">
-          You have installed and checked all four expansions in SMAPI.
-          Setup steps are complete; choose the new storyline that sounds most fun.
-          Your existing gameplay checkmarks are unchanged.
-        </p>
-        <div className="gm-major-grid">
-          {([
-            ["new-age", "Adventurer's Guild Expanded", "Monster research and branching quests"],
-            ["new-sunberry", "Sunberry Village", "A new village, mines, and museum"],
-            ["new-vapius", "Visit Mount Vapius", "A mountain region, bundles, and unlocks"],
-            ["new-distant", "Distant Lands", "Witch's Swamp adventures and Zic's story"],
-          ] as const).map(([id, name, summary]) => {
-            const story = activeStorylines.find((entry) => entry.id === id);
-            if (!story) return null;
-            const initial = story.steps[0];
-            const installed = !!initial && isStepDone(story, initial);
-            const remaining = story.steps.find((step) => !isStepDone(story, step));
-            const current = questRows.find((row) => row.story.id === id);
-            const complete = !remaining;
-            return (
-              <article className={"gm-major-story " + (complete ? "complete" : "")} key={id}>
-                <div className="gm-major-head">
-                  <div><span className="gm-quest-mod">New expansion</span><h3>{name}</h3></div>
-                  <span className="gm-major-status">{complete ? "Complete" : installed ? "Ready to explore" : "Check installation"}</span>
-                </div>
-                <p className="gm-note">{summary}</p>
-                {installed && remaining && (
-                  <>
-                    <p className="gm-major-next"><b>Next:</b> {remaining.label}</p>
-                    <button type="button" className="gm-pill" onClick={() => {
-                      setPlayMode("new");
-                      setField(mainQuestKey(game.id), story.id);
-                    }}>Make this my next adventure</button>
-                  </>
-                )}
-                <details className="gm-major-path">
-                  <summary>View storyline checkpoints · {story.steps.filter((step) => isStepDone(story, step)).length}/{story.steps.length}</summary>
-                  {story.note && <p className="gm-note">{story.note}</p>}
-                  {current && <div className="gm-smart-list">{renderQuest(current, "compact")}</div>}
-                </details>
-              </article>
-            );
-          })}
-        </div>
       </section>
 
       {showAllQuests && visibleSocialRows.length > 0 && (
@@ -914,13 +885,13 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
       <div className="gm-dashboard">
         <section className="gm-main-panel">
           <div className="gm-panel-label">🎯 {showAllQuests ? "Main Quest" : "Your one focus"}</div>
-          {mainRow ? renderQuest(mainRow, "main") : <p className="gm-note">You are caught up on the tracked storylines.</p>}
+          {mainRow ? renderQuest(mainRow, "main") : <p className="gm-note">{playMode === "new" ? "All tracked checkpoints for this expansion are complete. Pick another world above." : "You are caught up on the tracked storylines."}</p>}
         </section>
 
-        <section className="gm-next-panel">
+        {playMode !== "new" && <section className="gm-next-panel">
           <div className="gm-panel-label">▶ {showAllQuests ? "Play This Next" : "Other things you could do"}</div>
           {sideRows.length ? sideRows.map((row) => renderQuest(row, "compact")) : <p className="gm-note">No extra side objectives need your attention right now.</p>}
-        </section>
+        </section>}
 
         {showAllQuests && <section className="gm-progress-panel">
           <div className="gm-panel-label">📊 Story Progress</div>
