@@ -115,10 +115,21 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
     !!prog.checks[terrariaCheckKey(game.id, stage.id, step.id)];
   const completedCount = (stage: TerrariaStage) => stage.steps.filter((step) => isDone(stage, step)).length;
   const stageDone = (stage: TerrariaStage) => completedCount(stage) === stage.steps.length;
+  const unlockedToken = (token: string) => {
+    const [id, stepId] = token.split(":");
+    const stage = game.stages.find((entry) => entry.id === id);
+    if (!stage) return false;
+    return stepId ? !!prog.checks[terrariaCheckKey(game.id, id, stepId)] : stageDone(stage);
+  };
+  const questUnlocked = (stage: TerrariaStage) =>
+    (stage.unlockAll ?? []).every(unlockedToken) &&
+    (!(stage.unlockAny?.length) || stage.unlockAny.some(unlockedToken));
   const recommended = route.find((stage) => !stageDone(stage)) ?? route[route.length - 1];
   const current = route.find((stage) => stage.id === selectedRoute) ?? recommended;
-  const questChoice = allQuests.find((stage) => stage.id === selectedQuest) ??
-    quests.find((stage) => !stageDone(stage)) ?? quests[0];
+  const questChoice =
+    allQuests.find((stage) => stage.id === selectedQuest && questUnlocked(stage)) ??
+    quests.find((stage) => questUnlocked(stage) && !stageDone(stage)) ??
+    quests.find(questUnlocked);
   const total = route.reduce((n, stage) => n + stage.steps.length, 0);
   const completed = route.reduce((n, stage) => n + completedCount(stage), 0);
   const worldKey = game.id + "|world";
@@ -213,28 +224,37 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
           <p className="gm-note">Use the mod's actual Quest Book to accept and activate quests. This portal tracks small objectives alongside it; it doesn't read Terraria saves automatically.</p>
           <label className="gm-note">Current quest
             <select className="gm-input gm-sel" style={{ width: "100%", display: "block", marginTop: 7 }}
-              value={questChoice.id} onChange={(event) => setSelectedQuest(event.target.value)}>
+              value={questChoice?.id ?? ""} onChange={(event) => setSelectedQuest(event.target.value)}>
+              {!questChoice && <option value="">Unlock the Quest Book first</option>}
               <optgroup label="Spirit Quest Book">
                 {quests.map((stage) => (
-                  <option value={stage.id} key={stage.id}>{stageDone(stage) ? "✓ " : ""}{stage.title}</option>
+                  <option value={stage.id} key={stage.id} disabled={!questUnlocked(stage)}>{!questUnlocked(stage) ? "🔒 " : stageDone(stage) ? "✓ " : ""}{stage.title}</option>
                 ))}
               </optgroup>
               <optgroup label="Optional side challenges">
                 {sides.map((stage) => (
-                  <option value={stage.id} key={stage.id}>{stageDone(stage) ? "✓ " : ""}{stage.title}</option>
+                  <option value={stage.id} key={stage.id} disabled={!questUnlocked(stage)}>{!questUnlocked(stage) ? "🔒 " : stageDone(stage) ? "✓ " : ""}{stage.title}</option>
                 ))}
               </optgroup>
             </select>
           </label>
         </section>
-        <FocusedStage key={questChoice.id} game={game} stage={questChoice} prog={prog} setCheck={setCheck} variant="quest" />
+        {questChoice ? (
+          <FocusedStage key={questChoice.id} game={game} stage={questChoice} prog={prog} setCheck={setCheck} variant="quest" />
+        ) : (
+          <section className="gm-card" style={{ padding: 16, marginTop: 12 }}>
+            <div className="gm-panel-label">Unlock Spirit quests</div>
+            <p className="gm-note">Find the Adventurer in the Underground Briar and complete The First Adventure to open up your town's quest chains.</p>
+            <button type="button" className="gm-pill" onClick={() => openStage("briar-adventurer")}>Go to the Adventurer chapter</button>
+          </section>
+        )}
         <details style={{ marginTop: 14 }}>
           <summary className="gm-note" style={{ cursor: "pointer" }}>Other quests and optional adventures</summary>
           <button type="button" className="gm-pill" style={{ margin: "10px 0" }}
             onClick={() => setShowCompletedQuests(!showCompletedQuests)}>
             {showCompletedQuests ? "Hide completed" : "Include completed"}
           </button>
-          {[...quests, ...sides].filter((stage) => showCompletedQuests || !stageDone(stage)).map((stage) => (
+          {allQuests.filter((stage) => questUnlocked(stage) && (showCompletedQuests || !stageDone(stage))).map((stage) => (
             <div className="gm-card" key={stage.id} style={{ padding: 12, marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div><b>{stage.title}</b><div className="gm-note">{completedCount(stage)}/{stage.steps.length} complete</div></div>
