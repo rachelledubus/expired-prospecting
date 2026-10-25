@@ -94,7 +94,8 @@ export async function getCareerProgress(): Promise<CareerProgress> {
   const skills: CareerProgress["skills"] = {};
   for (const page of skillRows) {
     const id = String(page.id ?? "").replace(/-/g, "");
-    if (!VALID_IDS.has(id) || page.parent?.data_source_id?.replace(/-/g, "") !== SKILLS_SOURCE.replace(/-/g, "")) continue;
+    // The Notion query already limits results to the known skills data source.
+    if (!VALID_IDS.has(id)) continue;
     const p = page.properties ?? {};
     const status = p["Status"]?.status?.name ?? "Not Started";
     const evidenceUrl = p["Evidence URL"]?.url ?? "";
