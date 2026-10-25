@@ -108,7 +108,7 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
   const [selectedQuest, setSelectedQuest] = useState("");
   const [showCompletedQuests, setShowCompletedQuests] = useState(false);
   const route = useMemo(() => game.stages.filter((stage) => stage.track === "route"), [game]);
-  const quests = useMemo(() => game.stages.filter((stage) => stage.track === "quest"), [game]);
+  const quests = useMemo(() => game.stages.filter((stage) => stage.track === "quest" || stage.id === "first-adventure"), [game]);
   const sides = useMemo(() => game.stages.filter((stage) => stage.track === "side"), [game]);
   const allQuests = useMemo(() => [...quests, ...sides], [quests, sides]);
   const isDone = (stage: TerrariaStage, step: TerrariaStep) =>
