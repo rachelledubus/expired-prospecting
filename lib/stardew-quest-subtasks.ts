@@ -1,3 +1,5 @@
+import { STARDEW_NEW_WORLD_SUBTASKS } from "./stardew-new-world-subtasks";
+
 /** Track the real actions inside broad Stardew/expanded-mod objectives without changing saved parent milestone keys. */
 export type StardewQuestSubtask = { id: string; label: string; how?: string };
 
@@ -1012,5 +1014,6 @@ export const STARDEW_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
       "id": "part-3",
       "label": "Trigger the post-marriage follow-up event"
     }
-  ]
+  ],
+  ...STARDEW_NEW_WORLD_SUBTASKS
 };
