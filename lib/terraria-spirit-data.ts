@@ -6,7 +6,7 @@
 export type TerrariaStep = { id: string; label: string; how?: string };
 export type TerrariaStage = {
  id: string; title: string; chapter: "pre" | "hard" | "end"; track: "route" | "quest" | "side";
- summary: string; steps: TerrariaStep[]; source?: string; boss?: string;
+ summary: string; steps: TerrariaStep[]; source?: string; boss?: string; unlockAll?: string[]; unlockAny?: string[];
 };
 export type TerrariaBoss = { name: string; stageId: string; stepId: string; chapter: "pre" | "hard" | "end"; optional: boolean };
 export type TerrariaGame = {
@@ -668,7 +668,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Open the Completed tab to claim rewards."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "first-adventure"
+      ]
     },
     {
       "id": "cacophonous-cries",
@@ -698,7 +701,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim your rewards in the Completed tab."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "first-adventure"
+      ]
     },
     {
       "id": "creepy-crawlies",
@@ -728,7 +734,11 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim the reward in Quest Book."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAny": [
+        "flowery-fiends",
+        "cacophonous-cries"
+      ]
     },
     {
       "id": "bare-necessities",
@@ -754,7 +764,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Confirm it counts toward the quest and claim the reward."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "first-adventure"
+      ]
     },
     {
       "id": "evil-explorer",
@@ -784,7 +797,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim the quest reward from the Completed tab."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "first-adventure"
+      ]
     },
     {
       "id": "aurora-explorer",
@@ -814,7 +830,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim your quest reward."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "evil-explorer"
+      ]
     },
     {
       "id": "space-rocks",
@@ -844,7 +863,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim the Wayfinder rewards."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "evil-explorer"
+      ]
     },
     {
       "id": "stylist-rescue",
@@ -878,7 +900,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim rewards from the Quest Book."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "first-adventure"
+      ]
     },
     {
       "id": "hardmode-quests",
@@ -908,7 +933,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Claim the reward in Completed and check for unlocked shop stock."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "hardmode-gate"
+      ]
     },
     {
       "id": "bonus-bosses",
@@ -1020,6 +1048,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a4",
           "label": "Claim the quest reward from Completed."
         }
+      ],
+      "unlockAll": [
+        "first-adventure"
       ]
     },
     {
@@ -1046,6 +1077,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a4",
           "label": "Claim the quest reward, including a Scarab Idol."
         }
+      ],
+      "unlockAll": [
+        "first-adventure"
       ]
     },
     {
@@ -1076,6 +1110,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the reward from the Quest Book."
         }
+      ],
+      "unlockAll": [
+        "idle-idol"
       ]
     },
     {
@@ -1106,6 +1143,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the thorn-themed reward."
         }
+      ],
+      "unlockAll": [
+        "flowery-fiends"
       ]
     },
     {
@@ -1140,6 +1180,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a6",
           "label": "Claim the Ancient Diver equipment reward."
         }
+      ],
+      "unlockAll": [
+        "dungeon"
       ]
     },
     {
@@ -1170,6 +1213,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the quest reward."
         }
+      ],
+      "unlockAll": [
+        "dungeon"
       ]
     },
     {
@@ -1200,6 +1246,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the decorative and treasure-related rewards."
         }
+      ],
+      "unlockAll": [
+        "heart-cause"
       ]
     },
     {
@@ -1230,6 +1279,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the Jade Dragon-related quest reward."
         }
+      ],
+      "unlockAll": [
+        "heart-cause"
       ]
     },
     {
@@ -1256,6 +1308,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a4",
           "label": "Claim the Briar-themed crafting and decoration rewards."
         }
+      ],
+      "unlockAll": [
+        "bare-necessities"
       ]
     },
     {
@@ -1286,6 +1341,11 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the Distress Jelly quest reward."
         }
+      ],
+      "unlockAny": [
+        "desert-scarabeus:a5",
+        "eye-jelly:a3",
+        "evil-and-briar:a3"
       ]
     },
     {
@@ -1316,6 +1376,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the Capacitor gear and other rewards."
         }
+      ],
+      "unlockAll": [
+        "evil-explorer"
       ]
     },
     {
@@ -1346,6 +1409,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the quest reward and house the rescued Bandit."
         }
+      ],
+      "unlockAll": [
+        "heart-cause"
       ]
     },
     {
@@ -1376,6 +1442,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the Quest Book reward and house the Gambler."
         }
+      ],
+      "unlockAll": [
+        "heart-cause"
       ]
     },
     {
@@ -1406,6 +1475,9 @@ export const TERRARIA_GAME: TerrariaGame = {
           "id": "a5",
           "label": "Claim the completed quest reward."
         }
+      ],
+      "unlockAll": [
+        "hardmode-gate"
       ]
     }
   ],
