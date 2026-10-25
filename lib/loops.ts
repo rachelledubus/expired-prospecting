@@ -67,6 +67,13 @@ async function pastDueTasks(now: Date): Promise<{ tasks: LoopTask[]; more: boole
       const d = readDate(p["Due Date"]);
       // Notion has already filtered; this keeps anything that is not clearly before today out of a "change it" list.
       if (!d.start || !isPastDue(d.start, today, midnightMs) || readBool(p["Archive"])) continue;
+      // Routine occurrences are not catch-up debt. Intentional resolutions are not open loops.
+      const resolution = readText(p["Resolution State"]);
+      const occurrence = readText(p["Occurrence Type"]);
+      if (
+        occurrence === "Routine Block" ||
+        ["Canceled", "Deferred", "Converted", "Missed Routine"].includes(resolution)
+      ) continue;
       tasks.push({
         id: page.id,
         url: page.url,
