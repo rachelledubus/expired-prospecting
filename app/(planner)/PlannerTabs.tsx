@@ -9,6 +9,7 @@ const PAGES = [
   { href: "/inbox", label: "Inbox", bg: "#E3EDDD" },
   { href: "/waiting", label: "Waiting", bg: "var(--work-bg)" },
   { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
+  { href: "/career", label: "Career", bg: "#E8EFE5" },
   { href: "/loops", label: "Loops", bg: "var(--other-bg, #EFE7DA)" },
   { href: "/review", label: "Review", bg: "#F4E6B8" },
   { href: "/games", label: "Games", bg: "#E3EAF2" },
