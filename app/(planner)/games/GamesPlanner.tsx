@@ -829,10 +829,11 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
       </section>
 
       <section className="gm-card" style={{ margin: "16px 0", padding: "16px" }}>
-        <div className="gm-panel-label">🗺️ Four new adventures · downloaded</div>
+        <div className="gm-panel-label">🗺️ Your four new worlds · ready to explore</div>
         <p className="gm-note">
-          You downloaded these expansions. Confirm each one loads in SMAPI before treating its quests as available.
-          Nothing here will mark your original save progress complete automatically.
+          You have installed and checked all four expansions in SMAPI.
+          Setup steps are complete; choose the new storyline that sounds most fun.
+          Your existing gameplay checkmarks are unchanged.
         </p>
         <div className="gm-major-grid">
           {([
@@ -851,18 +852,10 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
             return (
               <article className={"gm-major-story " + (complete ? "complete" : "")} key={id}>
                 <div className="gm-major-head">
-                  <div><span className="gm-quest-mod">Downloaded expansion</span><h3>{name}</h3></div>
-                  <span className="gm-major-status">{complete ? "Complete" : installed ? "In progress" : "Check install"}</span>
+                  <div><span className="gm-quest-mod">New expansion</span><h3>{name}</h3></div>
+                  <span className="gm-major-status">{complete ? "Complete" : installed ? "Ready to explore" : "Check installation"}</span>
                 </div>
                 <p className="gm-note">{summary}</p>
-                {initial && (
-                  <Check
-                    label="Installed and confirmed working in SMAPI"
-                    sub="Checking this unlocks the next quest; downloading alone does not count."
-                    checked={installed}
-                    onChange={(value) => setCheck(questStepKey(game, story, initial), value)}
-                  />
-                )}
                 {installed && remaining && (
                   <>
                     <p className="gm-major-next"><b>Next:</b> {remaining.label}</p>
