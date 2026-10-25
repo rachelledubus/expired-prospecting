@@ -134,7 +134,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Check the Completed tab and claim the quest reward."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Quests"
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "unlockAll": [
+        "briar-adventurer"
+      ]
     },
     {
       "id": "desert-scarabeus",
