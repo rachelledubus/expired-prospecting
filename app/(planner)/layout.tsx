@@ -5,6 +5,7 @@ import "./review/review.css";
 import "./projects/projects.css";
 import "./loops/loops.css";
 import "./games/games.css";
+import "./career/career.css";
 import "./planner.css";
 import PlannerTabs from "./PlannerTabs";
 
