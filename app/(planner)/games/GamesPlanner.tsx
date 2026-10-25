@@ -231,7 +231,7 @@ function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQu
 }
 
 function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps<ChecklistGame> & { onOpenFarm: () => void }) {
-  const [playMode, setPlayMode] = useState<"story" | "explore" | "gather" | "quick">("story");
+  const [playMode, setPlayMode] = useState<"story" | "explore" | "gather" | "quick" | "new">("story");
   const [showAllQuests, setShowAllQuests] = useState(false);
   const saveVal = prog.fields[saveKey(game.id)] ?? game.saveDefault;
   const gameDate = useMemo(() => parseGameDate(saveVal), [saveVal]);
@@ -436,15 +436,19 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
 
   // Play mode offers actionable, weather-appropriate checkpoints; it does not rewrite quest progress.
   const coreReadyRows = coreRows.filter((row) => row.bucket !== "waiting" && row.todayOk);
+  const newWorldRows = rankedRows.filter((row) => row.story.id.startsWith("new-") && row.bucket !== "waiting" && row.todayOk);
   const gatherReadyRows = rankedRows.filter((row) =>
     row.bucket !== "waiting" && row.todayOk && !!row.step.requiredItems?.length,
   );
   // Gathering mode deliberately includes optional seasonal orders, but never blocked quests.
-  const readyRows = playMode === "gather" && gatherReadyRows.length
-    ? gatherReadyRows : coreReadyRows;
+  const readyRows = playMode === "new"
+    ? newWorldRows
+    : playMode === "gather" && gatherReadyRows.length
+      ? gatherReadyRows : coreReadyRows;
   const moodScore = (row: QuestRow) => {
     const base = scoreRow(row);
     const text = `${row.story.title} ${row.step.label} ${row.step.location ?? ""}`;
+    if (playMode === "new") return base + (row.story.id.startsWith("new-") ? 800 : 0);
     if (playMode === "story") return base + (row.importance === "required" ? 700 : 0);
     if (playMode === "explore") return base +
       (/island|highlands|cavern|reef|badlands|realm|ridge|nexus|volcano|dungeon|forest/i.test(text) ? 520 : 0) +
@@ -462,7 +466,7 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
   const playRows = [...readyRows].sort((a, b) => moodScore(b) - moodScore(a));
   const pinnedRow = pinnedStory ? questRows.find((row) => row.story.id === pinnedStory) : undefined;
   const mainRow =
-    (pinnedRow && (playMode === "story" || showAllQuests) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
+    (pinnedRow && (playMode === "story" || playMode === "new" || showAllQuests) && pinnedRow.bucket !== "waiting" && pinnedRow.todayOk ? pinnedRow : undefined) ??
     playRows[0] ??
     coreRows.find((row) => row.bucket !== "waiting") ??
     rankedRows.find((row) => row.bucket !== "waiting") ??
@@ -805,6 +809,8 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
         <div className="gm-chips" role="group" aria-label="What do you feel like doing?">
           <button type="button" className={"gm-chip" + (playMode === "story" ? " on" : "")}
             aria-pressed={playMode === "story"} onClick={() => setPlayMode("story")}>📖 Main story</button>
+          <button type="button" className={"gm-chip" + (playMode === "new" ? " on" : "")}
+            aria-pressed={playMode === "new"} onClick={() => setPlayMode("new")}>🗺️ New worlds</button>
           <button type="button" className={"gm-chip" + (playMode === "explore" ? " on" : "")}
             aria-pressed={playMode === "explore"} onClick={() => setPlayMode("explore")}>🧭 Explore</button>
           <button type="button" className={"gm-chip" + (playMode === "gather" ? " on" : "")}
@@ -820,6 +826,61 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
         )}
         <button type="button" className="gm-pill" onClick={() => setShowAllQuests((v) => !v)}
           aria-expanded={showAllQuests}>{showAllQuests ? "Hide full quest tracker" : "Browse all questlines and completed quests"}</button>
+      </section>
+
+      <section className="gm-card" style={{ margin: "16px 0", padding: "16px" }}>
+        <div className="gm-panel-label">🗺️ Four new adventures · downloaded</div>
+        <p className="gm-note">
+          You downloaded these expansions. Confirm each one loads in SMAPI before treating its quests as available.
+          Nothing here will mark your original save progress complete automatically.
+        </p>
+        <div className="gm-major-grid">
+          {([
+            ["new-age", "Adventurer's Guild Expanded", "Monster research and branching quests"],
+            ["new-sunberry", "Sunberry Village", "A new village, mines, and museum"],
+            ["new-vapius", "Visit Mount Vapius", "A mountain region, bundles, and unlocks"],
+            ["new-distant", "Distant Lands", "Witch's Swamp adventures and Zic's story"],
+          ] as const).map(([id, name, summary]) => {
+            const story = activeStorylines.find((entry) => entry.id === id);
+            if (!story) return null;
+            const initial = story.steps[0];
+            const installed = !!initial && isStepDone(story, initial);
+            const remaining = story.steps.find((step) => !isStepDone(story, step));
+            const current = questRows.find((row) => row.story.id === id);
+            const complete = !remaining;
+            return (
+              <article className={"gm-major-story " + (complete ? "complete" : "")} key={id}>
+                <div className="gm-major-head">
+                  <div><span className="gm-quest-mod">Downloaded expansion</span><h3>{name}</h3></div>
+                  <span className="gm-major-status">{complete ? "Complete" : installed ? "In progress" : "Check install"}</span>
+                </div>
+                <p className="gm-note">{summary}</p>
+                {initial && (
+                  <Check
+                    label="Installed and confirmed working in SMAPI"
+                    sub="Checking this unlocks the next quest; downloading alone does not count."
+                    checked={installed}
+                    onChange={(value) => setCheck(questStepKey(game, story, initial), value)}
+                  />
+                )}
+                {installed && remaining && (
+                  <>
+                    <p className="gm-major-next"><b>Next:</b> {remaining.label}</p>
+                    <button type="button" className="gm-pill" onClick={() => {
+                      setPlayMode("new");
+                      setField(mainQuestKey(game.id), story.id);
+                    }}>Make this my next adventure</button>
+                  </>
+                )}
+                <details className="gm-major-path">
+                  <summary>View storyline checkpoints · {story.steps.filter((step) => isStepDone(story, step)).length}/{story.steps.length}</summary>
+                  {story.note && <p className="gm-note">{story.note}</p>}
+                  {current && <div className="gm-smart-list">{renderQuest(current, "compact")}</div>}
+                </details>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       {showAllQuests && visibleSocialRows.length > 0 && (
