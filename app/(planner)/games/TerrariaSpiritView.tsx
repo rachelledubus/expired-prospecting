@@ -110,13 +110,14 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
   const route = useMemo(() => game.stages.filter((stage) => stage.track === "route"), [game]);
   const quests = useMemo(() => game.stages.filter((stage) => stage.track === "quest"), [game]);
   const sides = useMemo(() => game.stages.filter((stage) => stage.track === "side"), [game]);
+  const allQuests = useMemo(() => [...quests, ...sides], [quests, sides]);
   const isDone = (stage: TerrariaStage, step: TerrariaStep) =>
     !!prog.checks[terrariaCheckKey(game.id, stage.id, step.id)];
   const completedCount = (stage: TerrariaStage) => stage.steps.filter((step) => isDone(stage, step)).length;
   const stageDone = (stage: TerrariaStage) => completedCount(stage) === stage.steps.length;
   const recommended = route.find((stage) => !stageDone(stage)) ?? route[route.length - 1];
   const current = route.find((stage) => stage.id === selectedRoute) ?? recommended;
-  const questChoice = quests.find((stage) => stage.id === selectedQuest) ??
+  const questChoice = allQuests.find((stage) => stage.id === selectedQuest) ??
     quests.find((stage) => !stageDone(stage)) ?? quests[0];
   const total = route.reduce((n, stage) => n + stage.steps.length, 0);
   const completed = route.reduce((n, stage) => n + completedCount(stage), 0);
@@ -213,9 +214,16 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
           <label className="gm-note">Current quest
             <select className="gm-input gm-sel" style={{ width: "100%", display: "block", marginTop: 7 }}
               value={questChoice.id} onChange={(event) => setSelectedQuest(event.target.value)}>
-              {quests.map((stage) => (
-                <option value={stage.id} key={stage.id}>{stageDone(stage) ? "✓ " : ""}{stage.title}</option>
-              ))}
+              <optgroup label="Spirit Quest Book">
+                {quests.map((stage) => (
+                  <option value={stage.id} key={stage.id}>{stageDone(stage) ? "✓ " : ""}{stage.title}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Optional side challenges">
+                {sides.map((stage) => (
+                  <option value={stage.id} key={stage.id}>{stageDone(stage) ? "✓ " : ""}{stage.title}</option>
+                ))}
+              </optgroup>
             </select>
           </label>
         </section>
@@ -230,7 +238,7 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
             <div className="gm-card" key={stage.id} style={{ padding: 12, marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div><b>{stage.title}</b><div className="gm-note">{completedCount(stage)}/{stage.steps.length} complete</div></div>
-                <button type="button" className="gm-pill" onClick={() => { setSelectedQuest(stage.id); if (stage.track === "quest") setView("quests"); else openStageForSide(stage.id); }}>
+                <button type="button" className="gm-pill" onClick={() => { setSelectedQuest(stage.id); setView("quests"); }}>
                   {stageDone(stage) ? "Review" : "Open"}
                 </button>
               </div>
@@ -271,10 +279,4 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
       </>}
     </div>
   );
-
-  function openStageForSide(stageId: string) {
-    // Side content should never replace the next required chapter.
-    setSelectedQuest(stageId);
-    setView("quests");
-  }
 }
