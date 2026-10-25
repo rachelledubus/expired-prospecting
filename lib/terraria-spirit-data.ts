@@ -276,11 +276,6 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Explore the Underground Jungle and obtain useful loot."
         },
         {
-          "id": "a5",
-          "label": "Locate a Jungle hive and defeat Queen Bee if you want the optional rewards.",
-          "how": "Queen Bee is optional for the main route, especially if your gear is already sufficient."
-        },
-        {
           "id": "a6",
           "label": "Upgrade armor, healing, and accessories before Skeletron."
         }
@@ -501,10 +496,6 @@ export const TERRARIA_GAME: TerrariaGame = {
         {
           "id": "a5",
           "label": "Upgrade equipment using a new Spirit recipe."
-        },
-        {
-          "id": "a6",
-          "label": "Try the Mystic Moon nighttime event when prepared (optional)."
         }
       ],
       "source": "https://spiritmod.wiki.gg/wiki/Events"
@@ -1051,8 +1042,8 @@ export const TERRARIA_GAME: TerrariaGame = {
     },
     {
       "name": "Queen Bee",
-      "stageId": "sky-and-jungle",
-      "stepId": "a5",
+      "stageId": "bonus-bosses",
+      "stepId": "a2",
       "chapter": "pre",
       "optional": true
     },
