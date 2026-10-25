@@ -566,11 +566,16 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
           <details className="gm-subtasks" open={mode !== "compact"} style={{ margin: "8px 0 12px 16px", paddingLeft: 12, borderLeft: "2px solid var(--border, #aab2be)" }}>
             <summary>{mode === "compact" && pendingSubtasks.length ? `Next small action: ${pendingSubtasks[0].label}` : `Step-by-step actions · ${completedSubtasks.length}/${subtasks.length}`}</summary>
             <div style={{ paddingTop: 8 }}>
-              {step.how && <p className="gm-note">{step.how}</p>}
+              {step.how && (
+                <details className="gm-fold">
+                  <summary>Full quest instructions</summary>
+                  <p className="gm-note">{step.how}</p>
+                </details>
+              )}
               {story.id === "vanilla-movie-theater" && step.id === "missing-bundle" && (
                 <p className="gm-note"><b>Only 5 of the 6 options are required.</b> Check whichever five you donate, then finish the main objective.</p>
               )}
-              {pendingSubtasks.map((task) => (
+              {pendingSubtasks.slice(0, 1).map((task) => (
                 <Check
                   key={task.id}
                   label={task.label}
@@ -579,6 +584,20 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
                   onChange={(v) => setCheck(questSubtaskKey(game, story, step, task), v)}
                 />
               ))}
+              {pendingSubtasks.length > 1 && (
+                <details className="gm-fold">
+                  <summary>Upcoming actions · {pendingSubtasks.length - 1}</summary>
+                  {pendingSubtasks.slice(1).map((task) => (
+                    <Check
+                      key={task.id}
+                      label={task.label}
+                      sub={task.how}
+                      checked={false}
+                      onChange={(v) => setCheck(questSubtaskKey(game, story, step, task), v)}
+                    />
+                  ))}
+                </details>
+              )}
               {pendingSubtasks.length === 0 && (
                 <button type="button" className="gm-pill" onClick={() => setCheck(key, true)}>
                   Finish this milestone and reveal the next quest
