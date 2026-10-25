@@ -1033,7 +1033,7 @@ export function getStardewQuestSubtasks(story: GameStoryline, step: GameQuestSte
     how: item.note,
   }));
 
-  if (step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)) {
+  if (materials.length <= 1 && step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)) {
     return [
       { id: "friendship", label: `Reach ${step.social.hearts} hearts with ${step.social.npc}` },
       { id: "event", label: "Trigger and watch the required story event", how: step.how },
@@ -1052,5 +1052,5 @@ export function getStardewQuestSubtasks(story: GameStoryline, step: GameQuestSte
     .slice(0, 4)
     .map((label, i) => ({ id: `instruction-${i + 1}`, label }));
 
-  return [...materials, ...route, ...instructions].slice(0, 12);
+  return [...materials, ...route, ...instructions].slice(0, Math.max(12, materials.length));
 }
