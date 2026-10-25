@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { CAREER_GATES, CAREER_SKILLS, type CareerGate, type CareerSkill } from "@/lib/career-skills";
-import type { CareerProgress, CareerSkillState } from "@/lib/career-store";
+import type { CareerProgress } from "@/lib/career-notion";
 
-type Editor = { status: string; evidenceUrl: string; verified: boolean; notes: string };
+type Editor = { status: string; evidenceUrl: string; verified: boolean };
 type SavePatch =
-  | { type: "skill"; id: string; status: string; evidenceUrl: string; verified: boolean; notes: string }
-  | { type: "action"; gate: number; taken: boolean };
+  | { type: "skill"; id: string; status: string; evidenceUrl: string; verified: boolean; expectedEditedAt: string }
+  | { type: "action"; gate: number; taken: boolean; expectedEditedAt: string };
 
-const learningStatuses = ["Not started", "Learning", "Practicing"];
+const learningStatuses = ["Not Started", "Learning", "Practicing"];
 const validUrl = (value: string) => {
   try { return ["https:", "http:"].includes(new URL(value).protocol); }
   catch { return false; }
@@ -18,15 +18,14 @@ const validUrl = (value: string) => {
 function stateOf(progress: CareerProgress, skill: CareerSkill): Editor {
   const saved = progress.skills[skill.id];
   return {
-    status: saved?.status || skill.initialStatus || "Not started",
+    status: saved?.status || "Not Started",
     evidenceUrl: saved?.evidenceUrl ?? "",
     verified: Boolean(saved?.verified),
-    notes: saved?.notes ?? "",
   };
 }
 function proven(progress: CareerProgress, skill: CareerSkill): boolean {
   const state = progress.skills[skill.id];
-  return Boolean(state?.verified && validUrl(state.evidenceUrl));
+  return Boolean(state?.proofComplete);
 }
 function gateCount(progress: CareerProgress, gate: CareerGate) {
   const all = CAREER_SKILLS.filter((skill) => skill.gate === gate.id);
@@ -76,7 +75,7 @@ export default function CareerPlanner({ initial }: { initial: CareerProgress }) 
         return false;
       }
       setProgress(payload.progress as CareerProgress);
-      setNotice("Saved — this will be available when you open the portal on another device.");
+      setNotice("Updated in Notion. Your progress is saved.");
       return true;
     } catch {
       setNotice("Could not reach the portal. Nothing was marked complete.");
@@ -86,28 +85,28 @@ export default function CareerPlanner({ initial }: { initial: CareerProgress }) 
     }
   }
 
-  async function saveSkill(skill: CareerSkill) {
-    if (!editor || busy) return;
-    if (editor.verified && !validUrl(editor.evidenceUrl.trim())) {
-      setNotice("Evidence required: add a valid http(s) link before you verify this skill.");
+  async function saveSkill(skill: CareerSkill, draft: Editor | null = editor) {
+    if (!draft || busy) return;
+    if (draft.verified && !validUrl(draft.evidenceUrl.trim())) {
+      setNotice("First paste a valid http(s) evidence link; then check Verified.");
       return;
     }
-    if (editor.evidenceUrl.trim() && !validUrl(editor.evidenceUrl.trim())) {
+    if (draft.evidenceUrl.trim() && !validUrl(draft.evidenceUrl.trim())) {
       setNotice("Evidence link must start with https:// or http://.");
       return;
     }
     const ok = await persist({
       type: "skill", id: skill.id,
-      status: editor.verified ? "Verified" : editor.status,
-      evidenceUrl: editor.evidenceUrl.trim(), verified: editor.verified,
-      notes: editor.notes.trim(),
+      status: draft.verified ? "Verified" : draft.status,
+      evidenceUrl: draft.evidenceUrl.trim(), verified: draft.verified,
+      expectedEditedAt: progress.skills[skill.id]?.updatedAt ?? "",
     });
     if (ok) { setExpandedId(null); setEditor(null); }
   }
 
   async function actionToggle() {
     if (busy) return;
-    await persist({ type: "action", gate: gate.id, taken: !Boolean(progress.actions[String(gate.id)]) });
+    await persist({ type: "action", gate: gate.id, taken: !Boolean(progress.actions[String(gate.id)]), expectedEditedAt: progress.actionUpdatedAt[String(gate.id)] ?? "" });
   }
 
   return (
@@ -120,6 +119,7 @@ export default function CareerPlanner({ initial }: { initial: CareerProgress }) 
               <div className="cr-kicker">School → software engineering → consulting</div>
               <h1>Career readiness</h1>
               <p>Proof before doubt. Learn it, demonstrate it, then act.</p>
+              <button type="button" className="cr-sync-button" disabled={busy} onClick={() => window.location.reload()}>↻ Refresh from Notion</button>
             </div>
             <div className="cr-total"><strong>{totalProven}/{CAREER_SKILLS.length}</strong><span>skills proven</span></div>
           </header>
@@ -195,18 +195,22 @@ export default function CareerPlanner({ initial }: { initial: CareerProgress }) 
                         <input type="url" value={editor.evidenceUrl} maxLength={1000} placeholder="https://github.com/…"
                           onChange={(e) => setEditor({ ...editor, evidenceUrl: e.target.value })} />
                       </label>
-                      <label className="cr-field">Private notes (optional)
-                        <textarea rows={2} maxLength={600} value={editor.notes} placeholder="What I built, tested or demonstrated"
-                          onChange={(e) => setEditor({ ...editor, notes: e.target.value })} />
-                      </label>
                       <label className="cr-verified-check">
-                        <input type="checkbox" checked={editor.verified} onChange={(e) => setEditor({ ...editor, verified: e.target.checked })} />
-                        <span><strong>I checked that my evidence meets the requirement.</strong><small>A checked box without a valid evidence URL never counts.</small></span>
+                        <input type="checkbox" disabled={busy} checked={editor.verified} onChange={(e) => {
+                          const draft = { ...editor, verified: e.target.checked };
+                          if (draft.verified && !validUrl(draft.evidenceUrl.trim())) {
+                            setNotice("Add a valid evidence link first, then check this box.");
+                            return;
+                          }
+                          setEditor(draft);
+                          void saveSkill(skill, draft);
+                        }} />
+                        <span><strong>Verified — sync checkbox to Notion</strong><small>Checking or unchecking immediately saves this skill in Notion. An evidence link is required to verify.</small></span>
                       </label>
                       <div className="cr-row-buttons">
-                        <button type="button" disabled={busy} className="cr-save" onClick={() => saveSkill(skill)}>{busy ? "Saving…" : "Save skill"}</button>
+                        <button type="button" disabled={busy} className="cr-save" onClick={() => saveSkill(skill)}>{busy ? "Saving to Notion…" : "Save status / evidence to Notion"}</button>
                         <button type="button" disabled={busy} className="cr-cancel" onClick={() => { setExpandedId(null); setEditor(null); setNotice(""); }}>Cancel</button>
-                        {validUrl(saved.evidenceUrl) && <a href={saved.evidenceUrl} target="_blank" rel="noopener noreferrer">View saved evidence ↗</a>}
+                        <a href={"https://www.notion.so/" + skill.id} target="_blank" rel="noopener noreferrer">Open skill in Notion ↗</a>
                       </div>
                     </div>
                   )}
@@ -215,8 +219,8 @@ export default function CareerPlanner({ initial }: { initial: CareerProgress }) 
             })}
           </div>
           <p className="cr-footer-note">
-            This is a snapshot of your 33 Notion skills, with independent progress saved privately in this portal using Netlify storage.
-            Checking boxes here does not update Notion. Meeting a gate is an action threshold, not a guarantee of employment,
+            Skills, evidence links, verified checkboxes, and milestone actions are read from and saved to your existing Notion databases.
+            Changes you make directly in Notion appear after you refresh this page. Meeting a gate is an action threshold, not a guarantee of employment,
             and you may apply for internships or jobs before all requirements are complete.
           </p>
         </div>

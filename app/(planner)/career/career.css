@@ -80,3 +80,6 @@
   .tp .cr-gate strong { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .tp .cr-meter > span { transition: none; } }
+
+.tp .cr-sync-button { margin-top: 12px; padding: 7px 12px; font-size: 12px; font-weight: 700; border: 1px solid #8fa58a; border-radius: 9px; background: #eef3ea; color: var(--navy); }
+.tp .cr-sync-button:focus-visible { outline: 3px solid #d4a24c; outline-offset: 2px; }
