@@ -1,4 +1,5 @@
 import { STARDEW_NEW_WORLD_SUBTASKS } from "./stardew-new-world-subtasks";
+import type { GameQuestStep, GameStoryline } from "./games-data";
 
 /** Track the real actions inside broad Stardew/expanded-mod objectives without changing saved parent milestone keys. */
 export type StardewQuestSubtask = { id: string; label: string; how?: string };
@@ -1017,3 +1018,39 @@ export const STARDEW_QUEST_SUBTASKS: Record<string, StardewQuestSubtask[]> = {
   ],
   ...STARDEW_NEW_WORLD_SUBTASKS
 };
+
+
+// One source of truth for BOTH the UI and server-side persisted check key registry.
+// Existing curated and material/social IDs remain unchanged across releases.
+export function getStardewQuestSubtasks(story: GameStoryline, step: GameQuestStep): StardewQuestSubtask[] {
+  const curated = STARDEW_QUEST_SUBTASKS[`${story.id}:${step.id}`];
+  if (curated?.length) return curated;
+
+  // Keep older "material-N" keys stable so existing individual checkmarks persist.
+  const materials: StardewQuestSubtask[] = (step.requiredItems ?? []).map((item, i) => ({
+    id: `material-${i + 1}`,
+    label: `Collect ${item.qty ?? 1} × ${item.name}`,
+    how: item.note,
+  }));
+
+  if (step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)) {
+    return [
+      { id: "friendship", label: `Reach ${step.social.hearts} hearts with ${step.social.npc}` },
+      { id: "event", label: "Trigger and watch the required story event", how: step.how },
+    ];
+  }
+
+  // For quests without a handcrafted breakdown, reuse actual objective instructions
+  // instead of inventing mod-specific requirements. Each short instruction gets a checkbox.
+  const route: StardewQuestSubtask[] = step.location
+    ? [{ id: "travel", label: `Go to ${step.location}` }]
+    : [];
+  const instructions = (step.how ?? "")
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9])|;\s+/)
+    .map((text) => text.trim())
+    .filter((text) => text.length > 8)
+    .slice(0, 4)
+    .map((label, i) => ({ id: `instruction-${i + 1}`, label }));
+
+  return [...materials, ...route, ...instructions].slice(0, 12);
+}
