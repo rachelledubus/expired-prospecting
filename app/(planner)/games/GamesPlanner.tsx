@@ -12,6 +12,7 @@ import {
   goldenWalnutKey,
   isBundleGame,
   isCompletionGame,
+  isTerrariaGame,
   itemKey,
   mainQuestKey,
   questKey,
@@ -36,6 +37,7 @@ import {
   type Season,
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
+import TerrariaSpiritView from "./TerrariaSpiritView";
 import { getStardewQuestSubtasks, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
@@ -1973,7 +1975,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
                 ? "Copied! Paste it into our chat so I can organize your actual remaining quests."
                 : copyProgressStatus === "error"
                   ? "Could not copy. Make sure you're logged in and your changes have saved, then try again."
-                  : "Read-only. Does not change or reset your checkboxes."}
+                  : "Read-only. Does not change or reset any game progress."}
             </span>
           </div>
 
@@ -1992,6 +1994,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             />
           ) : isCompletionGame(game) ? (
             <CompletionView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+          ) : isTerrariaGame(game) ? (
+            <TerrariaSpiritView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}
@@ -2010,7 +2014,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               {statusText}
             </span>
             <button type="button" className={"gm-pill ghost" + (armed ? " arm" : "")} onClick={resetGame}>
-              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : "Reset Story & Quests"}
+              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : isTerrariaGame(game) ? "Reset Terraria" : "Reset Story & Quests"}
             </button>
           </div>
         </div>
