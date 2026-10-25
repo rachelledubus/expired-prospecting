@@ -2585,7 +2585,6 @@ const completionTracker: CompletionGame = {
 };
 
 export const GAMES: Game[] = [
-  TERRARIA_GAME,
   {
     kind: "checklist",
     id: "stardew-mega-mod",
@@ -8382,4 +8381,5 @@ export const GAMES: Game[] = [
   },
   communityCenter,
   completionTracker,
+  TERRARIA_GAME,
 ];
