@@ -1182,7 +1182,7 @@ export const TERRARIA_GAME: TerrariaGame = {
         }
       ],
       "unlockAll": [
-        "dungeon"
+        "dungeon:a3"
       ]
     },
     {
@@ -1215,7 +1215,7 @@ export const TERRARIA_GAME: TerrariaGame = {
         }
       ],
       "unlockAll": [
-        "dungeon"
+        "dungeon:a3"
       ]
     },
     {
