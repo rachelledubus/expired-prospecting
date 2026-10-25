@@ -2610,10 +2610,11 @@ export const GAMES: Game[] = [
           title: "NEW · Adventurer's Guild Expanded",
           mod: "Adventurer's Guild Expanded for 1.6",
           importance: "optional",
-          note: "Downloaded in October 2026; only check installation after SMAPI loads it. The modern 1.6 version needs SMAPI and Content Patcher, not the extra dependencies of the obsolete 1.5 release. The monster research story includes a meaningful later choice.",
+          note: "You confirmed that the mod is installed and loading through SMAPI. Pick up the Expanding the Guild quest at the Adventurer's Guild; the monster research storyline has a meaningful later choice.",
           steps: [
             {
               id: "installed",
+              currentSaveComplete: true,
               label: "Confirm Adventurer's Guild Expanded loads in SMAPI",
               how: "Install the current 'Adventurer's Guild Expanded for 1.6' and its required Content Patcher dependency. Start the game with SMAPI; check this only after it appears without a skipped-mod or missing-dependency error.",
               bucket: "now",
@@ -2677,10 +2678,11 @@ export const GAMES: Game[] = [
           title: "NEW · Sunberry Village",
           mod: "Sunberry Village",
           importance: "optional",
-          note: "Downloaded in October 2026; confirm the mod and dependencies work first. Needs Stardew Valley 1.6.15+ on PC, plus Content Patcher, Custom Companions, Farm Type Manager, HxW Tilesheets, Item Extensions, and Lumisteria Tilesheets - Indoor. Special Orders can be configured to unlock with vanilla progression or Elias's friendship.",
+          note: "You confirmed the village expansion is installed and loading through SMAPI. Begin with exploration, the museum and mines; the Special Orders board may depend on your mod configuration or Elias's friendship.",
           steps: [
             {
               id: "installed",
+              currentSaveComplete: true,
               label: "Confirm Sunberry Village and its required frameworks load",
               how: "After extracting the mod and dependencies into Mods, launch through SMAPI. Check this once the new area loads and the SMAPI log has no missing-dependency errors.",
               bucket: "now",
@@ -2744,10 +2746,11 @@ export const GAMES: Game[] = [
           title: "NEW · Visit Mount Vapius",
           mod: "Visit Mount Vapius",
           importance: "optional",
-          note: "Downloaded in October 2026; confirm the 2.x requirements first. In addition to the mod's usual frameworks, version 2 requires Button's Extra Trigger Action Stuff (BETAS) and Custom Museum Framework. Your Year 2 Railroad is already open.",
+          note: "You confirmed the Mount Vapius expansion is installed and loading through SMAPI. Your Year 2 Railroad is already open, so start with the train ticket and explore Glimsap Hamlet.",
           steps: [
             {
               id: "installed",
+              currentSaveComplete: true,
               label: "Confirm Visit Mount Vapius and version 2 dependencies load",
               how: "Check the mod requirements for BETAS, Custom Museum Framework, Content Patcher, Farm Type Manager, Item Extensions, SpaceCore, Esca's Modding Plugins, Lumisteria Tilesheets - Indoor, and Unlockable Bundles. Only check after SMAPI reports no missing dependencies.",
               bucket: "now",
@@ -2812,10 +2815,11 @@ export const GAMES: Game[] = [
           title: "NEW · Distant Lands (Witch's Swamp)",
           mod: "Distant Lands",
           importance: "optional",
-          note: "Downloaded in October 2026; confirm the mod is installed, with Content Patcher, Farm Type Manager, and SpaceCore. This is a post-Community-Center side story; friendship with Zic and swamp changes are the main focus.",
+          note: "You confirmed Distant Lands is installed and loading through SMAPI. Revisit the Witch's Swamp to begin Zic's expanded storyline, with new resources and secrets to explore.",
           steps: [
             {
               id: "installed",
+              currentSaveComplete: true,
               label: "Confirm Distant Lands and dependencies load in SMAPI",
               how: "Install the current mod with Content Patcher, Farm Type Manager, and SpaceCore. Start through SMAPI, then verify that the Witch's Swamp is updated in-game.",
               bucket: "now",
