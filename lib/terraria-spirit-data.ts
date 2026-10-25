@@ -995,6 +995,418 @@ export const TERRARIA_GAME: TerrariaGame = {
         }
       ],
       "source": "https://spiritmod.wiki.gg/wiki/Spirit_Classic"
+    },
+    {
+      "id": "heart-cause",
+      "title": "Heart to the Cause",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "After The First Adventure: the Guide wants you to find a Life Crystal.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete The First Adventure and ask the Guide for Heart to the Cause."
+        },
+        {
+          "id": "a2",
+          "label": "Activate Heart to the Cause in the Quest Book."
+        },
+        {
+          "id": "a3",
+          "label": "Explore underground until you obtain a Life Crystal."
+        },
+        {
+          "id": "a4",
+          "label": "Claim the quest reward from Completed."
+        }
+      ]
+    },
+    {
+      "id": "idle-idol",
+      "title": "Idle Idol",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "A short desert relic quest that eventually leads to Scarabeus.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete The First Adventure, then ask the Adventurer about Idle Idol."
+        },
+        {
+          "id": "a2",
+          "label": "Activate Idle Idol and search the Desert for a Decrepit Idol."
+        },
+        {
+          "id": "a3",
+          "label": "Obtain the Decrepit Idol and talk to the Adventurer."
+        },
+        {
+          "id": "a4",
+          "label": "Claim the quest reward, including a Scarab Idol."
+        }
+      ]
+    },
+    {
+      "id": "sinister-sands",
+      "title": "Sinister Sands",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Beat Scarabeus as a quest objective after retrieving the relic.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete Idle Idol and receive Sinister Sands from the Adventurer."
+        },
+        {
+          "id": "a2",
+          "label": "Activate Sinister Sands in the Quest Book."
+        },
+        {
+          "id": "a3",
+          "label": "Summon Scarabeus in the Desert during the day."
+        },
+        {
+          "id": "a4",
+          "label": "Defeat Scarabeus while the quest is active."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the reward from the Quest Book."
+        }
+      ]
+    },
+    {
+      "id": "return-roots",
+      "title": "A Return to Your Roots",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "A main Quest Book assignment to face Vinewrath Bane.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete Flowery Fiends and talk with the Adventurer."
+        },
+        {
+          "id": "a2",
+          "label": "Activate A Return to Your Roots."
+        },
+        {
+          "id": "a3",
+          "label": "Travel to the bottom of the Underground Briar."
+        },
+        {
+          "id": "a4",
+          "label": "Summon and defeat Vinewrath Bane with the quest active."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the thorn-themed reward."
+        }
+      ]
+    },
+    {
+      "id": "strange-seas",
+      "title": "Strange Seas",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "A Spirit quest that points you to The Tide and its miniboss.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Defeat Skeletron to meet the unlocking condition."
+        },
+        {
+          "id": "a2",
+          "label": "Accept and activate Strange Seas from the Adventurer."
+        },
+        {
+          "id": "a3",
+          "label": "Obtain a Seabreak Pearl."
+        },
+        {
+          "id": "a4",
+          "label": "Travel to the Ocean and begin The Tide event."
+        },
+        {
+          "id": "a5",
+          "label": "Defeat R'lyehian while the quest is active."
+        },
+        {
+          "id": "a6",
+          "label": "Claim the Ancient Diver equipment reward."
+        }
+      ]
+    },
+    {
+      "id": "raiding-stars",
+      "title": "Raiding the Stars",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Post-Skeletron Asteroid Field combat assignment.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Defeat Skeletron and ask the Adventurer for Raiding the Stars."
+        },
+        {
+          "id": "a2",
+          "label": "Activate Raiding the Stars in the Quest Book."
+        },
+        {
+          "id": "a3",
+          "label": "Travel to the Asteroid Field and defeat two Stardancers."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain Energized Metal as required."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the quest reward."
+        }
+      ]
+    },
+    {
+      "id": "decrepit-depths",
+      "title": "Decrepit Depths",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Search dangerous underground ruins for a Sepulchre Chest.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Finish Heart to the Cause and ask the Adventurer for Decrepit Depths."
+        },
+        {
+          "id": "a2",
+          "label": "Activate the quest and prepare ropes, torches and mining equipment."
+        },
+        {
+          "id": "a3",
+          "label": "Find a Dark Sepulchre in the Cavern layer."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain a Sepulchre Chest."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the decorative and treasure-related rewards."
+        }
+      ]
+    },
+    {
+      "id": "sky-high",
+      "title": "Sky High",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Search Spirit's floating pagodas for an ornate staff.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete Heart to the Cause."
+        },
+        {
+          "id": "a2",
+          "label": "Accept and activate Sky High."
+        },
+        {
+          "id": "a3",
+          "label": "Look for Floating Pagodas in the skies near the oceans."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain the Staff of the Jade Dragon."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the Jade Dragon-related quest reward."
+        }
+      ]
+    },
+    {
+      "id": "ancestral-worship",
+      "title": "Ancestral Worship",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Create a Briar monument after finishing Bare Necessities.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Finish Bare Necessities and accept Ancestral Worship."
+        },
+        {
+          "id": "a2",
+          "label": "Activate the quest from your Quest Book."
+        },
+        {
+          "id": "a3",
+          "label": "Acquire or craft the Statue of the Old Gods."
+        },
+        {
+          "id": "a4",
+          "label": "Claim the Briar-themed crafting and decoration rewards."
+        }
+      ]
+    },
+    {
+      "id": "unidentified-floaters",
+      "title": "Unidentified Floaters",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "Investigate a Jelly Deluge and capture Dreamlight Jelly.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Defeat a qualifying early boss and ask the Adventurer about Unidentified Floaters."
+        },
+        {
+          "id": "a2",
+          "label": "Activate the quest."
+        },
+        {
+          "id": "a3",
+          "label": "Visit the surface or Space during a Jelly Deluge and meet the distance objective."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain Dreamlight Jelly."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the Distress Jelly quest reward."
+        }
+      ]
+    },
+    {
+      "id": "rocky-road",
+      "title": "Rocky Road",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "An exploration quest through underground Granite Caves.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Finish Vile Wastes or Body Horrors, then accept Rocky Road."
+        },
+        {
+          "id": "a2",
+          "label": "Activate the quest."
+        },
+        {
+          "id": "a3",
+          "label": "Find a Granite Cave while exploring underground."
+        },
+        {
+          "id": "a4",
+          "label": "Travel the required distance inside the Granite Cave."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the Capacitor gear and other rewards."
+        }
+      ]
+    },
+    {
+      "id": "rescue-bandit",
+      "title": "Friend Safari",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "A conditional NPC rescue quest; only available when the Bandit Hideout generated.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete Heart to the Cause and confirm your world has a Bandit Hideout."
+        },
+        {
+          "id": "a2",
+          "label": "Ask the Adventurer for Friend Safari and activate it."
+        },
+        {
+          "id": "a3",
+          "label": "Search the Bandit Hideout for the bound Bandit."
+        },
+        {
+          "id": "a4",
+          "label": "Talk to the Bandit to rescue him."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the quest reward and house the rescued Bandit."
+        }
+      ]
+    },
+    {
+      "id": "rescue-gambler",
+      "title": "Breaking and Entering",
+      "chapter": "pre",
+      "track": "quest",
+      "summary": "A conditional NPC rescue quest for worlds with the Goblin Tower / Arcane Tower.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Complete Heart to the Cause and confirm the appropriate tower generated."
+        },
+        {
+          "id": "a2",
+          "label": "Receive and activate Breaking and Entering."
+        },
+        {
+          "id": "a3",
+          "label": "Explore the tower and talk to the bound Gambler."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain a Shadowbreak Wand."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the Quest Book reward and house the Gambler."
+        }
+      ]
+    },
+    {
+      "id": "taming-stars",
+      "title": "Taming the Stars",
+      "chapter": "hard",
+      "track": "quest",
+      "summary": "A Hardmode aurora-themed quest with a special mount reward.",
+      "source": "https://spiritmod.wiki.gg/wiki/Quests",
+      "steps": [
+        {
+          "id": "a1",
+          "label": "Defeat Wall of Flesh."
+        },
+        {
+          "id": "a2",
+          "label": "Receive Taming the Stars from the Adventurer and activate it."
+        },
+        {
+          "id": "a3",
+          "label": "Obtain an Ice Berry."
+        },
+        {
+          "id": "a4",
+          "label": "Obtain an Aurora Saddle."
+        },
+        {
+          "id": "a5",
+          "label": "Claim the completed quest reward."
+        }
+      ]
     }
   ],
   "bosses": [
