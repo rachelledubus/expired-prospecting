@@ -36,7 +36,7 @@ import {
   type Season,
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
-import { STARDEW_QUEST_SUBTASKS, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
+import { getStardewQuestSubtasks, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
 
@@ -197,32 +197,6 @@ function questStepKey(game: ChecklistGame, story: GameStoryline, step: GameQuest
   if (step.legacy) return itemKey(game.id, step.legacy.phaseId, step.legacy.groupLabel, step.legacy.text);
   const owner = step.progressKey ?? { storylineId: story.id, stepId: step.id };
   return questKey(game.id, owner.storylineId, owner.stepId);
-}
-
-/** Keep intermediate progress independent from existing quest/storyline completion keys. */
-function getQuestSubtasks(story: GameStoryline, step: GameQuestStep): StardewQuestSubtask[] {
-  const curated = STARDEW_QUEST_SUBTASKS[`${story.id}:${step.id}`];
-  if (curated?.length) return curated;
-
-  // A materials list should be checkable one ingredient at a time even if
-  // the quest data has not yet been given a custom route.
-  if (step.requiredItems && step.requiredItems.length > 1) {
-    return step.requiredItems.map((item, index) => ({
-      id: `material-${index + 1}`,
-      label: `Collect ${item.qty ?? 1} × ${item.name}`,
-      how: item.note,
-    }));
-  }
-
-  // Friendships have two distinct accomplishments: hearts and the event.
-  // Do not force event steps on simple friendship-only milestones.
-  if (step.social && /hearts?/i.test(step.label) && /(event|Part |trigger|see |unlock)/i.test(step.label)) {
-    return [
-      { id: "friendship", label: `Reach ${step.social.hearts} hearts with ${step.social.npc}` },
-      { id: "event", label: "Trigger and watch the required story event", how: step.how },
-    ];
-  }
-  return [];
 }
 
 function questSubtaskKey(game: ChecklistGame, story: GameStoryline, step: GameQuestStep, subtask: StardewQuestSubtask) {
@@ -564,7 +538,7 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
     const key = questStepKey(game, story, step);
     const nextStep = story.steps[row.index + 1];
     const weatherNeed = weatherLabel(step);
-    const subtasks = getQuestSubtasks(story, step);
+    const subtasks = getStardewQuestSubtasks(story, step);
     const completedSubtasks = subtasks.filter((task) => !!prog.checks[questSubtaskKey(game, story, step, task)]);
     const pendingSubtasks = subtasks.filter((task) => !prog.checks[questSubtaskKey(game, story, step, task)]);
     const details = [
@@ -605,6 +579,11 @@ function ChecklistView({ game, prog, setCheck, setField, onOpenFarm }: ViewProps
                   onChange={(v) => setCheck(questSubtaskKey(game, story, step, task), v)}
                 />
               ))}
+              {pendingSubtasks.length === 0 && (
+                <button type="button" className="gm-pill" onClick={() => setCheck(key, true)}>
+                  Finish this milestone and reveal the next quest
+                </button>
+              )}
               {completedSubtasks.length > 0 && (
                 <details className="gm-fold gm-completed-path">
                   <summary>Completed actions · {completedSubtasks.length}</summary>
