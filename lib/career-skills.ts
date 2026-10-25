@@ -1,5 +1,5 @@
-// Imported one-time from the user's existing Notion career tracker (2026-10-25).
-// Editing proof on this portal will not modify Notion.
+// Skill definitions are mirrored from the existing Notion career tracker.
+// Actual progress and proof verification read/write the ORIGINAL Notion records.
 export type CareerSkill = { id: string; name: string; gate: number; domain: string; proof: string; course: string; next: string; initialStatus: string };
 export type CareerGate = { id: number; title: string; action: string; deadline: string };
 export const CAREER_SKILLS: CareerSkill[] = [
@@ -8,9 +8,9 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "name": "Build an interactive, accessible web page",
     "gate": 1,
     "domain": "Web and Data",
-    "proof": "Published HTML/CSS/JS portfolio usable on mobile and by keyboard, with working navigation and interaction.",
+    "proof": "Original HTML/CSS/JavaScript service-request dashboard usable on mobile and by keyboard, with working form, list, filters and status changes.",
     "course": "Web Development Foundations; JavaScript Programming",
-    "next": "Finish and verify your current web portfolio project.",
+    "next": "Create QueuePilot Web in your own HTML/CSS/JavaScript; demonstrate responsive layouts and keyboard use.",
     "initialStatus": "Practicing"
   },
   {
@@ -20,7 +20,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Architecture and Integration",
     "proof": "README or case study: problem, users, features, design choices, limitations, and a 3-minute demo.",
     "course": "Introduction to Software Engineering",
-    "next": "Write a README for the completed inventory program.",
+    "next": "Explain your original QueuePilot CLI data structures, control flow, design tradeoffs and limitations.",
     "initialStatus": "Learning"
   },
   {
@@ -30,7 +30,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Test log with at least 6 normal and edge cases; show failed case, fix, and passing rerun.",
     "course": "Introduction to Software Engineering; Software Design and Quality Assurance",
-    "next": "Write test cases for existing inventory tracker.",
+    "next": "Test original QueuePilot CLI across six cases, document a genuine bug and show a successful fix/retest.",
     "initialStatus": "Practicing"
   },
   {
@@ -38,9 +38,9 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "name": "Independently implement Python business logic",
     "gate": 1,
     "domain": "Programming",
-    "proof": "Working inventory tracker: add, subtract, delete, and reject invalid quantities; demonstrate 5 example runs.",
+    "proof": "Working ORIGINAL Python service-request queue: create, find, update and cancel requests, reject invalid input and demonstrate five real runs.",
     "course": "Introduction to Software Engineering; Object Oriented Programming in Python",
-    "next": "Finish the current inventory assignment before extending it.",
+    "next": "Start QueuePilot CLI from a blank personal repo; implement creating, finding, updating and cancelling service requests.",
     "initialStatus": "Practicing"
   },
   {
@@ -50,7 +50,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Career",
     "proof": "Updated one-page technical resume, GitHub profile, one demonstrable project, and short project explanation.",
     "course": "Technical Communication; Composition: Successful Self-Expression",
-    "next": "Build from completed WGU projects, not a new portfolio from scratch.",
+    "next": "Prepare your real résumé, GitHub profile and explanation of original QueuePilot projects, not fictional assignment content.",
     "initialStatus": "Not started"
   },
   {
@@ -60,7 +60,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "One-page brief with user, goal, three user stories, and testable acceptance criteria.",
     "course": "Introduction to Software Engineering; Introduction to Systems Thinking and Applications",
-    "next": "Extract requirements from the inventory scenario.",
+    "next": "Write QueuePilot's original problem statement, three user stories and measurable acceptance criteria.",
     "initialStatus": "Learning"
   },
   {
@@ -70,7 +70,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Programming",
     "proof": "Repo with at least 3 meaningful commits and one branch merged after reviewing a change.",
     "course": "Version Control",
-    "next": "Demonstrate branch and merge in an existing school repository.",
+    "next": "Use an original QueuePilot repository for three meaningful commits and a reviewed branch merge.",
     "initialStatus": "Not started"
   },
   {
@@ -80,7 +80,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Passing test suite covers normal/invalid inputs and at least one integration; show CI or repeatable test command.",
     "course": "Software Security and Testing; Software Design and Quality Assurance",
-    "next": "Add tests to a course app.",
+    "next": "Add unit and integration tests to original QueuePilot Full Stack and demonstrate repeatable test execution.",
     "initialStatus": "Not started"
   },
   {
@@ -90,7 +90,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Web and Data",
     "proof": "Deployed app connects UI, API, and persistent database; at least one end-to-end user workflow works.",
     "course": "Front End Development; Back-End Programming; Data Management - Foundations",
-    "next": "Extend one school project rather than building several.",
+    "next": "Deploy QueuePilot with its own interface, server-side API and persistent database.",
     "initialStatus": "Not started"
   },
   {
@@ -100,7 +100,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Architecture and Integration",
     "proof": "Runnable REST service with at least 3 routes, input validation, clear error responses, and documentation.",
     "course": "Back-End Programming; Java Frameworks",
-    "next": "Extend a WGU back-end project.",
+    "next": "Implement and document three original QueuePilot REST endpoints with validation and errors.",
     "initialStatus": "Not started"
   },
   {
@@ -110,7 +110,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Web and Data",
     "proof": "Working browser interface fetches API data, handles errors/loading, and explains async behavior.",
     "course": "JavaScript Programming; Front End Development",
-    "next": "Use a public test API with no private credentials.",
+    "next": "Connect QueuePilot's original browser UI to your own API; show loading, errors and results.",
     "initialStatus": "Not started"
   },
   {
@@ -120,7 +120,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Career",
     "proof": "Merged pull request reviewed by a peer/mentor or instructor, with feedback addressed; explain code changes.",
     "course": "Version Control; Agile for Software Engineering",
-    "next": "Find a legitimate peer review opportunity.",
+    "next": "Invite a peer or mentor to review your original QueuePilot pull request and address their feedback.",
     "initialStatus": "Not started"
   },
   {
@@ -130,7 +130,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "App deployed with environment secrets excluded from repo; logs, error handling, and runbook demonstrated.",
     "course": "AWS Developer; Network and Security - Foundations",
-    "next": "Deploy a safe demonstration app and document rollback.",
+    "next": "Deploy original QueuePilot demo, exclude secrets from Git and document logs plus rollback steps.",
     "initialStatus": "Not started"
   },
   {
@@ -140,7 +140,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Programming",
     "proof": "Repo uses classes or modules appropriately, with responsibilities explained and one refactor documented.",
     "course": "Object Oriented Programming in Python; Java Frameworks",
-    "next": "Use an appropriate WGU programming project.",
+    "next": "Design and refactor original QueuePilot Full Stack modules/classes; explain one refactor.",
     "initialStatus": "Not started"
   },
   {
@@ -150,7 +150,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Programming",
     "proof": "Solve 3 introductory interview problems, explain complexity/tradeoffs, and show tests without a tutorial.",
     "course": "Data Structures and Algorithms I; Applied Discrete Mathematics",
-    "next": "Use completed coursework plus one mock interview.",
+    "next": "Independently solve three introductory algorithms and explain the tests and complexity.",
     "initialStatus": "Not started"
   },
   {
@@ -160,7 +160,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Demo app prevents unauthorized access to a protected feature, using an established auth library and tests.",
     "course": "Software Security and Testing; Back-End Programming",
-    "next": "Use test accounts and explain access rules.",
+    "next": "Protect a QueuePilot feature with an established auth library and prove unauthorized requests are rejected.",
     "initialStatus": "Not started"
   },
   {
@@ -170,7 +170,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Web and Data",
     "proof": "Working SQL file showing tables, inserts, updates, deletes, joins, constraints, and test outputs.",
     "course": "Data Management - Foundations",
-    "next": "Reuse a course database exercise.",
+    "next": "Build QueuePilot's own service request schema and show CRUD, joins and constraints.",
     "initialStatus": "Not started"
   },
   {
@@ -180,7 +180,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Architecture and Integration",
     "proof": "One-page decision record compares 3 options for cost, speed, security, maintainability, and user fit.",
     "course": "Software Engineering; Software Design and Quality Assurance",
-    "next": "Compare a custom app, off-the-shelf tool, and API integration.",
+    "next": "Compare a packaged product, no-code automation and original OpsRelay integration.",
     "initialStatus": "Not started"
   },
   {
@@ -190,7 +190,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Risk checklist: access controls, secrets, consent, backup/restore test, and handling of client-owned information.",
     "course": "Software Security and Testing; Network and Security - Foundations",
-    "next": "Demonstrate with synthetic data and verify restore.",
+    "next": "Demonstrate OpsRelay test-data access controls, secret handling and backup/restore using synthetic data.",
     "initialStatus": "Not started"
   },
   {
@@ -200,7 +200,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Quote shows labor/time assumptions, milestones, deposit/payment terms, revision limits, and contingency.",
     "course": "Business of IT - Applications; IT Leadership Foundations",
-    "next": "Price a low-risk example project and review assumptions.",
+    "next": "Estimate a small OpsRelay pilot with realistic effort, payment milestones, revisions and contingency.",
     "initialStatus": "Not started"
   },
   {
@@ -210,7 +210,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Architecture and Integration",
     "proof": "Working sandbox API integration with auth/secrets handled safely, invalid-input behavior, and failure/retry demonstration.",
     "course": "Back-End Programming; AWS Developer",
-    "next": "Use a sandbox service; avoid storing production credentials.",
+    "next": "Build OpsRelay's original sandbox integration and demonstrate errors, retries and secret handling.",
     "initialStatus": "Not started"
   },
   {
@@ -220,7 +220,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Written project limits: no high-stakes or regulated-data projects without expertise; escalation plan, rollback and exit criteria.",
     "course": "Ethical Engineering; Software Security and Testing",
-    "next": "Write a first-client project acceptance checklist.",
+    "next": "Write OpsRelay client acceptance and refusal rules, including privacy, safety, rollback and escalation.",
     "initialStatus": "Not started"
   },
   {
@@ -230,7 +230,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Before/after process map with bottlenecks, assumptions, and a realistic estimated improvement.",
     "course": "Introduction to Systems Thinking and Applications; Data Management - Foundations",
-    "next": "Diagram a workflow using fictitious data.",
+    "next": "Draw OpsRelay's before/after service inquiry process using synthetic examples.",
     "initialStatus": "Not started"
   },
   {
@@ -240,7 +240,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Document appropriate local registration/tax requirements, contract reviewed by qualified professional as needed, invoicing, insurance decision.",
     "course": "Business of IT - Applications; independent business setup",
-    "next": "Verify requirements for the jurisdiction before accepting payment.",
+    "next": "Research registration, taxes, contract, invoicing and insurance requirements before a real pilot.",
     "initialStatus": "Not started"
   },
   {
@@ -250,7 +250,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Test checklist, client demo, acceptance sign-off template, handoff notes, and clear warranty/support boundaries.",
     "course": "Software Design and Quality Assurance; Applied Software Engineering",
-    "next": "Create templates; no actual paying client required for proof.",
+    "next": "Write OpsRelay QA, demo, acceptance sign-off, handoff and support-boundary templates.",
     "initialStatus": "Not started"
   },
   {
@@ -260,7 +260,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Document a 20-30 minute practice/real interview, current pain points, stakeholders, constraints, and success measure.",
     "course": "Introduction to Systems Thinking and Applications; Technical Communication",
-    "next": "Practice with a consenting small-business owner or mock client.",
+    "next": "Interview a consenting mock client about OpsRelay's fictional inquiry-to-follow-up workflow.",
     "initialStatus": "Not started"
   },
   {
@@ -270,7 +270,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Signed-off sample scope lists deliverables, excluded work, assumptions, acceptance tests, timeline, and change-control rule.",
     "course": "Software Engineering; Agile for Software Engineering",
-    "next": "Draft for a small fixed-scope pilot.",
+    "next": "Write an OpsRelay pilot scope with deliverables, exclusions, assumptions, acceptance tests and change control.",
     "initialStatus": "Not started"
   },
   {
@@ -280,7 +280,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Document 2 legitimate client discovery conversations, a referral/outreach process, and an ethical follow-up approach.",
     "course": "Technical Communication; independent consulting practice",
-    "next": "Use a low-pressure, helpful-first outreach script.",
+    "next": "Document two genuine discovery conversations plus ethical referrals and follow-up for your consulting service.",
     "initialStatus": "Not started"
   },
   {
@@ -290,7 +290,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "One-page service menu with ideal client, scope, exclusions, typical deliverables, and pricing approach.",
     "course": "Independent consulting practice",
-    "next": "Select one narrow small-business automation offer.",
+    "next": "Write a one-page specialized offer inspired by your original work: target client, scope, exclusions and pricing.",
     "initialStatus": "Not started"
   },
   {
@@ -300,7 +300,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Anonymized case study documents an accepted solution, client feedback, outcomes, and permission for any public claims.",
     "course": "Applied Software Engineering; real pilot",
-    "next": "Use a real completed low-risk pilot and confirm permission.",
+    "next": "Deliver one narrowly scoped solution to a consenting real client; document acceptance and permitted outcomes.",
     "initialStatus": "Not started"
   },
   {
@@ -310,7 +310,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Quality and Security",
     "proof": "Written support process includes issue intake, severity, monitoring, response boundaries, backups, and handoff ownership.",
     "course": "Software Security and Testing; AWS Developer",
-    "next": "Test recovery and write a realistic support agreement.",
+    "next": "Document and test a realistic support, incident, monitoring and recovery process for your pilot.",
     "initialStatus": "Not started"
   },
   {
@@ -320,7 +320,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Business banking/bookkeeping, invoice records, contract storage, tax process, and secure handling of sensitive records.",
     "course": "Business of IT - Applications; independent business setup",
-    "next": "Set up records and verify professional advice where needed.",
+    "next": "Set up appropriate private invoices, bookkeeping, contract storage, business banking and tax workflow.",
     "initialStatus": "Not started"
   },
   {
@@ -330,7 +330,7 @@ export const CAREER_SKILLS: CareerSkill[] = [
     "domain": "Client and Business",
     "proof": "Reusable templates for discovery, quote, design, development, QA, deployment, acceptance, and handoff.",
     "course": "Agile for Software Engineering; IT Leadership Foundations",
-    "next": "Refine templates from first pilot.",
+    "next": "Turn your original pilot process into reusable discovery, quote, design, QA and handoff templates.",
     "initialStatus": "Not started"
   }
 ];
