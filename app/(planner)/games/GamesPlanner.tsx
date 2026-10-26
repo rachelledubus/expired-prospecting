@@ -1968,7 +1968,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
                     sub: "Spirit Quest Book, guided playthrough, bosses & roadmap",
                     ids: ["terraria-spirit"] },
                   { id: "dreamlight", icon: "✨", name: "Disney Dreamlight Valley",
-                    sub: "Main story, realms, friendship, projects & expansions",
+                    sub: "Main story, realms, friendships, projects & collections",
                     ids: ["dreamlight-valley"] },
                 ] as const).map((entry) => {
                   const marked = entry.ids.reduce((n, id) => n + Object.keys(progress[id]?.checks ?? {}).length, 0);
@@ -2043,7 +2043,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
           ) : isTerrariaGame(game) ? (
             <TerrariaSpiritView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : isDreamlightGame(game) ? (
-            <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+            <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}
