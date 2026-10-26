@@ -288,10 +288,6 @@ export const DREAMLIGHT_GAME: DreamlightGame = {
         {
           "id": "q3",
           "label": "Follow On the Path of Stars when unlocked."
-        },
-        {
-          "id": "q4",
-          "label": "Check the in-game quest journal for Oogie Boogie's seasonal 2026 storyline before its event ends."
         }
       ]
     },
@@ -1105,31 +1101,31 @@ export const DREAMLIGHT_GAME: DreamlightGame = {
     },
     {
       "id": "dlc-life",
-      "title": "Expansion collections & crafting",
+      "title": "Cozy Valley projects",
       "area": "valley",
       "section": "projects",
-      "summary": "Optional cross-expansion crafting and gathering; ignore tasks for packs you do not own.",
+      "summary": "Small optional building and decorating goals using only base-game resources. Expansion resources are tracked under their own packs.",
       "source": "https://www.dreamlightvalleywiki.com/quests",
       "steps": [
         {
           "id": "q1",
-          "label": "Use the Hourglass to find a new item or Timebending material (if A Rift in Time is owned)."
+          "label": "Finish decorating a single corner or pathway in a favorite biome."
         },
         {
           "id": "q2",
-          "label": "Capture Snippets for a Storybook Vale tapestry (if owned)."
+          "label": "Repair or upgrade a stall or facility you've already unlocked."
         },
         {
           "id": "q3",
-          "label": "Build or repair an upgrade at Wishblossom Ranch (if owned)."
+          "label": "Plan storage for the resources you collect most often."
         },
         {
           "id": "q4",
-          "label": "Collect an unfamiliar resource in Honeyglow Woods (if owned)."
+          "label": "Craft and place one new piece of furniture."
         },
         {
           "id": "q5",
-          "label": "Decorate one small area using expansion furniture you have unlocked."
+          "label": "Pick a new room or outdoor area as your next decorating project."
         }
       ]
     }
