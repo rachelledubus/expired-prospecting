@@ -1,9 +1,8 @@
-/** Disney Dreamlight Valley base-game progression guide.
- * Paid DLC and expansion quests are intentionally excluded.
- * Stage/step IDs are stable and preserve progress already recorded under these keys.
+/** Disney Dreamlight Valley guide: base game plus the user's owned Honeyglow Woods Adventure Pack.
+ * Other paid expansions are intentionally excluded. Stable stage and step IDs preserve saved progress.
  */
-export type DreamlightArea = "valley";
-export type DreamlightSection = "story" | "realms" | "friends" | "projects" | "collections";
+export type DreamlightArea = "valley" | "honeyglow";
+export type DreamlightSection = "story" | "realms" | "friends" | "projects" | "collections" | "honeyglow" | "honeyglow-friends";
 export type DreamlightStep = { id: string; label: string; how?: string };
 export type DreamlightStage = {
  id: string; title: string; area: DreamlightArea; section: DreamlightSection;
@@ -17,7 +16,7 @@ export const DREAMLIGHT_GAME: DreamlightGame = {
   "id": "dreamlight-valley",
   "tab": "Dreamlight Valley",
   "title": "Disney Dreamlight Valley",
-  "mods": "Base game • Main Story • Realms • Friends",
+  "mods": "Base Game • Honeyglow Woods",
   "stages": [
     {
       "id": "welcome",
@@ -749,6 +748,635 @@ export const DREAMLIGHT_GAME: DreamlightGame = {
         {
           "id": "q5",
           "label": "Pick a new room or outdoor area as your next decorating project."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-prologue",
+      "title": "Prologue: Childhood Treasures",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Enter the new world through your magical tree. Ownership already confirmed.",
+      "source": "https://dreamlightvalleywiki.com/Prologue%3A_Childhood_Treasures",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Confirm these Valley quests are complete: The Dream Castle, Friendship Is Everything, Making Cents of Things, Scrooge McDuck's Grand Re-opening, and Fishing Expedition."
+        },
+        {
+          "id": "q2",
+          "label": "Read A VERY IMPORTANT PARCEL!!! in your mailbox and claim the Tree Sprout."
+        },
+        {
+          "id": "q3",
+          "label": "Place the Tree Sprout from furniture mode.",
+          "how": "It is a furniture placement, not a crop that you plant in soil."
+        },
+        {
+          "id": "q4",
+          "label": "Enter the glowing tree gateway into Honeyglow Woods."
+        },
+        {
+          "id": "q5",
+          "label": "Explore Drowsybloom Acre and meet Winnie the Pooh."
+        },
+        {
+          "id": "q6",
+          "label": "Finish the Childhood Treasures prologue."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-1",
+      "title": "Chapter 1: All You Need Is Honey",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Meet Pooh and begin restoring the Woods.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_1%3A_All_You_Need_Is_Honey",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Talk with Pooh about the condition of Drowsybloom Acre."
+        },
+        {
+          "id": "q2",
+          "label": "Follow the story markers and inspect his honey-related concerns."
+        },
+        {
+          "id": "q3",
+          "label": "Try the introduction to gathering honey and beekeeping."
+        },
+        {
+          "id": "q4",
+          "label": "Complete the quest's requested gathering or crafting tasks."
+        },
+        {
+          "id": "q5",
+          "label": "Finish Chapter 1: All You Need Is Honey."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-2",
+      "title": "Chapter 2: About Thought, Fog, and Light",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Learn how the magic and fog-clearing mechanics work.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_2:_About_Thought,_Fog,_and_Light",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Follow Pooh and investigate the lantern affected by the fog."
+        },
+        {
+          "id": "q2",
+          "label": "Inspect the Memory Shard near the lantern."
+        },
+        {
+          "id": "q3",
+          "label": "Gather the ingredients shown for Honeyglow Elixir."
+        },
+        {
+          "id": "q4",
+          "label": "Make and use the Honeyglow Elixir as directed."
+        },
+        {
+          "id": "q5",
+          "label": "Complete the fog and Thoughtful Spot objectives."
+        },
+        {
+          "id": "q6",
+          "label": "Finish Chapter 2: About Thought, Fog, and Light."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-3",
+      "title": "Chapter 3: A Very Satisfied Bear",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Finish Pooh's first storyline and unlock him as a villager.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_3%3A_A_Very_Satisfied_Bear",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Talk to Pooh and start Chapter 3."
+        },
+        {
+          "id": "q2",
+          "label": "Follow the instructions to restore Pooh's house."
+        },
+        {
+          "id": "q3",
+          "label": "Finish the remaining honey and home-restoration objectives."
+        },
+        {
+          "id": "q4",
+          "label": "Complete A Very Satisfied Bear and welcome Pooh to your Valley."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-interlude-1",
+      "title": "Interlude: The Misplaced Honey",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Open Gloommeadow and continue toward Eeyore.",
+      "source": "https://dreamlightvalleywiki.com/Interlude%3A_The_Misplaced_Honey",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Speak to Winnie the Pooh to begin the next story beat."
+        },
+        {
+          "id": "q2",
+          "label": "Follow the clue about missing honey."
+        },
+        {
+          "id": "q3",
+          "label": "Make or obtain the item needed to clear the blocked passage as instructed."
+        },
+        {
+          "id": "q4",
+          "label": "Clear the corrupted honey barrier into Gloommeadow."
+        },
+        {
+          "id": "q5",
+          "label": "Complete The Misplaced Honey and enter the new biome."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-4",
+      "title": "Chapter 4: A Tail Tale",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Start Eeyore's Gloommeadow storyline.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_4%3A_A_Tail_Tale",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Explore Gloommeadow and find Eeyore."
+        },
+        {
+          "id": "q2",
+          "label": "Start A Tail Tale and speak with Eeyore."
+        },
+        {
+          "id": "q3",
+          "label": "Follow Eeyore's directions for the damaged landscape and nearby tasks."
+        },
+        {
+          "id": "q4",
+          "label": "Complete A Tail Tale."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-5",
+      "title": "Chapter 5: The Big Red Monster",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Help Eeyore feel safer and reveal more of the Woods.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_5%3A_The_Big_Red_Monster",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Start The Big Red Monster."
+        },
+        {
+          "id": "q2",
+          "label": "Investigate the strange 'monster' in Gloommeadow."
+        },
+        {
+          "id": "q3",
+          "label": "Gather and craft the quest items shown in your journal."
+        },
+        {
+          "id": "q4",
+          "label": "Complete the investigation and the Chapter 5 finale."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-6",
+      "title": "Chapter 6: A Place for Eeyore",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Repair Eeyore's home and complete his first arc.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_6%3A_A_Place_for_Eeyore",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Start A Place for Eeyore."
+        },
+        {
+          "id": "q2",
+          "label": "Find the site of Eeyore's home."
+        },
+        {
+          "id": "q3",
+          "label": "Gather the building materials required by the active quest."
+        },
+        {
+          "id": "q4",
+          "label": "Repair Eeyore's house and finish any decoration tasks."
+        },
+        {
+          "id": "q5",
+          "label": "Complete Chapter 6 and welcome Eeyore as a villager."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-interlude-2",
+      "title": "Interlude 2: The Gloomy Hollow",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Connect Eeyore's story to the Piglet chapters.",
+      "source": "https://dreamlightvalleywiki.com/Interlude_2%3A_The_Gloomy_Hollow",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Return to the Honeyglow Woods with Eeyore's storyline completed."
+        },
+        {
+          "id": "q2",
+          "label": "Begin The Gloomy Hollow."
+        },
+        {
+          "id": "q3",
+          "label": "Investigate the new clue toward the next hidden character."
+        },
+        {
+          "id": "q4",
+          "label": "Complete the interlude and unlock the way into Braveheart Grove."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-7",
+      "title": "Chapter 7: A Voice Behind the Door",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Meet the next character in Braveheart Grove.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_7%3A_A_Voice_Behind_the_Door",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Explore Braveheart Grove."
+        },
+        {
+          "id": "q2",
+          "label": "Find the source of the voice and speak to the relevant character."
+        },
+        {
+          "id": "q3",
+          "label": "Follow the main quest's investigation and dialogue steps."
+        },
+        {
+          "id": "q4",
+          "label": "Complete A Voice Behind the Door."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-8",
+      "title": "Chapter 8: The Little Big Forest",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Restore more of the area while helping Piglet.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_8%3A_The_Little_Big_Forest",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Begin The Little Big Forest."
+        },
+        {
+          "id": "q2",
+          "label": "Collect the materials shown in the quest journal."
+        },
+        {
+          "id": "q3",
+          "label": "Craft and use any required forest or fog-clearing item."
+        },
+        {
+          "id": "q4",
+          "label": "Repair the story location or path requested by the chapter."
+        },
+        {
+          "id": "q5",
+          "label": "Finish The Little Big Forest."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-9",
+      "title": "Chapter 9: How to Meet a Best Friend (Again)",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Reunite the trio and unlock Piglet.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_9%3A_How_to_Meet_a_Best_Friend_(Again)",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Talk with Piglet about his next task."
+        },
+        {
+          "id": "q2",
+          "label": "Follow the friendship and reconnection objectives."
+        },
+        {
+          "id": "q3",
+          "label": "Repair the shortcut or location indicated in the story."
+        },
+        {
+          "id": "q4",
+          "label": "Complete Chapter 9 and welcome Piglet to the Valley."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-interlude-3",
+      "title": "Interlude 3: The Shadowy Surprise",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Reveal Honeyglow Woods' last major region.",
+      "source": "https://dreamlightvalleywiki.com/Interlude_3%3A_The_Shadowy_Surprise",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Return to the Everoak story after Piglet joins."
+        },
+        {
+          "id": "q2",
+          "label": "Begin The Shadowy Surprise."
+        },
+        {
+          "id": "q3",
+          "label": "Investigate the new mystery and follow the fog-related instructions."
+        },
+        {
+          "id": "q4",
+          "label": "Unlock and enter Nectar Apiary."
+        },
+        {
+          "id": "q5",
+          "label": "Complete the interlude."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-10",
+      "title": "Chapter 10: Most Grand Adventure",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Restore the Nectar Apiary campsite and pursue the remaining fog.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_10:_Most_Grand_Adventure",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Begin Chapter 10 in Nectar Apiary."
+        },
+        {
+          "id": "q2",
+          "label": "Collect and place the four flags on their poles."
+        },
+        {
+          "id": "q3",
+          "label": "Catch the fifth red flag and place it near the Wishing Well."
+        },
+        {
+          "id": "q4",
+          "label": "Go to the campsite southeast of the Everoak Tree."
+        },
+        {
+          "id": "q5",
+          "label": "Make Bright Imagination Potion and clear the resin blocking the campsite."
+        },
+        {
+          "id": "q6",
+          "label": "Collect 10 Driftwood, 8 Tree Resin, and 10 Soft Limestone."
+        },
+        {
+          "id": "q7",
+          "label": "Repair the campsite and finish Chapter 10."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-11",
+      "title": "Chapter 11: The Anti-monster Camp",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Set up a welcoming camp and investigate the mystery.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_11:_The_Anti-monster_Camp",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Cook four Toasted Picnic Sandwiches."
+        },
+        {
+          "id": "q2",
+          "label": "Give the sandwiches to Winnie the Pooh."
+        },
+        {
+          "id": "q3",
+          "label": "Craft a Welcoming Signpost."
+        },
+        {
+          "id": "q4",
+          "label": "Craft a Welcoming Picnic Blanket."
+        },
+        {
+          "id": "q5",
+          "label": "Place the picnic items at the edge of the fog."
+        },
+        {
+          "id": "q6",
+          "label": "Investigate the missing honey and ask Piglet, Eeyore, and Pooh."
+        },
+        {
+          "id": "q7",
+          "label": "Finish the chapter after Pooh's windmill clue."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-12",
+      "title": "Chapter 12: Old Plans, New Wind",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Repair the windmill and reconnect memories from the Woods.",
+      "source": "https://dreamlightvalleywiki.com/Chapter_12:_Old_Plans,_New_Wind",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Investigate the corrupted lantern in Nectar Apiary."
+        },
+        {
+          "id": "q2",
+          "label": "Collect 18 Golden Honey for three Honeyed Memories."
+        },
+        {
+          "id": "q3",
+          "label": "Craft and gift Honeyed Memories to Pooh, Eeyore, and Piglet."
+        },
+        {
+          "id": "q4",
+          "label": "Revisit the lantern and inspect the new memory."
+        },
+        {
+          "id": "q5",
+          "label": "Find and read the Worn Scout's Journal."
+        },
+        {
+          "id": "q6",
+          "label": "Gather 5 Golden Honey, 10 Driftwood, 10 Tree Resin, 15 Soft Limestone, and 10 Oak Leaves."
+        },
+        {
+          "id": "q7",
+          "label": "Repair the Old Windmill."
+        },
+        {
+          "id": "q8",
+          "label": "Find the old photo, take a new photo, and finish the quest."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-interlude-4",
+      "title": "Interlude 4: Curiosity Satisfied",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Restore the final Pillar and lift the remaining fog.",
+      "source": "https://dreamlightvalleywiki.com/Interlude_4:_Curiosity_Satisfied",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Bring the Bright New Photo into the Everoak Tree at Nectar Apiary."
+        },
+        {
+          "id": "q2",
+          "label": "Explore the Everoak Tree interior with Pooh."
+        },
+        {
+          "id": "q3",
+          "label": "Follow the orb-piece puzzles with Pooh, Eeyore, and Piglet."
+        },
+        {
+          "id": "q4",
+          "label": "Prepare the requested hedgehog treat for Piglet."
+        },
+        {
+          "id": "q5",
+          "label": "Collect the three broken orb pieces and place them in the Pillar."
+        },
+        {
+          "id": "q6",
+          "label": "Rotate the honey-flow floor pieces to connect the pond to the Pillar."
+        },
+        {
+          "id": "q7",
+          "label": "Watch the restored Woods scene and complete the interlude."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-epilogue",
+      "title": "Epilogue: See You Next Summer",
+      "area": "honeyglow",
+      "section": "honeyglow",
+      "summary": "Celebrate restoring Honeyglow Woods and finish the main adventure.",
+      "source": "https://dreamlightvalleywiki.com/Epilogue:_See_You_Next_Summer",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Speak with the three friends to arrange a celebration."
+        },
+        {
+          "id": "q2",
+          "label": "Cook a Honey Hero Cake."
+        },
+        {
+          "id": "q3",
+          "label": "Craft and place a Party Table in Drowsybloom Acre."
+        },
+        {
+          "id": "q4",
+          "label": "Craft the four Honeyglow Flower Pot variants."
+        },
+        {
+          "id": "q5",
+          "label": "Place the flower pots and take the group picture."
+        },
+        {
+          "id": "q6",
+          "label": "Use the Great Summer List to craft a Paper Boat."
+        },
+        {
+          "id": "q7",
+          "label": "Set the Paper Boat sailing from the river bridge and watch the final scene."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-friendship",
+      "title": "Honeyglow friendships: Pooh, Eeyore & Piglet",
+      "area": "honeyglow",
+      "section": "honeyglow-friends",
+      "summary": "Optional friendship quests after each character joins.",
+      "source": "https://dreamlightvalleywiki.com/Honeyglow_friendships%3A_Pooh%2C_Eeyore_%26_Piglet",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Choose one of the three friends to focus on."
+        },
+        {
+          "id": "q2",
+          "label": "Check that friend's next friendship-level prerequisite."
+        },
+        {
+          "id": "q3",
+          "label": "Talk, gift, or hang out until the next friendship quest unlocks."
+        },
+        {
+          "id": "q4",
+          "label": "Complete the active friendship quest in your journal."
+        },
+        {
+          "id": "q5",
+          "label": "Repeat for the other two friends when you want another story."
+        }
+      ]
+    },
+    {
+      "id": "honeyglow-exploration",
+      "title": "Honeyglow collection & cozy projects",
+      "area": "honeyglow",
+      "section": "honeyglow-friends",
+      "summary": "Low-pressure exploration beyond the main story.",
+      "source": "https://dreamlightvalleywiki.com/Honeyglow_collection_%26_cozy_projects",
+      "steps": [
+        {
+          "id": "q1",
+          "label": "Find an unexplored corner of one Honeyglow biome."
+        },
+        {
+          "id": "q2",
+          "label": "Try the beekeeping mechanic and gather honey."
+        },
+        {
+          "id": "q3",
+          "label": "Cook one new Honeyglow recipe."
+        },
+        {
+          "id": "q4",
+          "label": "Collect one new flower, crafting ingredient, or critter."
+        },
+        {
+          "id": "q5",
+          "label": "Craft and place one Honeyglow furniture item."
         }
       ]
     }
