@@ -13,6 +13,7 @@ import {
   isBundleGame,
   isCompletionGame,
   isTerrariaGame,
+  isDreamlightGame,
   itemKey,
   mainQuestKey,
   questKey,
@@ -38,6 +39,7 @@ import {
 } from "@/lib/games-data";
 import Lookup from "./Lookup";
 import TerrariaSpiritView from "./TerrariaSpiritView";
+import DreamlightView from "./DreamlightView";
 import { getStardewQuestSubtasks, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
@@ -1737,6 +1739,7 @@ function CompletionView({ game, prog, setCheck, setField }: ViewProps<Completion
 
 export default function GamesPlanner({ initial, loaded }: { initial: Record<string, GameProgress>; loaded: boolean }) {
   const [gameId, setGameId] = useState(GAMES[0].id);
+  const [openLibrary, setOpenLibrary] = useState<"stardew" | "terraria" | "dreamlight" | null>(null);
   const [progress, setProgress] = useState<Record<string, GameProgress>>(initial);
   const [status, setStatus] = useState<Status>(loaded ? "idle" : "loadfail");
   const [armed, setArmed] = useState(false);
@@ -1747,6 +1750,15 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const prog = progress[game.id] ?? emptyProgress();
   const storyGame = GAMES.find((g): g is ChecklistGame => g.kind === "checklist") ?? (GAMES[0] as ChecklistGame);
   const storyProg = progress[storyGame.id] ?? emptyProgress();
+  const openGameLibrary = (family: "stardew" | "terraria" | "dreamlight") => {
+    setOpenLibrary(family);
+    setGameId(family === "stardew" ? "stardew-mega-mod" : family === "terraria" ? "terraria-spirit" : "dreamlight-valley");
+    setArmed(false);
+    setLastCheck(null);
+  };
+  const chosenTitle = openLibrary === "stardew" ? "Stardew Valley"
+    : openLibrary === "terraria" ? "Terraria · Spirit Classic"
+    : openLibrary === "dreamlight" ? "Disney Dreamlight Valley" : "My Game Library";
 
   // Saving: changes queue up, then go to the server together half a second after the last tap.
   const pending = useRef<Record<string, GameProgressPatch>>({});
@@ -1940,26 +1952,60 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               <div className="dow">
                 <span>Games</span>
               </div>
-              <div className="dmy">{game.title}</div>
+              <div className="dmy">{chosenTitle}</div>
             </div>
           </header>
 
-          {GAMES.length > 1 && (
-            <div className="gm-chips" role="tablist" aria-label="Game checklists" onClick={() => setArmed(false)}>
-              {GAMES.map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={g.id === game.id}
-                  className={"gm-chip" + (g.id === game.id ? " on" : "")}
-                  onClick={() => setGameId(g.id)}
-                >
-                  {g.tab}
+          {!openLibrary ? (
+            <section style={{ marginTop: 18 }}>
+              <p className="gm-note">Choose a game to open its own guide. Your checklists and saved progress are separate for each game.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 14, marginTop: 16 }}>
+                {([
+                  { id: "stardew", icon: "🌱", name: "Stardew Valley",
+                    sub: "Modded storylines, farm & progression, and completion",
+                    ids: ["stardew-mega-mod", "community-center", "stardew-completion"] },
+                  { id: "terraria", icon: "⚔️", name: "Terraria · Spirit Classic",
+                    sub: "Spirit Quest Book, guided playthrough, bosses & roadmap",
+                    ids: ["terraria-spirit"] },
+                  { id: "dreamlight", icon: "✨", name: "Disney Dreamlight Valley",
+                    sub: "Main story, realms, friendship, projects & expansions",
+                    ids: ["dreamlight-valley"] },
+                ] as const).map((entry) => {
+                  const marked = entry.ids.reduce((n, id) => n + Object.keys(progress[id]?.checks ?? {}).length, 0);
+                  return (
+                    <div key={entry.id} className="gm-card" style={{ padding: 18, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}>
+                      <div>
+                        <div aria-hidden="true" style={{ fontSize: 30, marginBottom: 10 }}>{entry.icon}</div>
+                        <h2 style={{ margin: "0 0 8px", fontSize: "1.2rem" }}>{entry.name}</h2>
+                        <p className="gm-note">{entry.sub}</p>
+                        <p className="gm-note" style={{ marginTop: 12 }}>{marked ? `${marked} saved checkmarks` : "New playthrough guide"}</p>
+                      </div>
+                      <button type="button" className="gm-pill" onClick={() => openGameLibrary(entry.id)}>
+                        Open {entry.id === "stardew" ? "Stardew" : entry.id === "terraria" ? "Terraria" : "Dreamlight"} guide
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : (
+            <>
+              <div style={{ marginTop: 12 }}>
+                <button type="button" className="gm-pill" onClick={() => {setOpenLibrary(null);setArmed(false);setLastCheck(null)}}>
+                  ← All games
                 </button>
-              ))}
-            </div>
-          )}
+              </div>
+              {openLibrary === "stardew" && (
+                <nav className="gm-chips" aria-label="Stardew Valley guides" style={{ marginTop: 14 }}>
+                  {GAMES.filter(g => g.id === "stardew-mega-mod" || g.id === "community-center" || g.id === "stardew-completion")
+                    .map(g => (
+                      <button key={g.id} type="button" className={"gm-chip" + (g.id === game.id ? " on" : "")}
+                        aria-pressed={g.id === game.id} onClick={() => {setGameId(g.id);setArmed(false);setLastCheck(null)}}>
+                        {g.tab}
+                      </button>
+                    ))}
+                </nav>
+              )}
 
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 16 }}>
             <button
@@ -1968,7 +2014,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               onClick={copySavedProgress}
               disabled={!loaded || status === "saving" || status === "error" || status === "signedout" || copyProgressStatus === "copying"}
             >
-              {copyProgressStatus === "copying" ? "Copying..." : "Copy saved progress (all tabs)"}
+              {copyProgressStatus === "copying" ? "Copying..." : "Copy saved progress (all games)"}
             </button>
             <span className="gm-small" role="status">
               {copyProgressStatus === "copied"
@@ -1979,7 +2025,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             </span>
           </div>
 
-          <Lookup />
+          {openLibrary === "stardew" && <Lookup />}
 
           {isBundleGame(game) ? (
             <BundleView
@@ -1996,6 +2042,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             <CompletionView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : isTerrariaGame(game) ? (
             <TerrariaSpiritView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+          ) : isDreamlightGame(game) ? (
+            <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}
@@ -2014,9 +2062,11 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               {statusText}
             </span>
             <button type="button" className={"gm-pill ghost" + (armed ? " arm" : "")} onClick={resetGame}>
-              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : isTerrariaGame(game) ? "Reset Terraria" : "Reset Story & Quests"}
+              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : isTerrariaGame(game) ? "Reset Terraria" : isDreamlightGame(game) ? "Reset Dreamlight Valley" : "Reset Story & Quests"}
             </button>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
