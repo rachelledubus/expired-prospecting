@@ -9,13 +9,15 @@ type Props = {
   prog: GameProgress;
   setCheck: (key: string, value: boolean) => void;
 };
-type Section = "story" | "realms" | "friends" | "projects" | "collections";
+type Section = "story" | "realms" | "friends" | "projects" | "collections" | "honeyglow" | "honeyglow-friends";
 const SECTIONS: { id: Section; label: string; help: string }[] = [
   { id: "story", label: "📖 Main story", help: "Progress through the Valley's main story" },
   { id: "realms", label: "🏰 Realms", help: "Explore the Dream Castle and unlock new characters" },
   { id: "friends", label: "💕 Friendships", help: "Choose character stories at your own pace" },
   { id: "projects", label: "🌿 Projects", help: "Village upgrades and cozy decorating goals" },
   { id: "collections", label: "✨ Collections", help: "Optional gathering and discovery challenges" },
+  { id: "honeyglow", label: "🍯 Honeyglow Woods", help: "Your owned Adventure Pack: Pooh, Eeyore, Piglet, and the complete Honeyglow storyline" },
+  { id: "honeyglow-friends", label: "🐻 Honeyglow extras", help: "Friendship stories and relaxed exploration after unlocking new areas" },
 ];
 const savedKey = (gameId: string, stageId: string, stepId: string) =>
   questKey(gameId, "dreamlight-" + stageId, stepId);
@@ -70,8 +72,8 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
   return (
     <div style={{ marginTop: 14 }}>
       <section className="gm-card" style={{ padding: 16 }}>
-        <div className="gm-panel-label">✨ Dreamlight Valley · Base Game</div>
-        <p className="gm-note">One small quest action at a time. Main story, character realms, friendships and cozy projects are tracked separately. Paid expansions are not included.</p>
+        <div className="gm-panel-label">✨ Dreamlight Valley · Base Game + Honeyglow Woods</div>
+        <p className="gm-note">One small quest action at a time. Your base-game quests and Honeyglow Woods are in their own sections. Other expansions are excluded.</p>
         <nav className="gm-chips" aria-label="Dreamlight Valley guide sections" style={{ marginTop: 12 }}>
           {SECTIONS.map(item => (
             <button key={item.id} type="button" className={"gm-chip" + (section === item.id ? " on" : "")}
