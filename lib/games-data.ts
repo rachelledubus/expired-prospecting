@@ -476,7 +476,7 @@ export function knownCheckKeys(game: Game): Set<string> {
 
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
-  if (isDreamlightGame(game)) return new Set<string>(["rift","storybook","ranch","honeyglow"].map(id=>game.id+"|owned|"+id));
+  if (isDreamlightGame(game)) return new Set<string>();
   if (isTerrariaGame(game)) return new Set<string>([game.id + "|difficulty", game.id + "|class", game.id + "|world", game.id + "|world-evil"]);
   if (isCompletionGame(game)) {
     const keys = new Set<string>();
