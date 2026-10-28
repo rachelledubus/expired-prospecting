@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import type { DreamlightGame, DreamlightStage, DreamlightStep } from "@/lib/dreamlight-data";
+import { DREAMLIGHT_MISSION_MATERIALS, DREAMLIGHT_RESOURCES } from "@/lib/dreamlight-resource-guides";
 
 type Props = {
   game: DreamlightGame;
@@ -37,20 +38,93 @@ function Progress({ done, total }: { done: number; total: number }) {
   );
 }
 
+function MissionMaterials({ stage, step }: { stage: DreamlightStage; step: DreamlightStep }) {
+  const groups = DREAMLIGHT_MISSION_MATERIALS[`${stage.id}:${step.id}`] ?? [];
+  if (!groups.length) return null;
+  return (
+    <div style={{ padding: "10px 12px", margin: "8px 0 14px", borderRadius: 10,
+      border: "1px solid rgba(128,128,128,.23)" }}>
+      <div className="gm-panel-label">📦 What you need & where to get it</div>
+      {groups.map((group, index) => (
+        <div key={index} style={{ marginTop: 10 }}>
+          {group.note && <p className="gm-note" style={{ margin: "0 0 6px" }}>{group.note}</p>}
+          {group.items.map((required, itemIndex) => {
+            const info = DREAMLIGHT_RESOURCES[required.item];
+            return (
+              <div key={required.item + ":" + itemIndex} style={{
+                display: "flex", flexDirection: "column", gap: 3, padding: "8px 0",
+                borderBottom: "1px solid rgba(128,128,128,.13)",
+              }}>
+                <b style={{ fontSize: ".9rem" }}>{required.qty ? required.qty + "× " : ""}{required.item}</b>
+                {info ? <>
+                  <span className="gm-note"><b>{info.method}:</b> {info.where}</span>
+                  <a className="gm-note" href={info.url} target="_blank" rel="noopener noreferrer">
+                    Item details / alternate sources ↗
+                  </a>
+                </> : <span className="gm-note">See the current quest journal for its location.</span>}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <p className="gm-note" style={{ marginTop: 9 }}>
+        These are mission requirements, not an inventory count. Collect only what's still missing in your game.
+      </p>
+    </div>
+  );
+}
+
+function ResourceFinder({ game }: { game: DreamlightGame }) {
+  const [search, setSearch] = useState("");
+  const results = Object.values(DREAMLIGHT_RESOURCES)
+    .filter(item => (item.name + " " + item.method + " " + item.where)
+      .toLowerCase().includes(search.trim().toLowerCase()))
+    .slice(0, 12);
+  return (
+    <details className="gm-card" style={{ padding: 14, marginTop: 12 }}>
+      <summary style={{ cursor: "pointer", fontWeight: 700 }}>🔎 Where do I find an item?</summary>
+      <p className="gm-note">Search base-game and Honeyglow Woods materials without leaving your guide.</p>
+      <label className="gm-note" style={{ display: "block", marginTop: 8 }}>
+        Search an item or location
+        <input className="gm-input" style={{ width: "100%", marginTop: 6 }}
+          placeholder="e.g. Driftwood, Garnet, Soft Limestone..."
+          value={search} onChange={e => setSearch(e.target.value)} />
+      </label>
+      {!search.trim()
+        ? <p className="gm-note">Try Golden Honey, Tree Resin, Parsnip, Dream Shard, or a biome name.</p>
+        : results.length
+          ? results.map(item => (
+            <div key={item.name} style={{ padding: "10px 0", borderBottom: "1px solid rgba(128,128,128,.14)" }}>
+              <b>{item.name}</b>
+              <div className="gm-note"><b>{item.method}:</b> {item.where}</div>
+              <a className="gm-note" href={item.url} target="_blank" rel="noopener noreferrer">
+                View resource page ↗
+              </a>
+            </div>
+          ))
+          : <p className="gm-note">No verified location saved for that item yet. Check the active quest's linked walkthrough.</p>}
+    </details>
+  );
+}
+
 function Action({ gameId, stage, step, checked, setCheck }: {
   gameId: string; stage: DreamlightStage; step: DreamlightStep;
   checked: boolean; setCheck: Props["setCheck"];
 }) {
   const key = savedKey(gameId, stage.id, step.id);
   return (
-    <label className="gm-item">
-      <input type="checkbox" checked={checked} onChange={event => setCheck(key, event.target.checked)} />
-      <span className="gm-box" aria-hidden="true" />
-      <span className="gm-txt">
-        <span className="gm-name">{step.label}</span>
-        {step.how && <span className="gm-sub">{step.how}</span>}
-      </span>
-    </label>
+    <div>
+      <label className="gm-item">
+        <input type="checkbox" checked={checked}
+          onChange={event => setCheck(key, event.target.checked)} />
+        <span className="gm-box" aria-hidden="true" />
+        <span className="gm-txt">
+          <span className="gm-name">{step.label}</span>
+          {step.how && <span className="gm-sub">{step.how}</span>}
+        </span>
+      </label>
+      {!checked && <MissionMaterials stage={stage} step={step} />}
+    </div>
   );
 }
 
@@ -140,6 +214,26 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
           </p>
         </section>
       )}
+      {focus && (
+        <details className="gm-card" style={{ padding: 14, marginTop: 12 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+            🧺 Prepare for this chapter · material check
+          </summary>
+          <p className="gm-note">These are separate mission objectives, not one combined shopping list.
+            Counts may include items you already have or will receive during the story.</p>
+          {focus.steps.filter(step => !!DREAMLIGHT_MISSION_MATERIALS[`${focus.id}:${step.id}`])
+            .map(step => (
+              <div key={step.id} style={{ marginTop: 12 }}>
+                <b style={{ fontSize: ".9rem" }}>{step.label}</b>
+                <MissionMaterials stage={focus} step={step} />
+              </div>
+            ))}
+          {!focus.steps.some(step => !!DREAMLIGHT_MISSION_MATERIALS[`${focus.id}:${step.id}`]) &&
+            <p className="gm-note">No verified fixed material list recorded for this chapter.
+              Use the item finder below or the linked quest walkthrough for variable requests.</p>}
+        </details>
+      )}
+      <ResourceFinder game={game} />
       <details className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           Browse all {activeSection?.label} chapters · {available.filter(complete).length}/{available.length} complete
