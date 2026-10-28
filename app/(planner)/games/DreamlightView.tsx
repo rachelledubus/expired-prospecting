@@ -74,7 +74,7 @@ function MissionMaterials({ stage, step }: { stage: DreamlightStage; step: Dream
   );
 }
 
-function ResourceFinder({ game }: { game: DreamlightGame }) {
+function ResourceFinder() {
   const [search, setSearch] = useState("");
   const results = Object.values(DREAMLIGHT_RESOURCES)
     .filter(item => (item.name + " " + item.method + " " + item.where)
@@ -233,7 +233,7 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
               Use the item finder below or the linked quest walkthrough for variable requests.</p>}
         </details>
       )}
-      <ResourceFinder game={game} />
+      <ResourceFinder />
       <details className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           Browse all {activeSection?.label} chapters · {available.filter(complete).length}/{available.length} complete
