@@ -312,6 +312,72 @@ export const DREAMLIGHT_RESOURCES: Record<string,DreamlightResource> = {
     "method": "Quest reward",
     "where": "Winnie the Pooh gives this special item during Chapter 11: The Anti-monster Camp. It is not a craftable ingredient.",
     "url": "https://dreamlightvalleywiki.com/Welcoming_Honey_Treat"
+  },
+  "Glass": {
+    "name": "Glass",
+    "method": "Crafting",
+    "where": "Craft from Sand (5) + Coal Ore (1) at a crafting station per Glass. Gather Sand by digging on Dazzle Beach or breaking sea debris.",
+    "url": "https://dreamlightvalleywiki.com/Glass"
+  },
+  "Purified Night Shard": {
+    "name": "Purified Night Shard",
+    "method": "Crafting",
+    "where": "Craft with 5 Night Shards and 1 Dream Shard at a crafting station for each Purified Night Shard.",
+    "url": "https://dreamlightvalleywiki.com/Purified_Night_Shard"
+  },
+  "Shattered Prism": {
+    "name": "Shattered Prism",
+    "method": "Quest pickup",
+    "where": "Pick up the three Shattered Prism pieces from the floor inside Olaf's secret chamber in Frosted Heights.",
+    "url": "https://dreamlightvalleywiki.com/Shattered_Prism"
+  },
+  "Citrine": {
+    "name": "Citrine",
+    "method": "Mining",
+    "where": "Mine rock spots in Glade of Trust or Sunlit Plateau; use a regular, non-shiny Citrine.",
+    "url": "https://dreamlightvalleywiki.com/Citrine"
+  },
+  "Amethyst": {
+    "name": "Amethyst",
+    "method": "Mining",
+    "where": "Mine rock spots in Frosted Heights or Forgotten Lands; use a regular, non-shiny Amethyst.",
+    "url": "https://dreamlightvalleywiki.com/Amethyst"
+  },
+  "Emerald": {
+    "name": "Emerald",
+    "method": "Mining",
+    "where": "Mine rock spots in Forest of Valor or Glade of Trust; use a regular, non-shiny Emerald.",
+    "url": "https://dreamlightvalleywiki.com/Emerald"
+  },
+  "Craggy Rock": {
+    "name": "Craggy Rock",
+    "method": "Quest pickup",
+    "where": "Pick up Craggy Rocks scattered on the ground inside the Frozen Realm while The Spirits of Nature is active.",
+    "url": "https://dreamlightvalleywiki.com/Craggy_Rock"
+  },
+  "Basil": {
+    "name": "Basil",
+    "method": "Foraging",
+    "where": "Pick Basil growing wild in Peaceful Meadow.",
+    "url": "https://dreamlightvalleywiki.com/Basil"
+  },
+  "Oregano": {
+    "name": "Oregano",
+    "method": "Foraging",
+    "where": "Pick Oregano growing wild in the Plaza.",
+    "url": "https://dreamlightvalleywiki.com/Oregano"
+  },
+  "Fiber": {
+    "name": "Fiber",
+    "method": "Crafting",
+    "where": "Craft Fiber using Seaweed at a crafting station; fish outside ripples to gather Seaweed in the Valley.",
+    "url": "https://dreamlightvalleywiki.com/Fiber"
+  },
+  "Sand": {
+    "name": "Sand",
+    "method": "Digging",
+    "where": "Dig on Dazzle Beach or break sea debris to gather Sand.",
+    "url": "https://dreamlightvalleywiki.com/Sand"
   }
 };
 export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup[]> = {
@@ -959,6 +1025,91 @@ export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup
         }
       ],
       "note": "Materials needed across all FOUR Honeyglow Flower Pots."
+    }
+  ],
+  "sunlit-blizzard:q6": [
+    {
+      "items": [
+        {
+          "item": "Glass",
+          "qty": 10
+        },
+        {
+          "item": "Purified Night Shard",
+          "qty": 5
+        },
+        {
+          "item": "Shattered Prism",
+          "qty": 3
+        }
+      ],
+      "note": "Craft the Dreamlight Prism in The Great Blizzard. Five Purified Night Shards require 25 Night Shards and 5 Dream Shards in total."
+    },
+    {
+      "items": [
+        {
+          "item": "Citrine",
+          "qty": 1
+        },
+        {
+          "item": "Amethyst",
+          "qty": 1
+        },
+        {
+          "item": "Emerald",
+          "qty": 1
+        }
+      ],
+      "note": "The secret chamber is missing these three NORMAL gems; shiny variants will not work."
+    }
+  ],
+  "realm-frozen-toys:q2": [
+    {
+      "items": [
+        {
+          "item": "Craggy Rock",
+          "qty": 3
+        },
+        {
+          "item": "Basil",
+          "qty": 1
+        },
+        {
+          "item": "Oregano",
+          "qty": 1
+        }
+      ],
+      "note": "Cook Stone Soup for the Earth Giant in Anna's Frozen Realm quest."
+    }
+  ],
+  "realm-lion-beast:q2": [
+    {
+      "items": [
+        {
+          "item": "Softwood",
+          "qty": 5
+        },
+        {
+          "item": "Fiber",
+          "qty": 5
+        },
+        {
+          "item": "Purified Night Shard",
+          "qty": 2
+        }
+      ],
+      "note": "Craft Rafiki's Walking Stick for Stars to Guide Us, during Simba's Lion King story."
+    }
+  ],
+  "forgotten-story:q1": [
+    {
+      "items": [
+        {
+          "item": "Purified Night Shard",
+          "qty": 5
+        }
+      ],
+      "note": "Miracles Take Time asks for five Purified Night Shards. Craft with 25 Night Shards and 5 Dream Shards total."
     }
   ]
 };
