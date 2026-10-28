@@ -154,7 +154,7 @@ export const DREAMLIGHT_RESOURCES: Record<string,DreamlightResource> = {
   "Plush Fish": {
     "name": "Plush Fish",
     "method": "Fishing",
-    "where": "Fish in Honeyglow Woods fishing spots for a Plush Fish.",
+    "where": "Fish in GOLD ripples anywhere in Honeyglow Woods.",
     "url": "https://dreamlightvalleywiki.com/Plush_Fish"
   },
   "Rainbow Foxglove": {
@@ -306,6 +306,12 @@ export const DREAMLIGHT_RESOURCES: Record<string,DreamlightResource> = {
     "method": "Mining",
     "where": "Mine rock spots in any Valley biome.",
     "url": "https://dreamlightvalleywiki.com/Coal_Ore"
+  },
+  "Welcoming Honey Treat": {
+    "name": "Welcoming Honey Treat",
+    "method": "Quest reward",
+    "where": "Winnie the Pooh gives this special item during Chapter 11: The Anti-monster Camp. It is not a craftable ingredient.",
+    "url": "https://dreamlightvalleywiki.com/Welcoming_Honey_Treat"
   }
 };
 export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup[]> = {
@@ -603,11 +609,64 @@ export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup
     {
       "items": [
         {
+          "item": "Sweet Chestnut",
+          "qty": 5
+        },
+        {
+          "item": "Oak Leaves",
+          "qty": 6
+        },
+        {
+          "item": "Soft Limestone",
+          "qty": 5
+        },
+        {
+          "item": "Yellow & Orange Foxglove",
+          "qty": 5
+        },
+        {
+          "item": "Yellow Thistle",
+          "qty": 3
+        },
+        {
           "item": "Tree Resin",
+          "qty": 5
+        },
+        {
+          "item": "Golden Honey",
+          "qty": 8
+        },
+        {
+          "item": "Honey Agate",
+          "qty": 4
+        }
+      ],
+      "note": "First gather ingredients for the Chime Arch and Buzzing Hive Cluster to restore the Woods' sounds."
+    },
+    {
+      "items": [
+        {
+          "item": "Rose & Cream Foxglove",
+          "qty": 5
+        },
+        {
+          "item": "Purple & White Foxglove",
+          "qty": 5
+        },
+        {
+          "item": "Driftwood",
+          "qty": 5
+        },
+        {
+          "item": "Shiny Honey Agate",
+          "qty": 2
+        },
+        {
+          "item": "Truffle",
           "qty": 5
         }
       ],
-      "note": "Use these for the Buzzing Hive Cluster. Additional crafting requirements appear in the mission journal."
+      "note": "After the sound decorations, craft Prickle-Popper Potion to upgrade your Shovel and clear Twistroots."
     }
   ],
   "honeyglow-8:q4": [
@@ -735,10 +794,6 @@ export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup
         {
           "item": "Tree Resin",
           "qty": 3
-        },
-        {
-          "item": "Golden Honey",
-          "qty": 1
         }
       ],
       "note": "Craft Welcoming Signpost."
@@ -758,9 +813,17 @@ export const DREAMLIGHT_MISSION_MATERIALS: Record<string,DreamlightMaterialGroup
         {
           "item": "White Thistle",
           "qty": 5
+        },
+        {
+          "item": "Golden Honey",
+          "qty": 1
+        },
+        {
+          "item": "Welcoming Honey Treat",
+          "qty": 1
         }
       ],
-      "note": "Craft the Welcoming Picnic Blanket. Also requires one quest-specific Welcoming Honey Treat; see the quest journal for its crafting step."
+      "note": "For the Welcoming Picnic Blanket: Pooh gives you the one Welcoming Honey Treat. Use the listed Golden Honey, flowers, and leaves at a crafting station."
     }
   ],
   "honeyglow-12:q2": [
