@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import type { TerrariaGame, TerrariaStage, TerrariaStep } from "@/lib/terraria-spirit-data";
+import { TerrariaPriorities, TerrariaItemFinder, TerrariaStepHelp } from "./TerrariaToolkit";
 
 type Props = {
   game: TerrariaGame;
@@ -34,10 +35,11 @@ function ProgressLine({ current, total }: { current: number; total: number }) {
   );
 }
 
-function QuestCheck({ step, checked, onChange }: {
-  step: TerrariaStep; checked: boolean; onChange: (value: boolean) => void;
+function QuestCheck({ step, stage, checked, onChange }: {
+  step: TerrariaStep; stage?: TerrariaStage; checked: boolean; onChange: (value: boolean) => void;
 }) {
   return (
+    <div className="gm-ter-check-wrap">
     <label className="gm-item">
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       <span className="gm-box" aria-hidden="true" />
@@ -46,6 +48,8 @@ function QuestCheck({ step, checked, onChange }: {
         {step.how && <span className="gm-sub">{step.how}</span>}
       </span>
     </label>
+    {!checked && stage && <TerrariaStepHelp stage={stage} step={step} />}
+    </div>
   );
 }
 
@@ -70,15 +74,15 @@ function FocusedStage({ game, stage, prog, setCheck, variant }: {
         <p className="gm-note">✓ All steps complete. {variant === "main" ? "The guide will recommend the next chapter." : "Choose another Spirit quest."}</p>
       ) : (
         <>
-          <div className="gm-panel-label">Do this next</div>
-          <QuestCheck step={remaining[0]} checked={false} onChange={(value) => onChange(remaining[0], value)} />
+          <div className="gm-panel-label">Next action in this chapter</div>
+          <QuestCheck stage={stage} step={remaining[0]} checked={false} onChange={(value) => onChange(remaining[0], value)} />
           {remaining.length > 1 && (
             <details open={showNext} onToggle={(e) => setShowNext(e.currentTarget.open)}>
               <summary className="gm-note" style={{ cursor: "pointer", padding: "10px 0" }}>
                 Upcoming actions ({remaining.length - 1})
               </summary>
               {remaining.slice(1).map((step) => (
-                <QuestCheck key={step.id} step={step} checked={false}
+                <QuestCheck key={step.id} stage={stage} step={step} checked={false}
                   onChange={(value) => onChange(step, value)} />
               ))}
             </details>
@@ -89,15 +93,11 @@ function FocusedStage({ game, stage, prog, setCheck, variant }: {
         <details style={{ marginTop: 8 }}>
           <summary className="gm-note" style={{ cursor: "pointer" }}>Completed actions ({finished.length})</summary>
           {finished.map((step) => (
-            <QuestCheck key={step.id} step={step} checked onChange={(value) => onChange(step, value)} />
+            <QuestCheck key={step.id} stage={stage} step={step} checked onChange={(value) => onChange(step, value)} />
           ))}
         </details>
       )}
-      {stage.source && (
-        <p className="gm-note" style={{ marginTop: 12 }}>
-          <a href={stage.source} target="_blank" rel="noopener noreferrer">View gameplay reference ↗</a>
-        </p>
-      )}
+      <p className="gm-note" style={{ marginTop: 12 }}>Use the item directory on this page for material locations and crafting instructions.</p>
     </section>
   );
 }
@@ -106,7 +106,6 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
   const [view, setView] = useState<View>("next");
   const [selectedRoute, setSelectedRoute] = useState("");
   const [selectedQuest, setSelectedQuest] = useState("");
-  const [showCompletedQuests, setShowCompletedQuests] = useState(false);
   const route = useMemo(() => game.stages.filter((stage) => stage.track === "route"), [game]);
   const quests = useMemo(() => game.stages.filter((stage) => stage.track === "quest" || stage.id === "first-adventure"), [game]);
   const sides = useMemo(() => game.stages.filter((stage) => stage.track === "side"), [game]);
@@ -190,9 +189,12 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
         ))}
       </nav>
 
+      {view !== "next" && <TerrariaItemFinder />}
       {view === "next" && <>
+        <TerrariaPriorities game={game} prog={prog} setCheck={setCheck} onOpenStage={openStage} />
+        <TerrariaItemFinder />
         <div style={{ marginTop: 14 }}>
-          <p className="gm-note">Recommended: {recommended.title}</p>
+          <p className="gm-note">Full chapter roadmap (secondary to the priority guide): {recommended.title}</p>
           <label className="gm-note">Jump to another chapter
             <select className="gm-input gm-sel" style={{ display: "block", width: "100%", marginTop: 5 }}
               value={selectedRoute || recommended.id} onChange={(event) => setSelectedRoute(event.target.value)}>
@@ -221,23 +223,35 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
       {view === "quests" && <>
         <section className="gm-card" style={{ padding: 16, marginTop: 14 }}>
           <div className="gm-panel-label">Spirit Quest Book companion</div>
-          <p className="gm-note">Use the mod's actual Quest Book to accept and activate quests. This portal tracks small objectives alongside it; it doesn't read Terraria saves automatically.</p>
-          <label className="gm-note">Current quest
-            <select className="gm-input gm-sel" style={{ width: "100%", display: "block", marginTop: 7 }}
-              value={questChoice?.id ?? ""} onChange={(event) => setSelectedQuest(event.target.value)}>
-              {!questChoice && <option value="">Unlock the Quest Book first</option>}
-              <optgroup label="Spirit Quest Book">
-                {quests.map((stage) => (
-                  <option value={stage.id} key={stage.id} disabled={!questUnlocked(stage)}>{!questUnlocked(stage) ? "🔒 " : stageDone(stage) ? "✓ " : ""}{stage.title}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Optional side challenges">
-                {sides.map((stage) => (
-                  <option value={stage.id} key={stage.id} disabled={!questUnlocked(stage)}>{!questUnlocked(stage) ? "🔒 " : stageDone(stage) ? "✓ " : ""}{stage.title}</option>
-                ))}
-              </optgroup>
-            </select>
-          </label>
+          <p className="gm-note">Active quests are listed below with their own next action and progress. Locked quests are folded separately. In-game progress counts only while the quest is activated.</p>
+          <div className="gm-ter-quest-board">
+            {allQuests.filter(stage => questUnlocked(stage) && !stageDone(stage)).map(stage => {
+              const nextStep = stage.steps.find(step => !isDone(stage, step));
+              return <div key={stage.id} className={"gm-ter-quest-row" + (questChoice?.id === stage.id ? " current" : "")}>
+                <div className="gm-ter-quest-meta"><b>{stage.title}</b>
+                  <span>{completedCount(stage)}/{stage.steps.length} actions</span>
+                </div>
+                {nextStep && <p className="gm-note">Next: {nextStep.label}</p>}
+                <button className="gm-pill ghost" type="button" onClick={() => setSelectedQuest(stage.id)}>
+                  {questChoice?.id === stage.id ? "Selected" : "Focus quest"}
+                </button>
+              </div>;
+            })}
+            {!allQuests.some(stage => questUnlocked(stage) && !stageDone(stage)) &&
+              <p className="gm-note">No available unfinished questlines yet. Unlock the Quest Book and finish its first assignment.</p>}
+          </div>
+          <details className="gm-ter-locked">
+            <summary>Not unlocked yet ({allQuests.filter(stage => !questUnlocked(stage)).length})</summary>
+            <p className="gm-note">These questlines stay out of your active list until their requirements are checked.</p>
+            {allQuests.filter(stage => !questUnlocked(stage)).map(stage =>
+              <p className="gm-note" key={stage.id}><b>{stage.title}</b> · Prerequisites: {(stage.unlockAll ?? []).join(", ") || (stage.unlockAny ?? []).join(" or ") || "other progression"}</p>)}
+          </details>
+          {allQuests.some(stage => questUnlocked(stage) && stageDone(stage)) && <details className="gm-ter-locked">
+            <summary>Completed questlines ({allQuests.filter(stage => questUnlocked(stage) && stageDone(stage)).length})</summary>
+            {allQuests.filter(stage => questUnlocked(stage) && stageDone(stage)).map(stage =>
+              <button key={stage.id} type="button" className="gm-pill ghost" style={{ margin: 5 }}
+                onClick={() => setSelectedQuest(stage.id)}>{stage.title}</button>)}
+          </details>}
         </section>
         {questChoice ? (
           <FocusedStage key={questChoice.id} game={game} stage={questChoice} prog={prog} setCheck={setCheck} variant="quest" />
@@ -248,23 +262,7 @@ export default function TerrariaSpiritView({ game, prog, setCheck, setField }: P
             <button type="button" className="gm-pill" onClick={() => openStage("briar-adventurer")}>Go to the Adventurer chapter</button>
           </section>
         )}
-        <details style={{ marginTop: 14 }}>
-          <summary className="gm-note" style={{ cursor: "pointer" }}>Other quests and optional adventures</summary>
-          <button type="button" className="gm-pill" style={{ margin: "10px 0" }}
-            onClick={() => setShowCompletedQuests(!showCompletedQuests)}>
-            {showCompletedQuests ? "Hide completed" : "Include completed"}
-          </button>
-          {allQuests.filter((stage) => questUnlocked(stage) && (showCompletedQuests || !stageDone(stage))).map((stage) => (
-            <div className="gm-card" key={stage.id} style={{ padding: 12, marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div><b>{stage.title}</b><div className="gm-note">{completedCount(stage)}/{stage.steps.length} complete</div></div>
-                <button type="button" className="gm-pill" onClick={() => { setSelectedQuest(stage.id); setView("quests"); }}>
-                  {stageDone(stage) ? "Review" : "Open"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </details>
+
       </>}
 
       {view === "bosses" && <>

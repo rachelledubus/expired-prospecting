@@ -523,3 +523,51 @@
   .tp.gm .gm-dv-tool-roadmap-row > summary { display: grid; gap: 3px; }
   .tp.gm .gm-dv-tool-roadmap-row > summary em { text-align: left; }
 }
+
+
+/* Terraria Spirit Classic: guide-first milestones, inline lookups, per-quest next actions */
+.tp.gm .gm-ter-priorities, .tp.gm .gm-ter-finder { margin-top: 12px; padding: 16px; }
+.tp.gm .gm-ter-priority-focus { border: 1px solid var(--line); background: var(--sand);
+  border-radius: 13px; margin: 12px 0; padding: 14px; }
+.tp.gm .gm-ter-priority-focus h4 { color: var(--navy); font: 700 17px/1.35 "DM Sans",system-ui,sans-serif; margin: 5px 0 7px; }
+.tp.gm .gm-ter-priority-focus > p { margin: 6px 0 10px; font-size: 14px; line-height: 1.45; }
+.tp.gm .gm-ter-priority-focus .gm-item { border-top: 1px solid var(--line); margin-top: 10px; }
+.tp.gm .gm-ter-priority-focus .gm-pill { margin: 8px 0 0; }
+.tp.gm .gm-ter-help { border-left: 3px solid var(--sage); margin: 3px 0 10px 35px; padding: 5px 10px; background: var(--card); border-radius: 0 9px 9px 0; }
+.tp.gm .gm-ter-help > summary { cursor: pointer; color: var(--navy); font: 700 12px/1.5 "DM Sans",system-ui,sans-serif; padding: 6px 0; }
+.tp.gm .gm-ter-help > p { margin: 6px 0; color: var(--ink); font-size: 13px; line-height: 1.5; }
+.tp.gm .gm-ter-help > p.gm-note { color: var(--muted); }
+.tp.gm .gm-ter-item { margin: 8px 0; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.tp.gm .gm-ter-item b { display: block; color: var(--navy); font: 700 14px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-ter-item p { font-size: 13px; line-height: 1.5; margin: 5px 0; color: var(--ink); }
+.tp.gm .gm-ter-item p.gm-note { color: var(--muted); }
+.tp.gm .gm-ter-item .gm-ter-method { display: block; color: var(--sage); font: 700 11px "DM Sans",system-ui,sans-serif; margin-top: 3px; }
+.tp.gm .gm-ter-search { display: grid; gap: 6px; margin: 14px 0 9px; }
+.tp.gm .gm-ter-search .gm-input { width: 100%; }
+.tp.gm .gm-ter-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 13px; }
+.tp.gm .gm-ter-tag { cursor: pointer; border: 1px solid var(--line); border-radius: 99px;
+ background: var(--sand); color: var(--navy); min-height: 34px; padding: 6px 10px; font: 600 12px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-ter-tag:focus-visible, .tp.gm .gm-ter-fold-toggle:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.tp.gm .gm-ter-fold-toggle { border: 0; border-top: 1px solid var(--line); cursor: pointer;
+ color: var(--navy); background: transparent; font: 700 13px "DM Sans",system-ui,sans-serif;
+ width: 100%; padding: 10px 0; display: flex; justify-content: space-between; }
+.tp.gm .gm-ter-priority-list { max-height: 500px; overflow-y: auto; border-top: 1px solid var(--line); }
+.tp.gm .gm-ter-priority-row { padding: 4px 0; border-bottom: 1px solid var(--line); }
+.tp.gm .gm-ter-priority-row.done { opacity: .65; }
+.tp.gm .gm-ter-disclaimer { font-size: 12px; margin-top: 12px; }
+.tp.gm .gm-ter-check-wrap { border-bottom: 1px solid var(--line); }
+.tp.gm .gm-ter-quest-board { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+.tp.gm .gm-ter-quest-row { background: var(--sand); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.tp.gm .gm-ter-quest-row.current { box-shadow: inset 3px 0 0 var(--sage); }
+.tp.gm .gm-ter-quest-meta { display: flex; gap: 9px; flex-wrap: wrap; align-items: baseline; justify-content: space-between; }
+.tp.gm .gm-ter-quest-meta b { color: var(--navy); font: 700 15px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-ter-quest-meta span { color: var(--muted); font-size: 12px; }
+.tp.gm .gm-ter-quest-row > p.gm-note { margin: 8px 0; font-size: 13px; }
+.tp.gm .gm-ter-quest-row .gm-pill { min-height: 34px; font-size: 12px; }
+.tp.gm .gm-ter-locked { margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.tp.gm .gm-ter-locked > summary { cursor: pointer; color: var(--navy); font: 700 13px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-ter-locked > .gm-note { margin: 9px 0; font-size: 13px; }
+@media(max-width:550px) {
+  .tp.gm .gm-ter-help { margin-left: 24px; }
+  .tp.gm .gm-ter-priority-focus { padding: 12px; }
+}

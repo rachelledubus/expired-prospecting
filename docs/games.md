@@ -194,3 +194,17 @@ shows as unchecked. Saved progress for a box that no longer exists is ignored, n
 - **See all 10 Royal Tool upgrades and unlock requirements** expands the complete road map with character friendship/biome prerequisites, material quantities, and item locations in the same guide.
 - Existing ordinary story, character, and Honeyglow checkboxes and saved progress are preserved. Checked tool quests count as complete immediately.
 - Verified sources: Dreamlight Valley Wiki Tools, Obstacles, The Great Maui, A Tale of Stone and Fire, Breaking the Ice, The Singing Ice, An Icy Invitation, Breaking Bones, The Circle of Life, A Dark Experiment, The Final Trial and Fire Alarm.
+
+
+## Terraria Spirit Classic: priority-first and self-contained guide (October 2026)
+
+- This change expands the already tracked **43 route/quest/side chapters** without renaming or deleting any existing stage or step IDs. Original checkboxes are preserved.
+- **Play next** now starts with a **25-milestone priority checklist**: NPC housing, early crafting, movement, rescuing Adventurer, activating Quest Book, crafting Wayfarer gear, health, essential boss unlocks, Hardmode and Moon Lord. Milestones reuse existing main/quest step keys; a check in the priority board instantly updates the matching chapter.
+- The ordinary chapter view is retained but labeled a supporting roadmap, not the primary next-action recommendation.
+- Added **75 item & recipe entries** from base Terraria and Spirit Classic with exact biome/source, obtaining method, recipe where verified, and use notes. The finder appears directly in Terraria views and does not redirect to external wiki pages.
+- Added **61 stage-step walkthrough notes** with practical location, what to do, recipe/item expansion, and important warnings. The existing steps display expandable **Where / how / materials** if detailed directions, a matching item, or original how text are available. Other existing steps still retain their original instructions and labels.
+- **Spirit quests** are arranged in a single active-quest board with one next objective per currently available quest. Locked and completed quests are folded into separate sections; a focused quest shows its remaining actions and inline materials.
+- Spirit quests only count in-game while activated from Quest Book. The portal mirrors only checkboxes the user personally marks; it does not read local Terraria saves.
+- No new checkbox keys or storage schema were necessary. Every priority calls the existing terrariaCheckKey shape and the current Netlify Blob API accepts them.
+- Fact-check sources: https://spiritmod.wiki.gg/wiki/Quests; https://spiritmod.wiki.gg/wiki/Guide:Mod_progression; item pages for Durasilk Sheaf, Wayfarer's armor, Feather Crown, Seabreak Pearl, Naturalist's Workshop, Dusk Crown, Stone Fist, Scarabeus, Ancient Avian, Adventurer.
+- Unverified recipe sources for a few Spirit items are described as unverified rather than invented. When mod versions diverge, the exact in-game Quest Book and crafting list take precedence.

@@ -136,7 +136,7 @@ export const TERRARIA_GAME: TerrariaGame = {
       ],
       "source": "https://spiritmod.wiki.gg/wiki/Quests",
       "unlockAll": [
-        "briar-adventurer"
+        "briar-adventurer:a6"
       ]
     },
     {
@@ -157,7 +157,7 @@ export const TERRARIA_GAME: TerrariaGame = {
         {
           "id": "a3",
           "label": "Obtain a Scarab Idol.",
-          "how": "Check the Guide's crafting recipes or Spirit Wiki if you lack the materials."
+          "how": "Complete the Idle Idol quest: search the Desert Ancient Ziggurat for a Decrepit Idol and exchange it with the Adventurer for a Scarab Idol."
         },
         {
           "id": "a4",
@@ -268,7 +268,7 @@ export const TERRARIA_GAME: TerrariaGame = {
         {
           "id": "a2",
           "label": "Find the Ancient Avian summoning route.",
-          "how": "Check the summon recipe and biome conditions in Spirit's Bosses guide."
+          "how": "Craft a Feather Crown (2 Fallen Stars + 6 Feathers at an Iron/Lead Anvil) and use it in Space, or break an Avian Egg on an Avian Island."
         },
         {
           "id": "a3",
@@ -995,7 +995,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Complete any new Spirit Quest Book branches you haven't tried."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Events"
+      "source": "https://spiritmod.wiki.gg/wiki/Events",
+      "unlockAll": [
+        "hardmode-gate:a5"
+      ]
     },
     {
       "id": "postgame",
@@ -1025,7 +1028,10 @@ export const TERRARIA_GAME: TerrariaGame = {
           "label": "Mark this playthrough fully complete when you're satisfied."
         }
       ],
-      "source": "https://spiritmod.wiki.gg/wiki/Spirit_Classic"
+      "source": "https://spiritmod.wiki.gg/wiki/Spirit_Classic",
+      "unlockAll": [
+        "moon-lord:a4"
+      ]
     },
     {
       "id": "heart-cause",
@@ -1480,7 +1486,7 @@ export const TERRARIA_GAME: TerrariaGame = {
         }
       ],
       "unlockAll": [
-        "hardmode-gate"
+        "hardmode-gate:a5"
       ]
     }
   ],
