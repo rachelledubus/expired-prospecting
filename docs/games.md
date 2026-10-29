@@ -183,3 +183,14 @@ shows as unchecked. Saved progress for a box that no longer exists is ignored, n
 - The main tracker is one row per active unlocked character. Each shows the next unchecked quest, progress count, and **Show the rest of this character's quests**. Fully completed character storylines collapse into **Completed character storylines**.
 - The separate roster editor lists characters not yet shown, with a searchable list and one-tap **Add**; each active row includes **Hide**. Hiding never deletes quest checkmarks. Re-adding restores them.
 - Honeyglow characters remain in their owned-content section, and other unowned expansions remain excluded.
+
+
+## Dreamlight Valley: Royal Tool upgrades first (October 29, 2026)
+
+- A prominent **Do this next: improve your tools** panel now comes before the general story and item-finder sections. The traditional story chapter remains available, but is labeled as secondary while upgrades are incomplete.
+- The panel tracks **10 permanent, base-game obstacle-clearing upgrades**: Pickaxe (small/large coral and ice), Shovel (tree stumps, small/large bones), and Watering Can (small/large mushrooms and green fire). No Hourglass/Net requirements from unowned expansions; the Fishing Rod has no permanent obstacle-clearing upgrade.
+- The next recommendation is the earliest incomplete tool upgrade whose required earlier tool upgrade is checked. Paths for already-unlocked characters are favored over paths requiring a new character; the opening Maui realm upgrade remains independently selectable before Maui has moved into the Valley.
+- Each objective's checkbox reuses the exact existing quest's saved key (character quest, or the already-existing Moana realm step for The Great Maui). This prevents duplicated progress.
+- **See all 10 Royal Tool upgrades and unlock requirements** expands the complete road map with character friendship/biome prerequisites, material quantities, and item locations in the same guide.
+- Existing ordinary story, character, and Honeyglow checkboxes and saved progress are preserved. Checked tool quests count as complete immediately.
+- Verified sources: Dreamlight Valley Wiki Tools, Obstacles, The Great Maui, A Tale of Stone and Fire, Breaking the Ice, The Singing Ice, An Icy Invitation, Breaking Bones, The Circle of Life, A Dark Experiment, The Final Trial and Fire Alarm.

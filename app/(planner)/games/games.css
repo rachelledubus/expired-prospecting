@@ -497,3 +497,29 @@
 .tp.gm .gm-dv-completed { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .tp.gm .gm-dv-completed > summary { cursor: pointer; color: var(--muted); min-height: 38px; font: 700 13px "DM Sans",system-ui,sans-serif; }
 .tp.gm .gm-dv-completed > summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+
+
+/* DDV: recommended Royal Tool upgrades come before the chronological story guide. */
+.tp.gm .gm-dv-tools { margin-top: 12px; padding: 16px; }
+.tp.gm .gm-dv-tools-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.tp.gm .gm-dv-tool-focus { background: var(--sand); border: 1px solid var(--line); border-radius: 14px; padding: 15px; margin: 10px 0 8px; }
+.tp.gm .gm-dv-tool-focus h4 { color: var(--navy); font: 700 18px/1.35 "DM Sans",system-ui,sans-serif; margin: 6px 0 9px; }
+.tp.gm .gm-dv-tool-quest, .tp.gm .gm-dv-tool-instruction, .tp.gm .gm-dv-tool-gate { margin: 6px 0 9px; font-size: 14px; line-height: 1.48; }
+.tp.gm .gm-dv-tool-gate { color: var(--muted); }
+.tp.gm .gm-dv-tool-hint { padding: 10px 12px; background: var(--card); border-radius: 10px; margin: 10px 0; }
+.tp.gm .gm-dv-tool-hint .gm-pill { margin-top: 6px; }
+.tp.gm .gm-dv-tool-focus .gm-item { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.tp.gm .gm-dv-tool-materials { margin: 12px 0 4px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.tp.gm .gm-dv-tool-materials > summary { font: 700 13px "DM Sans",system-ui,sans-serif; color: var(--navy); cursor: pointer; }
+.tp.gm .gm-dv-tool-roadmap { margin-top: 12px; border-top: 1px solid var(--line); }
+.tp.gm .gm-dv-tool-roadmap-row { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.tp.gm .gm-dv-tool-roadmap-row > summary { cursor: pointer; display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 13px; color: var(--ink); line-height: 1.35; }
+.tp.gm .gm-dv-tool-roadmap-row > summary span { flex: 1; }
+.tp.gm .gm-dv-tool-roadmap-row > summary em { color: var(--muted); text-align: right; font-size: 12px; font-style: normal; white-space: normal; }
+.tp.gm .gm-dv-tool-roadmap-row.done > summary span { color: var(--sage); }
+.tp.gm .gm-dv-tool-roadmap-row > p { margin-top: 10px; }
+.tp.gm .gm-dv-tool-roadmap-row .gm-item { margin-top: 8px; border-top: 1px solid var(--line); }
+@media (max-width: 500px) {
+  .tp.gm .gm-dv-tool-roadmap-row > summary { display: grid; gap: 3px; }
+  .tp.gm .gm-dv-tool-roadmap-row > summary em { text-align: left; }
+}

@@ -5,6 +5,7 @@ import { questKey, type GameProgress } from "@/lib/games-data";
 import type { DreamlightGame, DreamlightStage, DreamlightStep } from "@/lib/dreamlight-data";
 import { DREAMLIGHT_MISSION_MATERIALS } from "@/lib/dreamlight-resource-guides";
 import DreamlightCharacters from "./DreamlightCharacters";
+import DreamlightTools from "./DreamlightTools";
 import DreamlightItems, { ItemDetails } from "./DreamlightItems";
 
 type Props = {
@@ -110,6 +111,9 @@ export default function DreamlightView({ game, prog, setCheck, setField }: Props
           ))}
         </nav>
       </section>
+      <DreamlightTools gameId={game.id} prog={prog} setCheck={setCheck}
+        onOpenCharacters={() => { setSection("friends"); setChosen(""); }}
+        onOpenRealms={() => { setSection("realms"); setChosen("realm-moana"); }} />
       <DreamlightItems />
       {section === "friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} area="Valley" />}
       {section === "honeyglow-friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} area="Honeyglow" />}
@@ -137,7 +141,7 @@ export default function DreamlightView({ game, prog, setCheck, setField }: Props
 
       {focus && (
         <section className="gm-card" style={{ padding: 16, marginTop: 12 }}>
-          <div className="gm-panel-label">{complete(focus) ? "Chapter complete" : "Do this next"}</div>
+          <div className="gm-panel-label">{complete(focus) ? "Story chapter complete" : "Story chapter · secondary to Royal Tool upgrades"}</div>
           <h3 style={{ margin: "8px 0" }}>{focus.title}</h3>
           <p className="gm-note">{focus.summary}</p>
           <Progress done={finished(focus).length} total={focus.steps.length} />
