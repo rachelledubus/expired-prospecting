@@ -448,7 +448,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
               <button className="refresh" type="button" onClick={() => { setNotice(null); setTaskUndo(null); }}>Dismiss</button>
             </p>
           )}
-          {taskError && <p className="snap warn" role="alert">{taskError}</p>
+          {taskError && <p className="snap warn" role="alert">{taskError}</p>}
           {data.warnings.map((w) => (
             <p className="state-line" key={w}>{w}</p>
           ))}
