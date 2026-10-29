@@ -189,6 +189,7 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
         </details>
       )}
       {/* The item finder stays near the top in every section. */}
+      {available.length > 0 && (
       <details className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           Browse all {activeSection?.label} chapters · {available.filter(complete).length}/{available.length} complete
@@ -204,6 +205,7 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
           </div>
         ))}
       </details>
+      )}
     </div>
   );
 }
