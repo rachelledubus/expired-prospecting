@@ -465,3 +465,35 @@
 .tp.gm .gm-dv-quest-fold > summary { padding: 10px 0; }
 @media (max-width: 800px) { .tp.gm .gm-dv-character-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 420px) { .tp.gm .gm-dv-character-grid { grid-template-columns: minmax(0,1fr); } }
+
+
+/* DDV unlocked-character quest board: active characters only, with a separate roster editor. */
+.tp.gm .gm-dv-manage-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 13px 0 8px; }
+.tp.gm .gm-dv-manage-panel { padding: 14px; margin: 12px 0; border: 1px solid var(--line); background: var(--sand); border-radius: 14px; }
+.tp.gm .gm-dv-manage-list { display: flex; flex-direction: column; max-height: 390px; overflow-y: auto; border-top: 1px solid var(--line); }
+.tp.gm .gm-dv-manage-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 10px 0; }
+.tp.gm .gm-dv-manage-row > div { flex: 1; min-width: 0; }
+.tp.gm .gm-dv-manage-row b { display: block; color: var(--navy); font: 700 14px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-manage-row span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.tp.gm .gm-dv-manage-row .gm-pill { flex: none; min-height: 36px; }
+.tp.gm .gm-dv-empty { background: var(--sand); border: 1px dashed var(--line); border-radius: 12px; padding: 16px; margin-top: 12px; }
+.tp.gm .gm-dv-empty b { color: var(--navy); }
+.tp.gm .gm-dv-empty p { font-size: 14px; color: var(--muted); margin: 7px 0 12px; }
+.tp.gm .gm-dv-track-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin: 12px 0; }
+.tp.gm .gm-dv-track { padding: 13px 14px; border: 1px solid var(--line); background: var(--sand); border-radius: 13px; }
+.tp.gm .gm-dv-track-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tp.gm .gm-dv-track-heading { flex: 1; min-width: 0; }
+.tp.gm .gm-dv-track-heading b { display: block; color: var(--navy); font: 700 16px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-track-heading span { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+.tp.gm .gm-dv-track-head .gm-pill { font-size: 12px; min-height: 34px; padding: 0 12px; flex: none; }
+.tp.gm .gm-dv-track .gm-dv-quest.next { margin-top: 11px; }
+.tp.gm .gm-dv-track .gm-dv-quest.next .gm-item { padding: 8px 0; }
+.tp.gm .gm-dv-track-finished { padding: 10px 0 0; }
+.tp.gm .gm-dv-expand { border: 0; background: transparent; cursor: pointer; color: var(--navy); font: 600 13px "DM Sans",system-ui,sans-serif; text-align: left; display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 42px; padding: 8px 0 0; }
+.tp.gm .gm-dv-expand:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.tp.gm .gm-dv-track-more { padding-top: 7px; border-top: 1px solid var(--line); }
+.tp.gm .gm-dv-track-more .gm-dv-quest:last-child { border-bottom: 0; }
+.tp.gm .gm-dv-track-more .gm-panel-label { margin: 8px 0 3px; }
+.tp.gm .gm-dv-completed { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.tp.gm .gm-dv-completed > summary { cursor: pointer; color: var(--muted); min-height: 38px; font: 700 13px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-completed > summary:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }

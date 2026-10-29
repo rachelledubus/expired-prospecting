@@ -173,3 +173,13 @@ shows as unchecked. Saved progress for a box that no longer exists is ignored, n
 - Coverage includes the base Valley's wood, crops/stalls, flowers, fishing ripples, mines, cooking ingredients and recipes, along with previously indexed Honeyglow materials. Individual quest unlock conditions may involve prior story progress or friendship levels; the game does not automatically send its own progress to the portal.
 - Quest names cross-checked with https://dreamlightvalleywiki.com/Quests (Oct 2026), and material locations against that wiki's foraging/digging/fishing/recipe references.
 - To add a character use lib/dreamlight-character-quests.ts; to add resources use lib/dreamlight-item-index.ts. Keep new check keys in knownCheckKeys (lib/games-data.ts) so the existing Netlify Blob save endpoint accepts them.
+
+
+## Dreamlight Valley: unlocked-only character quest board (October 29, 2026)
+
+- The DDV **Characters** and **Honeyglow characters** sections show only personally unlocked characters. Unlock status is not guessed from the user's general main-story/realm checklist; it is selected explicitly in **Add / manage characters**.
+- Anyone who already has individual completed character quests in saved progress appears automatically unless explicitly hidden. This avoids hiding known progress when migrating from the previous character grid.
+- Unlocks are saved as separate validated fields on the existing dreamlight-valley Netlify Blob record. Values are "unlocked" or "hidden" with stable keys from dreamlightCharacterVisibilityKey. The backend registers them through knownFieldKeys.
+- The main tracker is one row per active unlocked character. Each shows the next unchecked quest, progress count, and **Show the rest of this character's quests**. Fully completed character storylines collapse into **Completed character storylines**.
+- The separate roster editor lists characters not yet shown, with a searchable list and one-tap **Add**; each active row includes **Hide**. Hiding never deletes quest checkmarks. Re-adding restores them.
+- Honeyglow characters remain in their owned-content section, and other unowned expansions remain excluded.

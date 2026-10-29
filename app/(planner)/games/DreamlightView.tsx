@@ -11,6 +11,7 @@ type Props = {
   game: DreamlightGame;
   prog: GameProgress;
   setCheck: (key: string, value: boolean) => void;
+  setField: (key: string, value: string) => void;
 };
 type Section = "story" | "realms" | "friends" | "projects" | "collections" | "honeyglow" | "honeyglow-friends";
 const SECTIONS: { id: Section; label: string; help: string }[] = [
@@ -80,7 +81,7 @@ function Action({ gameId, stage, step, checked, setCheck }: {
   );
 }
 
-export default function DreamlightView({ game, prog, setCheck }: Props) {
+export default function DreamlightView({ game, prog, setCheck, setField }: Props) {
   const [section, setSection] = useState<Section>("story");
   const [chosen, setChosen] = useState("");
   const available = game.stages.filter(stage => stage.section === section && stage.id !== "honeyglow-friendship" && section !== "friends");
@@ -110,8 +111,8 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
         </nav>
       </section>
       <DreamlightItems />
-      {section === "friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} area="Valley" />}
-      {section === "honeyglow-friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} area="Honeyglow" />}
+      {section === "friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} area="Valley" />}
+      {section === "honeyglow-friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} area="Honeyglow" />}
       {section !== "friends" && (
       <section className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <div className="gm-panel-label">{activeSection?.label}</div>

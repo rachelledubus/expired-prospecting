@@ -2043,7 +2043,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
           ) : isTerrariaGame(game) ? (
             <TerrariaSpiritView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : isDreamlightGame(game) ? (
-            <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} />
+            <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}

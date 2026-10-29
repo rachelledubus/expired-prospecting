@@ -22,3 +22,7 @@ export const DREAMLIGHT_CHARACTERS: DreamlightCharacterChain[] = QUEST_LINES.spl
 
 export const dreamlightCharacterKey = (gameId: string, characterId: string, questId: string) =>
   [gameId, "quest", "dreamlight-character-" + characterId, questId].join("|");
+
+/** A saved, reversible per-character unlock choice; separate from quest completion. */
+export const dreamlightCharacterVisibilityKey = (gameId: string, characterId: string) =>
+  [gameId, "dreamlight-character", "visibility", characterId].join("|");
