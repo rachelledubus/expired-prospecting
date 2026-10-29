@@ -424,3 +424,44 @@
   .tp.gm .gm-custom-add .gm-pill { width: 100%; }
 }
 
+
+/* DDV: standalone character questlines and in-page item answers. */
+.tp.gm .gm-dv-items, .tp.gm .gm-dv-characters { padding: 16px; margin-top: 12px; }
+.tp.gm .gm-dv-search-label { display: grid; gap: 6px; margin: 12px 0 8px; }
+.tp.gm .gm-dv-search-label .gm-input { width: 100%; }
+.tp.gm .gm-dv-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.tp.gm .gm-dv-shortcut { border-radius: 99px; border: 1px solid var(--line); background: var(--sand);
+  color: var(--navy); cursor: pointer; padding: 7px 10px; min-height: 34px; font: 600 12px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-shortcut:focus-visible, .tp.gm .gm-dv-character:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.tp.gm .gm-dv-item-results { margin: 8px 0; }
+.tp.gm .gm-dv-item-detail { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tp.gm .gm-dv-item-detail > b { color: var(--navy); display: block; font: 700 14px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-method { display: inline-block; margin: 3px 0 2px; color: var(--sage); font: 700 12px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-where, .tp.gm .gm-dv-tip, .tp.gm .gm-dv-unverified { font-size: 14px; line-height: 1.45; margin: 3px 0; color: var(--ink); }
+.tp.gm .gm-dv-tip, .tp.gm .gm-dv-unverified { color: var(--muted); }
+.tp.gm .gm-dv-mission-materials { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 8px 0 14px; }
+.tp.gm .gm-dv-mission-materials .gm-dv-item-detail:last-of-type { border-bottom: 0; }
+.tp.gm .gm-dv-caveat { margin-top: 12px; font-size: 12px; }
+.tp.gm .gm-dv-show-all { margin-top: 10px; }
+.tp.gm .gm-dv-character-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 14px; }
+.tp.gm .gm-dv-character { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 6px; border: 1px solid var(--line); background: var(--sand); color: var(--navy);
+  border-radius: 10px; min-height: 49px; padding: 10px; cursor: pointer; text-align: left; }
+.tp.gm .gm-dv-character.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.tp.gm .gm-dv-character-name { font: 700 13px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-dv-character-count { font: 600 12px "DM Sans",system-ui,sans-serif; opacity: .8; white-space: nowrap; }
+.tp.gm .gm-dv-select-hint { margin: 12px 0 0; }
+.tp.gm .gm-dv-character-detail { margin-top: 16px; padding: 14px; background: var(--sand); border-radius: 12px; }
+.tp.gm .gm-dv-character-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.tp.gm .gm-dv-character-head h3 { margin-top: 4px; }
+.tp.gm .gm-dv-quest { padding: 4px 0; border-bottom: 1px solid var(--line); }
+.tp.gm .gm-dv-quest.next { padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+.tp.gm .gm-dv-quest .gm-item { margin: 0; }
+.tp.gm .gm-dv-quest.done { opacity: .7; }
+.tp.gm .gm-dv-help { padding: 0 0 10px 36px; }
+.tp.gm .gm-dv-help > p { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+.tp.gm .gm-dv-help details summary, .tp.gm .gm-dv-quest-fold > summary { cursor: pointer; font: 700 13px "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-dv-quest-fold { margin-top: 14px; }
+.tp.gm .gm-dv-quest-fold > summary { padding: 10px 0; }
+@media (max-width: 800px) { .tp.gm .gm-dv-character-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 420px) { .tp.gm .gm-dv-character-grid { grid-template-columns: minmax(0,1fr); } }

@@ -1,6 +1,7 @@
 import { getStardewQuestSubtasks } from "./stardew-quest-subtasks";
 import { TERRARIA_GAME, type TerrariaGame } from "./terraria-spirit-data";
 import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
+import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey } from "./dreamlight-character-quests";
 
 // Game progression checklists for the /games planner page.
 // To add a game: append one object to GAMES. It gets its own chip on the page and its own saved progress.
@@ -430,6 +431,9 @@ export function knownCheckKeys(game: Game): Set<string> {
   if (isDreamlightGame(game)) {
     for (const stage of game.stages) {
       for (const step of stage.steps) keys.add(questKey(game.id, "dreamlight-" + stage.id, step.id));
+    }
+    for (const character of DREAMLIGHT_CHARACTERS) {
+      for (const quest of character.quests) keys.add(dreamlightCharacterKey(game.id, character.id, quest.id));
     }
     return keys;
   }

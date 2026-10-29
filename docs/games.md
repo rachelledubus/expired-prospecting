@@ -162,3 +162,14 @@ shows as unchecked. Saved progress for a box that no longer exists is ignored, n
 | `app/api/games/progress/route.ts` | The save and read route. Same-origin only. |
 | `app/(planner)/games/` | The page, the client component, and `games.css`. |
 | `app/(planner)/PlannerTabs.tsx` | The `Games` tab entry. |
+
+
+## Dreamlight Valley: individual characters and direct item answers (Oct 2026)
+
+- **Characters** contains a searchable, per-character named quest chain for base-game villagers. **Honeyglow characters** has separate Pooh, Eeyore and Piglet lines. Other paid expansion characters are excluded.
+- Each opens to **Do next**, **Remaining quests** and **Completed quests**. Every named quest has its own persistent checkbox keyed by a stable title slug. Prior broad friendship checkboxes are left in storage but not inferred to mean that each exact quest was finished.
+- **Item locations & recipes** is a visible search field at the top of every DDV section. Searching by material, food, biome or obtaining method shows facts in the page. No wiki redirect is required for indexed resources.
+- Quest material panels also show inline quantities and locations. If a quest-only material has not been verified, the page labels the gap directly rather than sending the player to another website.
+- Coverage includes the base Valley's wood, crops/stalls, flowers, fishing ripples, mines, cooking ingredients and recipes, along with previously indexed Honeyglow materials. Individual quest unlock conditions may involve prior story progress or friendship levels; the game does not automatically send its own progress to the portal.
+- Quest names cross-checked with https://dreamlightvalleywiki.com/Quests (Oct 2026), and material locations against that wiki's foraging/digging/fishing/recipe references.
+- To add a character use lib/dreamlight-character-quests.ts; to add resources use lib/dreamlight-item-index.ts. Keep new check keys in knownCheckKeys (lib/games-data.ts) so the existing Netlify Blob save endpoint accepts them.

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import type { DreamlightGame, DreamlightStage, DreamlightStep } from "@/lib/dreamlight-data";
-import { DREAMLIGHT_MISSION_MATERIALS, DREAMLIGHT_RESOURCES } from "@/lib/dreamlight-resource-guides";
+import { DREAMLIGHT_MISSION_MATERIALS } from "@/lib/dreamlight-resource-guides";
+import DreamlightCharacters from "./DreamlightCharacters";
+import DreamlightItems, { ItemDetails } from "./DreamlightItems";
 
 type Props = {
   game: DreamlightGame;
@@ -14,11 +16,11 @@ type Section = "story" | "realms" | "friends" | "projects" | "collections" | "ho
 const SECTIONS: { id: Section; label: string; help: string }[] = [
   { id: "story", label: "📖 Main story", help: "Progress through the Valley's main story" },
   { id: "realms", label: "🏰 Realms", help: "Explore the Dream Castle and unlock new characters" },
-  { id: "friends", label: "💕 Friendships", help: "Choose character stories at your own pace" },
+  { id: "friends", label: "💕 Characters", help: "Individual friendship quest chains, one character at a time" },
   { id: "projects", label: "🌿 Projects", help: "Village upgrades and cozy decorating goals" },
   { id: "collections", label: "✨ Collections", help: "Optional gathering and discovery challenges" },
   { id: "honeyglow", label: "🍯 Honeyglow Woods", help: "Your owned Adventure Pack: Pooh, Eeyore, Piglet, and the complete Honeyglow storyline" },
-  { id: "honeyglow-friends", label: "🐻 Honeyglow extras", help: "Friendship stories and relaxed exploration after unlocking new areas" },
+  { id: "honeyglow-friends", label: "🐻 Honeyglow characters", help: "Pooh, Eeyore and Piglet each have their own friendship questline" },
 ];
 const savedKey = (gameId: string, stageId: string, stepId: string) =>
   questKey(gameId, "dreamlight-" + stageId, stepId);
@@ -39,71 +41,21 @@ function Progress({ done, total }: { done: number; total: number }) {
 }
 
 function MissionMaterials({ stage, step }: { stage: DreamlightStage; step: DreamlightStep }) {
-  const groups = DREAMLIGHT_MISSION_MATERIALS[`${stage.id}:${step.id}`] ?? [];
+  const groups = DREAMLIGHT_MISSION_MATERIALS[stage.id + ":" + step.id] ?? [];
   if (!groups.length) return null;
   return (
-    <div style={{ padding: "10px 12px", margin: "8px 0 14px", borderRadius: 10,
-      border: "1px solid rgba(128,128,128,.23)" }}>
-      <div className="gm-panel-label">📦 What you need & where to get it</div>
+    <div className="gm-dv-mission-materials">
+      <div className="gm-panel-label">📦 Materials · exact locations</div>
       {groups.map((group, index) => (
         <div key={index} style={{ marginTop: 10 }}>
-          {group.note && <p className="gm-note" style={{ margin: "0 0 6px" }}>{group.note}</p>}
-          {group.items.map((required, itemIndex) => {
-            const info = DREAMLIGHT_RESOURCES[required.item];
-            return (
-              <div key={required.item + ":" + itemIndex} style={{
-                display: "flex", flexDirection: "column", gap: 3, padding: "8px 0",
-                borderBottom: "1px solid rgba(128,128,128,.13)",
-              }}>
-                <b style={{ fontSize: ".9rem" }}>{required.qty ? required.qty + "× " : ""}{required.item}</b>
-                {info ? <>
-                  <span className="gm-note"><b>{info.method}:</b> {info.where}</span>
-                  <a className="gm-note" href={info.url} target="_blank" rel="noopener noreferrer">
-                    Item details / alternate sources ↗
-                  </a>
-                </> : <span className="gm-note">See the current quest journal for its location.</span>}
-              </div>
-            );
-          })}
+          {group.note && <p className="gm-note">{group.note}</p>}
+          {group.items.map((required, i) => (
+            <ItemDetails key={required.item + ":" + i} item={required.item} qty={required.qty} />
+          ))}
         </div>
       ))}
-      <p className="gm-note" style={{ marginTop: 9 }}>
-        These are mission requirements, not an inventory count. Collect only what's still missing in your game.
-      </p>
+      <p className="gm-note gm-dv-caveat">Quantities are for this objective, not the amount still missing from your inventory.</p>
     </div>
-  );
-}
-
-function ResourceFinder() {
-  const [search, setSearch] = useState("");
-  const results = Object.values(DREAMLIGHT_RESOURCES)
-    .filter(item => (item.name + " " + item.method + " " + item.where)
-      .toLowerCase().includes(search.trim().toLowerCase()))
-    .slice(0, 12);
-  return (
-    <details className="gm-card" style={{ padding: 14, marginTop: 12 }}>
-      <summary style={{ cursor: "pointer", fontWeight: 700 }}>🔎 Where do I find an item?</summary>
-      <p className="gm-note">Search base-game and Honeyglow Woods materials without leaving your guide.</p>
-      <label className="gm-note" style={{ display: "block", marginTop: 8 }}>
-        Search an item or location
-        <input className="gm-input" style={{ width: "100%", marginTop: 6 }}
-          placeholder="e.g. Driftwood, Garnet, Soft Limestone..."
-          value={search} onChange={e => setSearch(e.target.value)} />
-      </label>
-      {!search.trim()
-        ? <p className="gm-note">Try Golden Honey, Tree Resin, Parsnip, Dream Shard, or a biome name.</p>
-        : results.length
-          ? results.map(item => (
-            <div key={item.name} style={{ padding: "10px 0", borderBottom: "1px solid rgba(128,128,128,.14)" }}>
-              <b>{item.name}</b>
-              <div className="gm-note"><b>{item.method}:</b> {item.where}</div>
-              <a className="gm-note" href={item.url} target="_blank" rel="noopener noreferrer">
-                View resource page ↗
-              </a>
-            </div>
-          ))
-          : <p className="gm-note">No verified location saved for that item yet. Check the active quest's linked walkthrough.</p>}
-    </details>
   );
 }
 
@@ -131,7 +83,7 @@ function Action({ gameId, stage, step, checked, setCheck }: {
 export default function DreamlightView({ game, prog, setCheck }: Props) {
   const [section, setSection] = useState<Section>("story");
   const [chosen, setChosen] = useState("");
-  const available = game.stages.filter(stage => stage.section === section);
+  const available = game.stages.filter(stage => stage.section === section && stage.id !== "honeyglow-friendship" && section !== "friends");
   const checked = (stage: DreamlightStage, step: DreamlightStep) =>
     !!prog.checks[savedKey(game.id, stage.id, step.id)];
   const pending = (stage: DreamlightStage) => stage.steps.filter(step => !checked(stage, step));
@@ -157,6 +109,10 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
           ))}
         </nav>
       </section>
+      <DreamlightItems />
+      {section === "friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} area="Valley" />}
+      {section === "honeyglow-friends" && <DreamlightCharacters gameId={game.id} prog={prog} setCheck={setCheck} area="Honeyglow" />}
+      {section !== "friends" && (
       <section className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <div className="gm-panel-label">{activeSection?.label}</div>
         <p className="gm-note">{activeSection?.help}</p>
@@ -176,6 +132,7 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
           </button>
         )}
       </section>
+      )}
 
       {focus && (
         <section className="gm-card" style={{ padding: 16, marginTop: 12 }}>
@@ -209,9 +166,7 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
               ))}
             </details>
           )}
-          <p className="gm-note" style={{ marginTop: 12 }}>
-            <a href={focus.source} target="_blank" rel="noopener noreferrer">Quest reference ↗</a>
-          </p>
+          <p className="gm-note" style={{ marginTop: 12 }}>Check each action as you finish it in game. Item locations are available in the finder above.</p>
         </section>
       )}
       {focus && (
@@ -230,10 +185,10 @@ export default function DreamlightView({ game, prog, setCheck }: Props) {
             ))}
           {!focus.steps.some(step => !!DREAMLIGHT_MISSION_MATERIALS[`${focus.id}:${step.id}`]) &&
             <p className="gm-note">No verified fixed material list recorded for this chapter.
-              Use the item finder below or the linked quest walkthrough for variable requests.</p>}
+              Search the item directory above for any materials requested during this chapter.</p>}
         </details>
       )}
-      <ResourceFinder />
+      {/* The item finder stays near the top in every section. */}
       <details className="gm-card" style={{ padding: 16, marginTop: 12 }}>
         <summary style={{ cursor: "pointer", fontWeight: 700 }}>
           Browse all {activeSection?.label} chapters · {available.filter(complete).length}/{available.length} complete
