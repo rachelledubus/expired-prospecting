@@ -205,6 +205,10 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [habitOverride, setHabitOverride] = useState<Record<string, boolean>>({});
   const [habitError, setHabitError] = useState<string | null>(null);
+  const [taskOverride, setTaskOverride] = useState<Record<string, string>>({});
+  const [taskSaving, setTaskSaving] = useState<string | null>(null);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [taskUndo, setTaskUndo] = useState<{ id: string; title: string; previousStatus: string } | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -258,13 +262,67 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
     }
   };
 
+  // Tasks are shown as complete immediately; Notion remains authoritative after refresh.
+  useEffect(() => { setTaskOverride({}); }, [data.fetchedAt]);
+  const currentTask = (t: Item): Item => taskOverride[t.id] ? { ...t, status: taskOverride[t.id] } : t;
+  const scheduleTasks = useMemo(() => data.schedule.map(currentTask), [data.schedule, taskOverride]);
   const items = useMemo(() => {
     const m = new Map<string, Item>();
-    [...data.now, ...data.schedule, ...data.pool].forEach((t) => m.set(t.id, t));
+    [...data.now, ...data.schedule, ...data.pool].forEach((t) => m.set(t.id, currentTask(t)));
     return m;
-  }, [data]);
+  }, [data, taskOverride]);
 
-  const { placed, unscheduled } = useMemo(() => layout(data.schedule), [data.schedule]);
+  const markTaskDone = async (t: Item) => {
+    if (taskSaving || t.status === "Done") return;
+    setTaskSaving(t.id);
+    setTaskError(null);
+    setTaskUndo(null);
+    setTaskOverride((o) => ({ ...o, [t.id]: "Done" }));
+    try {
+      const res = await fetch("/api/today/task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: t.id, mode: "complete" }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.ok) throw new Error(out.message || "Notion could not save this task.");
+      setTaskUndo(out.previousStatus ? { id: t.id, title: t.title, previousStatus: out.previousStatus } : null);
+      setNotice(`Marked "${t.title}" done in Notion.`);
+      refresh();
+    } catch (err) {
+      setTaskOverride((o) => { const copy = { ...o }; delete copy[t.id]; return copy; });
+      setTaskError(err instanceof Error ? err.message : "Could not reach Notion. The task is unchanged.");
+    } finally {
+      setTaskSaving(null);
+    }
+  };
+
+  const undoDoneTask = async () => {
+    if (!taskUndo || taskSaving) return;
+    const { id, title, previousStatus } = taskUndo;
+    setTaskSaving(id);
+    setTaskError(null);
+    setTaskOverride((o) => ({ ...o, [id]: previousStatus }));
+    try {
+      const res = await fetch("/api/today/task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: id, mode: "undo", previousStatus }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.ok) throw new Error(out.message || "Notion could not undo this change.");
+      setTaskUndo(null);
+      setNotice(`Restored "${title}" to ${previousStatus} in Notion.`);
+      refresh();
+    } catch (err) {
+      setTaskOverride((o) => ({ ...o, [id]: "Done" }));
+      setTaskError(err instanceof Error ? err.message : "Could not undo the change.");
+    } finally {
+      setTaskSaving(null);
+    }
+  };
+
+  const { placed, unscheduled } = useMemo(() => layout(scheduleTasks), [scheduleTasks]);
 
   const nowParts = nowMs === null ? null : etParts(new Date(nowMs));
   const todayDate = etParts(new Date(data.fetchedAt)).date;
@@ -289,16 +347,16 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
 
   // Important Tasks are the to-do items: NOW-list tasks that are not time blocks on the schedule,
   // plus anything on today's schedule list that has no time. None of them appear on the agenda.
-  const scheduleIds = new Set(data.schedule.map((t) => t.id));
+  const scheduleIds = new Set(scheduleTasks.map((t) => t.id));
   const importantTasks: Item[] = [];
-  [...data.now.filter((t) => !scheduleIds.has(t.id)), ...unscheduled.filter((t) => t.status !== "Done" && t.calendarRole !== "Maintenance")].forEach((t) => {
+  [...data.now.map(currentTask).filter((t) => !scheduleIds.has(t.id) && t.status !== "Done"), ...unscheduled.filter((t) => t.status !== "Done" && t.calendarRole !== "Maintenance")].forEach((t) => {
     if (!importantTasks.some((x) => x.id === t.id)) importantTasks.push(t);
   });
 
   // The open "Must Happen" tasks that used to be their own list now sit with the rest of the tasks.
   data.defaultPriorityIds.forEach((id) => {
     const t = items.get(id);
-    if (t && !importantTasks.some((x) => x.id === id)) importantTasks.push(t);
+    if (t && t.status !== "Done" && !importantTasks.some((x) => x.id === id)) importantTasks.push(t);
   });
 
   // "From now" leaves out what is finished or already over; "All day" keeps everything.
@@ -385,9 +443,12 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
           <p className="state-line">Updated from Notion at {updated}.</p>
           {notice && (
             <p className="notice" role="status">
-              {notice} <button className="refresh" type="button" onClick={() => setNotice(null)}>Dismiss</button>
+              {notice}{" "}
+              {taskUndo && <button className="refresh" type="button" disabled={Boolean(taskSaving)} onClick={undoDoneTask}>{taskSaving === taskUndo.id ? "Undoing..." : "Undo"}</button>}{" "}
+              <button className="refresh" type="button" onClick={() => { setNotice(null); setTaskUndo(null); }}>Dismiss</button>
             </p>
           )}
+          {taskError && <p className="snap warn" role="alert">{taskError}</p>
           {data.warnings.map((w) => (
             <p className="state-line" key={w}>{w}</p>
           ))}
@@ -419,6 +480,9 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                         <div className="cf-actions">
                           {t.link && <a className="pill" href={t.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
                           <button className="pill ghost" type="button" onClick={() => openDetail(t.id)}>Details</button>
+                          <button className="pill" type="button" disabled={Boolean(taskSaving)} onClick={() => markTaskDone(t)}>
+                            {taskSaving === t.id ? "Saving..." : "✓ Mark Done"}
+                          </button>
                           {restart?.id !== t.id && (
                             <button className="pill ghost" type="button" onClick={() => { setRestartError(null); setRestart({ id: t.id, phase: "confirm" }); }}>Restart time</button>
                           )}
@@ -548,16 +612,25 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                               style.width = `calc((100% - var(--tc)) / ${lanes} - 4px)`;
                             }
                             return (
-                              <button className={cls} type="button" key={t.id} style={style} onClick={() => openDetail(t.id)}>
-                                <div className="b-time">
-                                  <span className="ic"><Icon kind={isDone ? "check" : cat} /></span>
-                                  <span>{rangeText(t.start!, endIso(t, s, e))}</span>
-                                  {cur && <span className="tag-now">Now</span>}
-                                  {isDone && <span className="done-tag">Done</span>}
-                                </div>
-                                <div className="b-title">{t.title}</div>
-                                {e - s >= 90 && !isDone && <div className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</div>}
-                              </button>
+                              <div className={cls} key={t.id} style={style}>
+                                <button className="block-open" type="button" onClick={() => openDetail(t.id)} aria-label={`Details for ${t.title}`}>
+                                  <span className="b-time">
+                                    <span className="ic"><Icon kind={isDone ? "check" : cat} /></span>
+                                    <span>{rangeText(t.start!, endIso(t, s, e))}</span>
+                                    {cur && <span className="tag-now">Now</span>}
+                                    {isDone && <span className="done-tag">Done</span>}
+                                  </span>
+                                  <span className="b-title">{t.title}</span>
+                                  {e - s >= 90 && !isDone && <span className="b-sub">{[durText(e - s), t.timeBlock].filter(Boolean).join("  ·  ")}</span>}
+                                </button>
+                                <button className={"block-check" + (isDone ? " checked" : "")} type="button"
+                                  aria-label={isDone ? `${t.title} is done` : `Mark ${t.title} done`}
+                                  title={isDone ? "Done in Notion" : "Mark Done in Notion"}
+                                  disabled={isDone || Boolean(taskSaving)}
+                                  onClick={() => markTaskDone(t)}>
+                                  {isDone && <Icon kind="check" />}
+                                </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -614,13 +687,20 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
                   <div className="focus" id="important-tasks">
                     {importantTasks.length === 0 && <div className="empty">No tasks in your NOW list right now.</div>}
                     {importantTasks.map((t) => (
-                      <button className="focus-item" type="button" key={t.id} onClick={() => openDetail(t.id)}>
-                        <span className={"bullet" + (t.weeklyRole === "Must Happen" ? " hot" : "")} />
-                        <span>
-                          <div className="f-title">{t.title}</div>
-                          <div className="f-meta">{taskMeta(t)}</div>
-                        </span>
-                      </button>
+                      <div className="focus-row" key={t.id}>
+                        <button className="focus-check" type="button" disabled={Boolean(taskSaving)}
+                          aria-label={`Mark ${t.title} done in Notion`}
+                          title="Mark Done in Notion" onClick={() => markTaskDone(t)}>
+                          {taskSaving === t.id ? "…" : ""}
+                        </button>
+                        <button className="focus-item" type="button" onClick={() => openDetail(t.id)}>
+                          <span className={"bullet" + (t.weeklyRole === "Must Happen" ? " hot" : "")} />
+                          <span>
+                            <span className="f-title">{t.title}</span>
+                            <span className="f-meta">{taskMeta(t)}</span>
+                          </span>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -629,7 +709,7 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
           </div>
 
           <footer>
-            Source: your Tasks database in Notion (Schedule and NOW views). Read only. Tap any block for details.{" "}
+            Source: your Tasks database in Notion (Schedule and NOW views). Check off tasks here to update Notion. Tap any block for details.{" "}
             <a className="portal-link" href="/">Portal home</a>
           </footer>
         </div>
@@ -667,6 +747,9 @@ export default function TodayPlanner({ data }: { data: TodayData }) {
               <><div className="d-label">Notes</div><p>No instruction on this task in Notion.</p></>
             )}
             <div className="actions">
+              {open.status !== "Done" && <button className="pill" type="button" disabled={Boolean(taskSaving)}
+                onClick={() => markTaskDone(open)}>{taskSaving === open.id ? "Saving..." : "✓ Mark Done"}</button>}
+              {open.status === "Done" && <span className="chip">✓ Completed in Notion</span>}
               {open.link && <a className="pill" href={open.link} target="_blank" rel="noopener noreferrer">Open linked page</a>}
               {open.url && <a className={"pill" + (open.link ? " ghost" : "")} href={open.url} target="_blank" rel="noopener noreferrer">Task in Notion</a>}
               <button className="pill ghost" type="button" ref={closeRef} onClick={closeDetail}>Close</button>

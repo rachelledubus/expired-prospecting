@@ -31,6 +31,14 @@ Setup for Restart time (once):
 
 Note: if a Notion automation sets Due Dates on its own, it may move tasks back. Restart time changes only the dates, not the rules behind them.
 
+## Marking tasks Done from Today
+
+- Tap the round checkbox on any scheduled block or in Important Tasks. The current focus card and task details also have a **Mark Done** button.
+- The task is immediately shown as done on the page, and the protected `/api/today/task` endpoint updates only its Notion **Status** to **Done**. An error restores the previous display and explains what happened.
+- A success message offers **Undo**, which restores the task's previous status. This remains available even if the task leaves the NOW list.
+- Completing a time block does not change its Due Date or delete it. **All day** continues to show completed blocks; **From now** hides them.
+- Only the Tasks database can be changed. The edit token is server-side, and the portal password plus a same-origin check protect writes. Uses the existing `NOTION_TODAY_EDIT_API_KEY`.
+
 ## Schedule view
 
 - The Schedule has a toggle: **From now** (default) hides blocks that are Done or already over, and **All day** shows everything. The choice is remembered on that device.
