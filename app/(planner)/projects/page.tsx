@@ -25,11 +25,19 @@ export default async function ProjectsPage() {
     </>
   );
   try {
-    const [data, cleaning, scheduled] = await Promise.all([getProjects(), getSessions(), getScheduledCleaning()]);
+    const data = await getProjects();
+    const [cleaningResult, scheduledResult] = await Promise.allSettled([getSessions(), getScheduledCleaning()]);
+    const cleaning = cleaningResult.status === "fulfilled" ? cleaningResult.value : [];
+    const scheduled = scheduledResult.status === "fulfilled" ? scheduledResult.value : [];
+    const cleaningWarning = cleaningResult.status === "rejected"
+      ? "Cleaning history is temporarily unavailable; your stored checkmarks have not been changed."
+      : scheduledResult.status === "rejected"
+      ? "Scheduled cleaning from Notion is temporarily unavailable. You can still open portal-only checklists."
+      : null;
     return (
       <>
         {fonts}
-        <ProjectsPlanner data={data} cleaning={cleaning} scheduled={scheduled} />
+        <ProjectsPlanner data={data} cleaning={cleaning} scheduled={scheduled} cleaningWarning={cleaningWarning} />
       </>
     );
   } catch (err) {

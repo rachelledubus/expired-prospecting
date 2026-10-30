@@ -8,7 +8,7 @@ import type { CleaningSession, CleaningType } from "@/lib/cleaning-templates";
 import type { ScheduledCleaning } from "@/lib/scheduled-cleaning";
 
 const dateText = (iso: string) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }).format(new Date(iso));
-export default function CleaningHome({ initial, scheduled }: { initial: CleaningSession[]; scheduled: ScheduledCleaning[] }) {
+export default function CleaningHome({ initial, scheduled, warning }: { initial: CleaningSession[]; scheduled: ScheduledCleaning[]; warning: string | null }) {
   const router = useRouter();
   const [sessions, setSessions] = useState(initial);
   const [library, setLibrary] = useState(false);
@@ -40,6 +40,7 @@ export default function CleaningHome({ initial, scheduled }: { initial: Cleaning
   return (
     <div className="hc-home">
       <div className="hc-subhead"><strong>Active Cleaning</strong><span>{active.length} active</span></div>
+      {warning && <p className="hc-error" role="alert">{warning}</p>}
       {active.length === 0 && <p className="hc-muted">No cleaning sessions in progress. Start a checklist whenever you need one.</p>}
       <div className="hc-cards">
         {active.map((s) => {

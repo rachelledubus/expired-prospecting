@@ -113,7 +113,7 @@ function Card({ p, today, canEdit, save, busy }: { p: ProjectCard; today: string
   );
 }
 
-export default function ProjectsPlanner({ data, cleaning, scheduled }: { data: ProjectsData; cleaning: CleaningSession[]; scheduled: ScheduledCleaning[] }) {
+export default function ProjectsPlanner({ data, cleaning, scheduled, cleaningWarning }: { data: ProjectsData; cleaning: CleaningSession[]; scheduled: ScheduledCleaning[]; cleaningWarning: string | null }) {
   const [items, setItems] = useState<ProjectCard[]>([...data.active, ...data.someday]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -210,7 +210,7 @@ export default function ProjectsPlanner({ data, cleaning, scheduled }: { data: P
           <details className="hc-category" open>
             <summary>Home <span>{household.length + cleaning.filter((s) => s.status === "active").length} active</span></summary>
             <div className="hc-category-body">
-              <CleaningHome initial={cleaning} scheduled={scheduled} />
+              <CleaningHome initial={cleaning} scheduled={scheduled} warning={cleaningWarning} />
               <div className="hc-household">
                 <h3>Household Projects</h3>
                 {household.length === 0 ? <p className="hc-muted">Your larger home projects from Notion will appear here.</p> : (
