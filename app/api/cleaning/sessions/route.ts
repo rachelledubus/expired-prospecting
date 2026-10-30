@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSessions, getTemplate, startSession } from "@/lib/cleaning-system";
+import { getSessions, startSession } from "@/lib/cleaning-system";
+import { getTemplate } from "@/lib/cleaning-templates";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 const fail = (code: number, message: string) => NextResponse.json({ ok: false, message }, { status: code });
