@@ -1,6 +1,8 @@
 import { getProjects } from "@/lib/projects";
 import { TodaySetupError } from "@/lib/today";
 import ProjectsPlanner from "./ProjectsPlanner";
+import { getSessions } from "@/lib/cleaning-system";
+import "./cleaning.css";
 
 // Always read Notion fresh; this page is behind the portal password.
 export const dynamic = "force-dynamic";
@@ -22,11 +24,11 @@ export default async function ProjectsPage() {
     </>
   );
   try {
-    const data = await getProjects();
+    const [data, cleaning] = await Promise.all([getProjects(), getSessions()]);
     return (
       <>
         {fonts}
-        <ProjectsPlanner data={data} />
+        <ProjectsPlanner data={data} cleaning={cleaning} />
       </>
     );
   } catch (err) {

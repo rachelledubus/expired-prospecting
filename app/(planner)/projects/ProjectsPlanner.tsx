@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import CleaningHome from "./CleaningHome";
+import type { CleaningSession } from "@/lib/cleaning-system";
 import type { ProjectCard, ProjectEdit, ProjectsData, ProjectStatus } from "@/lib/projects";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const STATUSES: ProjectStatus[] = ["Not started", "In progress", "Waiting on Client", "Someday Maybe", "Done"];
-const SCOPE_ORDER = ["Business", "School", "Personal", "Mixed"];
+const SCOPE_ORDER = ["Home", "Business", "School", "Personal", "Mixed"];
+const HOUSEHOLD = /\b(home|household|apartment|closet|cleaning|declutter|furniture|laundry|organizing|home maintenance)\b/i;
 
 const md = (ymd: string) => `${MONTHS[Number(ymd.slice(5, 7)) - 1]} ${Number(ymd.slice(8, 10))}`;
 const dayNum = (ymd: string) => {
@@ -109,7 +112,7 @@ function Card({ p, today, canEdit, save, busy }: { p: ProjectCard; today: string
   );
 }
 
-export default function ProjectsPlanner({ data }: { data: ProjectsData }) {
+export default function ProjectsPlanner({ data, cleaning }: { data: ProjectsData; cleaning: CleaningSession[] }) {
   const [items, setItems] = useState<ProjectCard[]>([...data.active, ...data.someday]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -162,22 +165,25 @@ export default function ProjectsPlanner({ data }: { data: ProjectsData }) {
     }
   };
 
-  const { groups, someday } = useMemo(() => {
+  const { groups, household, someday } = useMemo(() => {
     const active = items.filter((p) => p.status !== "Someday Maybe");
-    const names = Array.from(new Set(active.map((p) => p.scope).filter((s): s is string => Boolean(s))));
+    const household = active.filter((p) => p.scope === "Home" || ((p.scope === "Personal" || !p.scope) && HOUSEHOLD.test(p.name)));
+    const housed = new Set(household.map((p) => p.id));
+    const remaining = active.filter((p) => !housed.has(p.id));
+    const names = Array.from(new Set(remaining.map((p) => p.scope).filter((s): s is string => Boolean(s))));
     names.sort((a, b) => {
       const ia = SCOPE_ORDER.indexOf(a), ib = SCOPE_ORDER.indexOf(b);
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
     });
-    const groups = names.map((n) => ({ name: n, list: active.filter((p) => p.scope === n) }));
-    const none = active.filter((p) => !p.scope);
+    const groups = names.map((n) => ({ name: n, list: remaining.filter((p) => p.scope === n) }));
+    const none = remaining.filter((p) => !p.scope);
     if (none.length) groups.push({ name: "No scope yet", list: none });
-    return { groups, someday: items.filter((p) => p.status === "Someday Maybe") };
+    return { groups, household, someday: items.filter((p) => p.status === "Someday Maybe") };
   }, [items]);
 
   const [y, m, d] = data.today.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
-  const activeCount = groups.reduce((n, g) => n + g.list.length, 0);
+  const activeCount = household.length + groups.reduce((n, g) => n + g.list.length, 0) + cleaning.filter((s) => s.status === "active").length;
 
   return (
     <div className="tp">
@@ -200,15 +206,31 @@ export default function ProjectsPlanner({ data }: { data: ProjectsData }) {
           )}
 
           {activeCount === 0 && <p className="wo-empty" style={{ marginTop: 18 }}>No active projects.</p>}
+          <details className="hc-category" open>
+            <summary>Home <span>{household.length + cleaning.filter((s) => s.status === "active").length} active</span></summary>
+            <div className="hc-category-body">
+              <CleaningHome initial={cleaning} />
+              <div className="hc-household">
+                <h3>Household Projects</h3>
+                {household.length === 0 ? <p className="hc-muted">Your larger home projects from Notion will appear here.</p> : (
+                  <ul className="wo-list">
+                    {household.map((p) => <Card key={p.id} p={p} today={data.today} canEdit={data.canEdit} save={save} busy={busyId === p.id} />)}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </details>
           {groups.map((g) => (
-            <section key={g.name}>
-              <div className="label">{g.name} ({g.list.length})</div>
-              <ul className="wo-list">
-                {g.list.map((p) => (
-                  <Card key={p.id} p={p} today={data.today} canEdit={data.canEdit} save={save} busy={busyId === p.id} />
-                ))}
-              </ul>
-            </section>
+            <details className="hc-category" key={g.name}>
+              <summary>{g.name} <span>{g.list.length} projects</span></summary>
+              <div className="hc-category-body">
+                <ul className="wo-list">
+                  {g.list.map((p) => (
+                    <Card key={p.id} p={p} today={data.today} canEdit={data.canEdit} save={save} busy={busyId === p.id} />
+                  ))}
+                </ul>
+              </div>
+            </details>
           ))}
 
           {someday.length > 0 && (
