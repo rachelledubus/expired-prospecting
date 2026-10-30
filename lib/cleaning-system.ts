@@ -41,16 +41,12 @@ async function put(session: CleaningSession, previous: string | null): Promise<v
 }
 export async function getSessions(): Promise<CleaningSession[]> {
   const out: CleaningSession[] = [];
-  let cursor: string | undefined;
-  for (let round = 0; round < 10; round += 1) {
-    const result = await store().list({ prefix: PREFIX, ...(cursor ? { cursor } : {}) });
-    for (const blob of result.blobs) {
-      const id = blob.key.slice(PREFIX.length);
-      const hit = await stored(id);
-      if (hit) out.push(hit.value);
-    }
-    if (!result.cursor) break;
-    cursor = result.cursor;
+  // Netlify Blobs list() returns every page automatically unless paginate:true is requested.
+  const result = await store().list({ prefix: PREFIX });
+  for (const blob of result.blobs) {
+    const id = blob.key.slice(PREFIX.length);
+    const hit = await stored(id);
+    if (hit) out.push(hit.value);
   }
   if (!out.some((s) => s.id === LEGACY_ID)) out.push(await legacySession());
   return out.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
