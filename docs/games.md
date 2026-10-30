@@ -1,0 +1,210 @@
+# Games checklists
+
+The **Games** tab in the planner (`/games`) holds custom game progression checklists and trackers. Each game gets a chip at
+the top of the page.
+
+- **Stardew Mega-Mod**: phase-by-phase checklist (Stardew Valley Expanded, Ridgeside Village, East Scarp, Sword & Sorcery).
+- **Community Center**: the 30 standard bundles, sorted by season.
+
+## How it behaves
+
+- On the Stardew page the quest board is the main view. The roadmap stages are folded, and each has a **Copy what's left**
+  button that copies its unchecked boxes as text.
+- Progress is saved in Netlify Blobs (store name `game-progress`), so every device shows the same boxes.
+  Nothing is saved to Notion.
+- It is one site-wide store with strong consistency, shared by every deploy, so deploying never resets progress.
+  Do **not** pick the store from `process.env.CONTEXT`: Netlify only sets that while building, not while the site runs.
+  An earlier version did, which silently used a per-deploy store and lost progress on every deploy.
+- Each save merges into what is stored and only goes through if nothing else saved first (a version-tag check).
+  If something did, it re-reads and redoes the merge, so two devices or two quick taps never overwrite each other.
+- A box that no longer exists (for example after you rename an item) is skipped on save instead of rejecting the save.
+- The page checks that the server really confirmed each save, retries on its own after a failure, sends anything
+  waiting when you leave the page, and says so if your login has lapsed.
+- `LEGACY_DEPLOY_IDS` in `lib/games-store.ts` lists old per-deploy stores whose boxes are copied into the permanent
+  store the first time a game is saved after the fix. Deploy stores cannot be listed, so only named deploys recover.
+- The page and its save route sit behind the same portal login as every other page.
+
+## Event triggers and finished-day guide (Stardew checklist)
+
+- Under many items there is a short grey line saying how to trigger it: hearts, place, time, weather, and what has to
+  happen first. It hides once you tick the box. Add one by putting `how: { "exact item text": "line" }` on the group.
+- A collapsed **How events trigger, and what to do with a finished day** card sits under the quest board. It holds the
+  event-trigger rules and the safe-to-do-early list (gifting, bed, what to leave alone). The text lives in `guide` on
+  the game (`guide.events`, `guide.early`). There is no per-phase "Done early" block any more.
+- The lines come from the Stardew Valley wiki, the Ridgeside Village wiki, and the East Scarp wiki (which also covers
+  Sword & Sorcery). They avoid spoilers on purpose: no artifact locations, no placement order, no names of later
+  Sword & Sorcery characters. Mod versions change, so spot-check a line in game if it does not work.
+- Event Lookup is confirmed to cover Stardew Valley Expanded and Ridgeside. Whether it lists East Scarp or Sword &
+  Sorcery events is not confirmed.
+
+## Audit version baseline
+
+This audit targets the currently released content available in October 2026: SVE 1.15.11, Ridgeside Village 2.5.17, East Scarp Remastered 3.0.9, and Sword & Sorcery 2.3.10. A future mod update can add new storyline content, so "complete" means complete for these released versions rather than content that has not shipped yet.
+
+## Progression completeness audit
+
+The progression database is intentionally scoped to **non-repeatable progression that changes the save**: main campaign chapters, permanent location/NPC unlocks, new skill systems, infrastructure, and major permanent-reward quests. Ordinary repeatable boards, generic cash/friendship errands, romance-only flavor scenes, and completion-collection items stay out unless they gate one of those systems.
+
+Coverage added in the October 2026 completeness audit:
+
+- **Vanilla post-Community Center:** Missing Bundle/Movie Theater, Island Farm mailbox/obelisk, Volcano shortcuts, full Professor Snail Field Office completion, Qi's Walnut Room, Infinity weapon path, Mastery Cave, and the Giant Stump/Raccoon family chain.
+- **Sword & Sorcery:** Cirrus/Lion's Mane/Bardics, Roslin/Sorcery, Solomon, Dandelion/Paladin, 30-floor Deep Dark milestones, finale/epilogue, plus level-5/10 profession tracks for Artificer, Druidics, Bardics, Sorcery, and Paladin.
+- **Stardew Valley Expanded:** Fable Reef/First Slash after Lance, Henchman and the Dark Shrines, exact Void Soul Retrieval and Legendary Trio requirements, all current SVE permanent Special Powers, permanent-reward Special Orders, Winery, Premium Barn, Premium Coop, and the existing Highlands/Caverns/Nexus/Badlands/Iridium Quarry/Treasure Cave/Aurora Vineyard/Grandpa's Shed/post-CC world chains.
+- **Ridgeside Village:** full Spirit Realm progression, the complete Lost Princess/Undreya storyline, plus post-Spirit-Realm Ridge Pond/Foxbloom/Obelisk/Summit systems, Mystic Falls, permanent Special-Order rewards (loan system, Rivera Family Secret, Ridgeside warp recipe, free hotel, Town Square upgrade), and Kimpoi/Malaya + Naomi service unlocks are tracked.
+- **East Scarp 3.x:** Rosa/Luma/Vintage Ruby Ring, Victoria/Luma slime progression, Aideen crafting + Bird of Paradise crop unlock, Jade Fairy Pool, Lady Sheba, Lighthouse, Lexi trading post + Moonflower, Eyvind/Void Goats, Josephine/Oliver → Kataryna, plus conditional Tristan, Meadow Cottage, Juliet romance, and Sen if those separate/conditional routes are installed.
+- **SVE farm-map branches:** Frontier Farm's minecarts, Desert shortcut, and Bridge Magic plus Grandpa's Farm's Stone Bridge, Grandpa's Grove, and late land expansion are retained as optional conditional cards, so they never enter main Story Progress on saves using a different farm map.
+- Existing saved step IDs were preserved wherever they already existed. New steps only extend the graph; they do not reset the player's old checkboxes.
+
+## Current Story & Quests stage
+
+- The current save has completed the Community Center and the core Ginger Island foundation: boat/arrival, Island North, Volcano Forge, Island West, Island Farmhouse, Dig Site bridge, and Professor Snail.
+- SVE's post-Community-Center world unlocks are complete: Junimo Woods, Dark Talisman, Goblin Problem / Magic Ink, and Sprite Spring.
+- Sword & Sorcery has completed Mateo and Hector's required progression. The current campaign checkpoint is **waiting for Cirrus's introduction cutscene**; Cirrus's chapter is next.
+- Mateo's completion also means the Underforge/Artificer system is unlocked, but Artificer levels and actual weapon upgrades remain active until explicitly completed.
+- Unconfirmed Ginger Island utility upgrades (Island Trader, Resort, Parrot Express) remain active instead of being guessed complete.
+- Confirmed current-save milestones are represented directly in guide data and are not written into Netlify Blob checkbox history behind the user's back.
+- Existing checked boxes still determine progress for every other storyline and system.
+
+## Golden Walnut tracker
+
+- Farm & Progression now includes an exact **130 Golden Walnut** checklist grouped as General (6), Island East (11), Island West (52), Island North (49), and Island South/Southeast (12).
+- Fixed multi-walnut rewards are one checkbox with their awarded quantity (for example Gem Birds +5 or a Professor Snail collection +6).
+- Random capped sources are split into individual checkboxes so partial progress stays accurate: fishing 5, Island Farm harvests 5, Mussel Nodes 5, Volcano rocks 5, Volcano enemies 5, Volcano metal crates 5, and Pirate Cove darts 3.
+- The tracker calls out the seven walnuts Leo's parrot never hints: the Gem Bird Shrine south bush, the 3-walnut Banana altar reward, and the three darts wins.
+- Golden Walnut source checks persist in the existing Farm & Progression save. They do not silently infer which locations were found from walnuts already spent on island upgrades.
+- Confirmed current unlocks prove a minimum of 41 walnuts found (North 1 + West 10 + Farmhouse 20 + Dig Site 10), but source rows start unchecked until the player identifies them.
+
+## Farm & Progression after Community Center completion
+
+- Once every Community Center bundle is complete, the tab automatically changes from a seasonal bundle tracker into a **post–Community Center progression dashboard**.
+- The main view becomes: **Next major unlock — Ginger Island**, **Power progression**, **SVE expansion — Lance & the Highlands**, **Post-CC world unlocks**, and **Later unlocks — keep on the radar**.
+- **Power progression** includes both weapon-upgrade systems: the vanilla Volcano Forge and Sword & Sorcery's Underforge. The Underforge track follows Mateo's 10-heart unlock into Artificer 2 (Pure Ore), Artificer 4 (Exquisite Gems), and Artificer 6 (Blade Coating), with separate checkboxes for actually applying each upgrade layer.
+- The first unchecked milestone across those sections is surfaced as **DO NEXT** at the top, so the tab answers what to work on rather than showing old bundle chores.
+- These post-CC milestones reuse the exact Story & Quests checkbox keys wherever possible. Checking Willy's Boat, Volcano Floor 10, Lance/Highlands, Galaxy Sword, Grandpa's Shed, Nexus, etc. in either tab updates the same saved progress.
+- Completed milestones collapse under **Completed here** inside each section.
+- The old farm/mining foundation tracker is kept under **Earlier farm & mining milestones** and the finished bundles are kept under **Completed Community Center archive**. Neither dominates the active page.
+- Completing all bundles also marks the Community Center-complete prerequisite steps in the Ginger Island and SVE post-CC storylines so the guide does not continue telling the player to finish a milestone that is already done.
+
+## Community Center tracker
+
+- Tabs for Spring, Summer, Fall, Winter and **Any season**. Each tab lists the items you can collect in that season,
+  with the room and bundle shown on every item. A badge on the tab shows how many items are left to gather there.
+- An item that works in several seasons appears under each one, with an "Also in..." line. Ticking it in one place ticks
+  it everywhere, because it is one box.
+- A bundle shows how many you need ("Any 5 of 9"). Once you have enough, it moves into a folded **Completed bundles**
+  section at the bottom of the tab, and its leftover items stop counting toward the tab numbers. Untick an item and
+  the bundle comes back out.
+- The **NOW** badge marks the season it is in game. Open another season and tap "It is ... in game now" to move it.
+  That choice is saved with the rest of the progress.
+- **Copy what's left** copies the unchecked items on the open tab, grouped by room and bundle.
+- Standard bundles only. Remixed bundles use different items.
+- Every item except the Vault payments has a grey line saying where to get it: forage locations and seasons, fish
+  location, weather and time, crab pot water type, Mines floors for ores and monster drops, seed prices at Pierre's, and
+  the machine, skill level or building that makes it. It is the `note` on the item in `lib/games-data.ts`. The facts come
+  from the Stardew Valley wiki (base game, 1.6). A mod can change a spot, so check in game if one does not match.
+
+## How the Stardew page is laid out
+
+- **My Current Objectives** shows each storyline once, as one row: its name, a count (for example 2/4), and the next
+  step to do. The rest of that storyline sits behind a "Rest of this storyline" fold. Rows are grouped by what the next
+  step needs: do before a window closes, available now, work toward, and waiting on (folded). Finished storylines are
+  folded at the bottom. Which group a row lands in comes from the "Current save" date, which you set with the season, day and year pickers.
+  **Next day** moves it forward one day (rolling over seasons and years). The date is saved as text like "Spring 10, Year 1".
+- The **Long-term roadmap** is one list of nine stages named for what you are doing (Getting started, Mines and farm
+  basics, and so on), not for a season or year. A stage's `when` is a readiness cue, never a date. Season or date limits
+  go on the one item that needs them, as a `how` line. Community Center items are not part of it: the Community
+  Center tab is the guide for those. The roadmap is folded and labelled "not a gate". It repeats nothing that is tracked in the storylines:
+  `hidden: [...]` on a roadmap group lists items that stay in the data and in saved progress (so no keys change) but are
+  not shown there, and the phase notes how many are hidden. If you add a storyline step that duplicates a roadmap item,
+  add that item to `hidden` instead of deleting it.
+- Storylines are in `questBoard.storylines` in `lib/games-data.ts`. A step with `legacy` shares its box with the roadmap
+  item of that text, so ticking it in either place stays in sync.
+
+## Alternate item acquisition routes
+
+- Material-gated quest and progression steps can declare `requiredItems`. The page then shows a folded **Ways to get required items** section directly under that step.
+- Acquisition routes live once in `GAME_ITEM_SOURCES` in `lib/games-data.ts`, so the same item shows the same options everywhere it is required.
+- Do not treat the normal crafting/farming route as the only route. When applicable, include useful alternatives such as monster drops, the Traveling Cart, permanent or rotating merchants, forage, fish ponds, treasure/reward sources, transmutation, recycling, and other valid acquisition methods.
+- Put the most practical repeatable route first, but keep earlier/luck-based routes visible when they could let the player satisfy a requirement before the usual unlock.
+- Keep this section collapsed by default so the progression page stays low-clutter; the player expands it only when they need help sourcing a requirement.
+- Mod-specific items should list only sources verified for that mod/version. If a mod item is not sold by the Traveling Cart or a merchant, do not imply that it is.
+
+## Item lookup (search box on the Games page)
+
+- Type an item, fish or crop and it shows where to get it, the season, the time and the weather, with a link to the page.
+  It is at the top of both trackers and works the same on each.
+- It reads the **Stardew Valley wiki** (base game) live when you press Look up: `GET /api/games/lookup?q=...`, in
+  `lib/wiki-lookup.ts`. The route sits behind the portal login. It uses the wiki's own search, then takes the infobox
+  (Where, Season, Time, Weather, Seeds, Grows in) and the first lines of the page, with the wiki markup stripped. It does
+  not summarize or guess, so every line is the wiki's own words.
+- The server only ever fetches `stardewvalleywiki.com`. The mod wikis (Ridgeside, East Scarp, Stardew Valley Expanded) do
+  not allow automated reading, so the page shows links that open each wiki's own search instead. Add a new mod wiki link
+  in `lookupLinks`.
+- Results are cached for a day. If the wiki is down or slow, the page says so and shows the links.
+- Mods can change a spot, so treat it as the base game answer.
+
+## Add another game
+
+1. Open `lib/games-data.ts`.
+2. Add one object to the `GAMES` list. Copy the Stardew entry for a phase checklist (`kind: "checklist"`), or the
+   Community Center entry for a bundle tracker (`kind: "bundles"`).
+3. Deploy. The game gets its own chip at the top of `/games` and its own saved progress.
+
+Boxes are matched to saved progress by their text and the phase they sit in. If you rename a box later, that one box
+shows as unchecked. Saved progress for a box that no longer exists is ignored, not deleted.
+
+## Files
+
+| File | What it does |
+|---|---|
+| `lib/games-data.ts` | The checklists, and the keys that identify each box. |
+| `lib/games-store.ts` | Reads and saves progress in Netlify Blobs, and checks that a save only touches real boxes. |
+| `app/api/games/progress/route.ts` | The save and read route. Same-origin only. |
+| `app/(planner)/games/` | The page, the client component, and `games.css`. |
+| `app/(planner)/PlannerTabs.tsx` | The `Games` tab entry. |
+
+
+## Dreamlight Valley: individual characters and direct item answers (Oct 2026)
+
+- **Characters** contains a searchable, per-character named quest chain for base-game villagers. **Honeyglow characters** has separate Pooh, Eeyore and Piglet lines. Other paid expansion characters are excluded.
+- Each opens to **Do next**, **Remaining quests** and **Completed quests**. Every named quest has its own persistent checkbox keyed by a stable title slug. Prior broad friendship checkboxes are left in storage but not inferred to mean that each exact quest was finished.
+- **Item locations & recipes** is a visible search field at the top of every DDV section. Searching by material, food, biome or obtaining method shows facts in the page. No wiki redirect is required for indexed resources.
+- Quest material panels also show inline quantities and locations. If a quest-only material has not been verified, the page labels the gap directly rather than sending the player to another website.
+- Coverage includes the base Valley's wood, crops/stalls, flowers, fishing ripples, mines, cooking ingredients and recipes, along with previously indexed Honeyglow materials. Individual quest unlock conditions may involve prior story progress or friendship levels; the game does not automatically send its own progress to the portal.
+- Quest names cross-checked with https://dreamlightvalleywiki.com/Quests (Oct 2026), and material locations against that wiki's foraging/digging/fishing/recipe references.
+- To add a character use lib/dreamlight-character-quests.ts; to add resources use lib/dreamlight-item-index.ts. Keep new check keys in knownCheckKeys (lib/games-data.ts) so the existing Netlify Blob save endpoint accepts them.
+
+
+## Dreamlight Valley: unlocked-only character quest board (October 29, 2026)
+
+- The DDV **Characters** and **Honeyglow characters** sections show only personally unlocked characters. Unlock status is not guessed from the user's general main-story/realm checklist; it is selected explicitly in **Add / manage characters**.
+- Anyone who already has individual completed character quests in saved progress appears automatically unless explicitly hidden. This avoids hiding known progress when migrating from the previous character grid.
+- Unlocks are saved as separate validated fields on the existing dreamlight-valley Netlify Blob record. Values are "unlocked" or "hidden" with stable keys from dreamlightCharacterVisibilityKey. The backend registers them through knownFieldKeys.
+- The main tracker is one row per active unlocked character. Each shows the next unchecked quest, progress count, and **Show the rest of this character's quests**. Fully completed character storylines collapse into **Completed character storylines**.
+- The separate roster editor lists characters not yet shown, with a searchable list and one-tap **Add**; each active row includes **Hide**. Hiding never deletes quest checkmarks. Re-adding restores them.
+- Honeyglow characters remain in their owned-content section, and other unowned expansions remain excluded.
+
+
+## Dreamlight Valley: Royal Tool upgrades first (October 29, 2026)
+
+- A prominent **Do this next: improve your tools** panel now comes before the general story and item-finder sections. The traditional story chapter remains available, but is labeled as secondary while upgrades are incomplete.
+- The panel tracks **10 permanent, base-game obstacle-clearing upgrades**: Pickaxe (small/large coral and ice), Shovel (tree stumps, small/large bones), and Watering Can (small/large mushrooms and green fire). No Hourglass/Net requirements from unowned expansions; the Fishing Rod has no permanent obstacle-clearing upgrade.
+- The next recommendation is the earliest incomplete tool upgrade whose required earlier tool upgrade is checked. Paths for already-unlocked characters are favored over paths requiring a new character; the opening Maui realm upgrade remains independently selectable before Maui has moved into the Valley.
+- Each objective's checkbox reuses the exact existing quest's saved key (character quest, or the already-existing Moana realm step for The Great Maui). This prevents duplicated progress.
+- **See all 10 Royal Tool upgrades and unlock requirements** expands the complete road map with character friendship/biome prerequisites, material quantities, and item locations in the same guide.
+- Existing ordinary story, character, and Honeyglow checkboxes and saved progress are preserved. Checked tool quests count as complete immediately.
+- Verified sources: Dreamlight Valley Wiki Tools, Obstacles, The Great Maui, A Tale of Stone and Fire, Breaking the Ice, The Singing Ice, An Icy Invitation, Breaking Bones, The Circle of Life, A Dark Experiment, The Final Trial and Fire Alarm.
+
+
+## Terraria Spirit Classic: priority-first and self-contained guide (October 2026)
+
+- This change expands the already tracked **43 route/quest/side chapters** without renaming or deleting any existing stage or step IDs. Original checkboxes are preserved.
+- **Play next** now starts with a **25-milestone priority checklist**: NPC housing, early crafting, movement, rescuing Adventurer, activating Quest Book, crafting Wayfarer gear, health, essential boss unlocks, Hardmode and Moon Lord. Milestones reuse existing main/quest step keys; a check in the priority board instantly updates the matching chapter.
+- The ordinary chapter view is retained but labeled a supporting roadmap, not the primary next-action recommendation.
+- Added **75 item & recipe entries** from base Terraria and Spirit Classic with exact biome/source, obtaining method, recipe where verified, and use notes. The finder appears directly in Terraria views and does not redirect to external wiki pages.
+- Added **61 stage-step walkthrough notes** with practical location, what to do, recipe/item expansion, and important warnings. The existing steps display expandable **Where / how / materials** if detailed directions, a matching item, or original how text are available. Other existing steps still retain their original instructions and labels.
+- **Spirit quests** are arranged in a single active-quest board with one next objective per currently available quest. Locked and completed quests are folded into separate sections; a focused quest shows its remaining actions and inline materials.
+- Spirit quests only count in-game while activated from Quest Book. The portal mirrors only checkboxes the user personally marks; it does not read local Terraria saves.
+- No new checkbox keys or storage schema were necessary. Every priority calls the existing terrariaCheckKey shape and the current Netlify Blob API accepts them.
+- Fact-check sources: https://spiritmod.wiki.gg/wiki/Quests; https://spiritmod.wiki.gg/wiki/Guide:Mod_progression; item pages for Durasilk Sheaf, Wayfarer's armor, Feather Crown, Seabreak Pearl, Naturalist's Workshop, Dusk Crown, Stone Fist, Scarabeus, Ancient Avian, Adventurer.
+- Unverified recipe sources for a few Spirit items are described as unverified rather than invented. When mod versions diverge, the exact in-game Quest Book and crafting list take precedence.

@@ -1,0 +1,178 @@
+# Today page (`/today`)
+
+A simplified daily planner styled like a paper planner page (cream background, binder holes, side tabs, pastel color coding). It shows:
+
+1. **Current focus**: a large card above the schedule for the block happening now, with time left, a progress bar, the next instruction and the link. Between blocks it says you are free and shows what is up next. Only one block is ever "right now": if blocks overlap, an Appointment wins, then a Deadline, then the one that started most recently, and the others are listed in a small note on the card. Done blocks are skipped.
+2. **Schedule**: the time-blocked rows of the "TODAY, Full Schedule" view with hour labels down the side. Colors are by Calendar Role: Time Block (blue), Maintenance (green), Appointment (peach), Deadline (rose), anything else (lavender). The current block is outlined with a NOW tag; the page does not scroll by itself. Done blocks stay visible, crossed out and faded.
+3. **Habits**: real habits from your Habits + Routines database in Notion. It shows habits that have a Routine Priority and a daily time of day (Early morning through Evening), grouped by time of day. A habit is left out when its task for today is already on the schedule or in the NOW list, so nothing appears twice. Weekly, monthly and yearly habits are not shown. Tapping a habit checks or unchecks the habit's **Checkbox** property in Notion, and the page reads that same Checkbox back, so Notion stays the source of truth. The Checkbox does not reset by itself; if you want it cleared each morning, that needs a Notion automation.
+4. **Important Tasks**: the NOW view rows, any scheduled item with no set time, and the top open "Must Happen" tasks (Do Next or In progress, in Notion's priority order, up to four). Collapsed by default. They never appear on the schedule. To change which tasks show here, change them in Notion.
+
+The side tabs jump to each section. 
+Notion stays the only database and this page adds no storage of its own. It reads Notion, and has exactly one write: the Restart time button (below).
+
+## Restart time
+
+On the Current focus card, **Restart time** starts the current task at the current time and moves the rest of today only as far as needed. It asks for confirmation first and lists exactly what will move.
+
+- Starting late: free time absorbs the delay. A later timed task (not Done) keeps its own start time unless the task before it now runs past that time, and then it moves just far enough to start when that task ends. Once a gap has used up the delay, nothing after it moves. Tasks that already overlapped each other keep their overlap.
+- Starting early: the current task and every later timed task (not Done) move earlier by the same number of minutes.
+- Appointments and Deadlines stay where they are. If a moved block now overlaps one, the confirmation and the result say so.
+- Nothing is allowed to move into a different day, and a shift of more than 8 hours is refused.
+- It writes only the **Due Date** of tasks that Notion's own Schedule view returned, one at a time. If any write fails, the ones already changed are put back.
+- The server route is `app/api/today/restart/route.ts` (behind the portal login, same-origin only). The planning rules are in `lib/today-shift.ts`, shared by the page preview and the server so they always agree.
+- It uses its own key, `NOTION_TODAY_EDIT_API_KEY` (also used to tick habits via `app/api/today/habit/route.ts`, which can only change the Checkbox of pages inside the Habits + Routines database). The read-only key can never write. Without this key the button explains it is not set up and changes nothing.
+
+Setup for Restart time (once):
+
+1. In Notion go to notion.so/my-integrations and create an internal integration named "Today (edit times)". Capabilities: **Read content** and **Update content**. Leave Insert content, comments and user information off.
+2. Open the **Tasks** database, choose ••• → **Connections**, and add that integration. Only add it to the Tasks and Habits + Routines databases.
+2b. Also open the **Habits + Routines** database, choose ••• → **Connections**, and add the same integration (so habits can be ticked).
+3. In Netlify (project `rachellesportal`), Site configuration → Environment variables, add `NOTION_TODAY_EDIT_API_KEY` with that integration's secret, Production scope. Redeploy.
+
+Note: if a Notion automation sets Due Dates on its own, it may move tasks back. Restart time changes only the dates, not the rules behind them.
+
+## Marking tasks Done from Today
+
+- Tap the round checkbox on any scheduled block or in Important Tasks. The current focus card and task details also have a **Mark Done** button.
+- The task is immediately shown as done on the page, and the protected `/api/today/task` endpoint updates only its Notion **Status** to **Done**. An error restores the previous display and explains what happened.
+- A success message offers **Undo**, which restores the task's previous status. This remains available even if the task leaves the NOW list.
+- Completing a time block does not change its Due Date or delete it. **All day** continues to show completed blocks; **From now** hides them.
+- Only the Tasks database can be changed. The edit token is server-side, and the portal password plus a same-origin check protect writes. Uses the existing `NOTION_TODAY_EDIT_API_KEY`.
+
+## Schedule view
+
+- The Schedule has a toggle: **From now** (default) hides blocks that are Done or already over, and **All day** shows everything. The choice is remembered on that device.
+- In both views, free stretches of 45 minutes or more are folded into one short row ("1 h 30 min free, 7:00 PM to 8:30 PM"), so the day is not a long empty ruler. If the current time falls in a folded stretch, that row says "Now ... Free until ...". In From now, a note above the schedule says how long you are free before the next block, and a link shows how many earlier items are hidden.
+- The 45 minute threshold is `GAP_MIN` in `app/today/TodayPlanner.tsx`.
+
+## Planner tabs
+
+Today and Waiting On live in one planner frame (`app/(planner)/`). Page tabs run along the top edge like binder dividers, the open page's tab is paper-colored, and switching pages plays a short slide-in. Today keeps its own tabs on the right edge for jumping between its sections. The URLs are still `/today` and `/waiting`. To add a page, put its folder inside `app/(planner)/` and add one line to the `PAGES` list in `PlannerTabs.tsx`. "Portal" at the end of the tab row goes back to the portal home.
+
+## Projects page (`/projects`)
+
+Reads the Projects database (it is titled "This Week" in Notion) and can change four things on a project, one at a time, each saved to Notion right away.
+
+- Shows every project that is not Done and not retired, as cards grouped by Project Scope (Business, School, Personal, Mixed, then any other scope, then "No scope yet"). A new scope option in Notion becomes a new group with no code change. Someday Maybe projects are in a closed section at the bottom.
+- Each card: name, status, first sentence of Next Physical Action ("Full note" opens the rest), due date (past dates read "Was due"), days since Last Progress, and Notion's own open task count. A project In progress that has gone quiet longer than its Stall After Days gets an accent bar and a colored line. Nothing flashes or alerts.
+- **Moved it today** sets Last Progress to today. **Edit** opens the next action text, the status choices (Not started, In progress, Waiting on Client, Someday Maybe, Done), and the due date. Marking Done removes the card from the page.
+- A change appears right away and is put back, with a message, if Notion does not accept it.
+- Edits go through `/api/projects/update`. It is same-origin only, uses `NOTION_TODAY_EDIT_API_KEY`, accepts only those four fields with checked values, and reads the page first and refuses anything that is not a row of the Projects database. It cannot create, delete, or archive anything.
+- Setup: open the Projects database (This Week) in Notion, choose ••• then **Connections**, and add both "Today (read only)" and "Today (edit times)". Without the second, the page loads but edits show a message saying how to add it.
+- Optional variable `NOTION_PROJECTS_DATA_SOURCE_ID` (default `3a2f408a-fdce-822a-abbb-87df8f4efd77`).
+
+## Open Loops page (`/loops`)
+
+A short page of things that may have slipped. Sections that are empty do not appear. Each shows its 5 most important items and points to the page where the rest live.
+
+- **Past due:** open tasks (not Done, not archived) whose Due Date is before today in Eastern time, oldest first. The page shows the 5 oldest and "and N more. Review them all". It reads up to 300 and says "300+" beyond that.
+- **Waiting too long:** waiting items whose Check back on day has passed, plus waiting items with no check-back date that have waited 14 days or more (`WAITING_UNDATED_DAYS` in `lib/loops.ts`).
+- **Projects with no next action** and **Projects gone quiet** (In progress, longer since Last Progress than Stall After Days).
+- Carried-forward tasks are not included, because Rollover Count is not updated by anything yet.
+
+**Cleaning up past-due tasks in bulk.** Tick tasks (or "Select all"), choose an action, and confirm. The confirmation names the action, the count, and the first three titles.
+
+| Button | What it writes in Notion |
+|---|---|
+| Drop it | Archive checkbox on. The task stays in Notion. |
+| Back to to-schedule | Due Date cleared and Status set to Schedule. |
+| Mark Done | Status set to Done. This counts as finished in totals and reviews. |
+| Move to today | Due Date set to today (date only, so a timed block becomes an all-day item). Status unchanged. |
+
+After a change the page shows **Undo**, which puts back each task's earlier Status, Due Date (including time and end), and Archive value. Undo lasts until you leave or reload the page.
+
+Safety: changes go through `/api/loops/tasks` (same-origin, edit key only). A selection is sent in batches of 12. For every batch the server re-reads Notion and only changes tasks that are still past due, not Done, and not archived, so a stale page cannot touch anything that has changed since it loaded. Undo checks that each page is a Tasks row. Nothing is created or deleted. The Tasks database must be shared with "Today (edit times)", which Restart time already needs.
+
+## Inbox page (`/inbox`)
+
+A capture box. Type one item per line (up to 10 at a time) and it is saved to the Tasks database and sorted automatically. The sorting is free: it uses plain rules in `lib/inbox-sort.ts`, with no AI and no outside service.
+
+What the rules do:
+
+- **Dates:** reads today, tomorrow, weekday names (Friday, next Friday), "in 2 weeks", "oct 15", and "by 10/15". A date like "aligner 10/21" is not read as a date. Two different dates in one line means no date is set.
+- **Projects:** matches words in the line to your active project names. A word that appears in only one project name counts strongly. Words shared by several projects, or a tie, match nothing.
+- **Type:** question, idea, reference or link, lead or contact, school, home repair, buy, otherwise task.
+- **Sorted or not:** a plain task with an action word, a project or a date is filed as a normal task (Intake State Routed, Status Schedule, or Scheduled when it has a date). Everything else stays in the Inbox (Intake State Inbox, Status Inbox) with a suggested Capture Type and Route Destination.
+- **Your words are kept:** the Task title is cleaned up (filler words and the date phrase removed). Exactly what you typed goes in Captured Context, starting with `Portal capture: `. That marker is how the portal knows a row is its own.
+
+On the page:
+
+- **Needs a look** lists everything with Intake State Inbox, including older items that were not added here. Items added here have Keep as a task, Fix (type, project, date) and Drop. Older items are read-only, with a link to Notion.
+- **Sorted for you** lists items sorted in the last 3 days, with Fix and Drop.
+- **Undo** appears after adding a batch and after a drop. Dropped items are archived with Intake State Dropped, never deleted.
+- **Copy these for cleanup** copies the waiting items, with their Notion links, so they can be pasted into a chat with an assistant that is connected to Notion.
+
+Setup: on the "Today (edit times)" integration, turn on **Insert content** (it already has Read and Update). This is the only thing that needs it. Nothing else the portal does creates rows.
+
+Safety: the route only creates rows in the Tasks database, and only changes or archives rows whose Captured Context starts with the portal marker. It is same-origin only and behind the portal login.
+
+Limits: the rules read plain English and cannot understand loose phrasing, so those items wait in Needs a look. Matching is by words, so a project can be matched wrongly. Fix changes it, and the project list only includes active and someday projects.
+
+## Weekly Review page (`/review`)
+
+The week on one page, read-only. "This week" is Monday to Sunday (shown "so far" until Sunday). "Last week" is the one before.
+
+- **Done:** finished tasks that have a Due Date in the week, routine blocks left out (Occurrence Type "Routine Block"). Notion does not record when a task was finished, so a done task is counted by its date. Routine blocks are shown as "X of Y done so far" and only count blocks whose day has come.
+- **Projects:** moved this week (Last Progress inside the week), gone quiet, and with no next action.
+- **Loose ends:** past-due count with the oldest three, waiting too long, and how many are in the Inbox. These are as of now, even when viewing last week.
+- **Next week:** tasks dated in the following Monday to Sunday, not done, routine blocks left out, with a count of routine blocks already scheduled.
+
+Uses only the read-only key. Nothing is written. If one part cannot be read, the rest still shows with a one-line warning. Weekly numbers read up to 300 tasks per week.
+
+## Waiting On page (`/waiting`)
+
+Read-only. It uses the same Notion key as Today and one query on the Tasks database.
+
+- Shows tasks with Status **Waiting for**, plus **Hold** tasks that have a Waiting On / Blocker note (tucked into a closed "On hold" section). Hold notes starting with "Resolved" are skipped. Archived tasks are skipped.
+- Two optional date fields on Tasks drive it: **Waiting since** and **Check back on**. If Waiting since is empty it shows the day the task was added, labelled "added".
+- A task whose Check back on is today or earlier goes under "Time to check". Later dates stay dimmed and quiet. Tasks with no date are listed plainly, with one short hint line.
+- Each card shows the first sentence of the blocker note; "Full note" opens the rest and a link to the Notion page.
+- Nothing on this page writes to Notion.
+
+## How it reads Notion
+
+- Schedule and Important Tasks are read by asking Notion for the rows of two saved views. Those views already hold the rules for what counts as "today" (they filter on formulas such as Execution Day), so the rules are not copied into this code. If the views change in Notion, the page follows.
+- One addition: the Schedule view filters on the Execution Day formula, and that formula treats anything after 8 PM Eastern (already tomorrow in UTC) as another day, so an evening item such as "Night Close" never reaches the view. The page therefore also asks the Tasks database for scheduled rows whose Due Date is inside today (Eastern) and adds any the view missed. It only adds rows; the view still decides everything it returns. If that extra query fails, the view's rows are shown as before.
+- Notion returns only row ids for a view, so each row is then fetched once for its details. That is about ten small requests per page load.
+- Open tasks come from one query on the Tasks data source.
+- Code: `lib/today.ts` (Notion reads), `app/today/page.tsx` (server page), `app/today/TodayPlanner.tsx` (the screen), `app/today/today.css` (scoped styles, no effect on other pages).
+- Uses Notion API version `2026-03-11` for this page only. Other routes keep their own version.
+
+## Setup (once)
+
+1. In Notion go to notion.so/my-integrations and create a new internal integration named "Today (read only)". Give it **Read content** only. Do not give it insert or update.
+2. Open the **Tasks** database in Notion, choose ••• → **Connections**, and add that integration.
+3. Open the **Today** page, choose ••• → **Connections**, and add the same integration. The Schedule and NOW views live on that page, so the integration needs it.
+3b. Habits use the **Today (edit times)** connection (see Restart time setup below), because ticking a habit writes to Notion. Open the **Habits + Routines** database, choose ••• → **Connections**, and add "Today (edit times)" there too. If only the read-only connection is on that database, habits still show but cannot be ticked. If the page cannot find the database it lists the databases the connections can see.
+4. In Netlify, Site settings → Environment variables, add `NOTION_TODAY_API_KEY` with the integration secret. Redeploy.
+
+Optional environment variables (the defaults are Rachelle's current Notion ids):
+
+| Variable | Purpose |
+|---|---|
+| `NOTION_TODAY_API_KEY` | Secret for the read-only integration above. Falls back to `NOTION_API_KEY` if unset, which is not recommended because that key can edit records. |
+| `NOTION_TASKS_DATA_SOURCE_ID` | Tasks data source. Default `8a5f408a-fdce-83e0-a000-87da31fdc6cf`. |
+| `NOTION_HABITS_DATA_SOURCE_ID` | Habits + Routines data source. Default `85ff408a-fdce-83fd-8dae-0715a2654ee8`. |
+| `NOTION_TODAY_SCHEDULE_VIEW_ID` | Schedule view. Default `3d5f408a-fdce-815c-8533-000c40cb6885`. |
+| `NOTION_TODAY_NOW_VIEW_ID` | NOW view. Default `3d5f408a-fdce-81a1-90b1-000c18b2ce11`. |
+| `NOTION_TODAY_EDIT_API_KEY` | Secret for the "Today (edit times)" integration. Used by Restart time, the Projects page, Open Loops, and the Inbox. The Inbox also needs Insert content. |
+| `NOTION_API_BASE` | Testing only. Points the page at a fake Notion server. |
+
+## What shows if something is wrong
+
+The page shows a plain message instead of failing silently:
+
+- No key set: names the missing variable.
+- Notion rejects the key: says the key is wrong or expired.
+- Notion cannot find the Schedule or NOW view: tells you to add the integration under Connections on the Tasks database and the Today page.
+- Notion takes longer than 8 seconds: says it took too long.
+- The open-tasks query fails but the views work: the page still loads and shows a one-line warning.
+
+## Known limits
+
+- The view ids above were taken from the Notion tools, not from the REST API. If Notion answers "not found" for a view after the setup steps, the first thing to check is that the Today page itself was added under Connections.
+- Time is shown in Eastern time (`America/New_York`).
+
+## Remove it
+
+Delete `app/today/`, `app/api/today/`, `lib/today.ts` and `lib/today-shift.ts`, and remove the "Your day" card in `app/page.tsx`. Nothing else depends on them.

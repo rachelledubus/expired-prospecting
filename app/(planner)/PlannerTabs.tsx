@@ -1,0 +1,42 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+// Add a page here and it gets a tab. Colors reuse the Today palette.
+const PAGES = [
+  { href: "/today", label: "Today", bg: "#F4E6B8" },
+  { href: "/inbox", label: "Inbox", bg: "#E3EDDD" },
+  { href: "/waiting", label: "Waiting", bg: "var(--work-bg)" },
+  { href: "/projects", label: "Projects", bg: "var(--routine-bg)" },
+  { href: "/career", label: "Career", bg: "#E8EFE5" },
+  { href: "/loops", label: "Loops", bg: "var(--other-bg, #EFE7DA)" },
+  { href: "/review", label: "Review", bg: "#F4E6B8" },
+  { href: "/games", label: "Games", bg: "#E3EAF2" },
+  { href: "/home/deep-clean", label: "Clean", bg: "#E8EFE5" },
+];
+
+export default function PlannerTabs() {
+  const path = usePathname() ?? "";
+  return (
+    <nav className="ptabs" aria-label="Planner pages">
+      <div className="ptabs-row">
+        {PAGES.map((p) => {
+          const active = path === p.href || path.startsWith(`${p.href}/`);
+          return (
+            <Link
+              key={p.href}
+              href={p.href}
+              className={"ptab" + (active ? " on" : "")}
+              style={active ? undefined : { background: p.bg }}
+              aria-current={active ? "page" : undefined}
+            >
+              {p.label}
+            </Link>
+          );
+        })}
+        <a className="ptab-home" href="/">Portal</a>
+      </div>
+    </nav>
+  );
+}
