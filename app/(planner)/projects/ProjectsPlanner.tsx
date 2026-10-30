@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import CleaningHome from "./CleaningHome";
-import type { CleaningSession } from "@/lib/cleaning-system";
+import type { CleaningSession } from "@/lib/cleaning-templates";
+import type { ScheduledCleaning } from "@/lib/scheduled-cleaning";
 import type { ProjectCard, ProjectEdit, ProjectsData, ProjectStatus } from "@/lib/projects";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -112,7 +113,7 @@ function Card({ p, today, canEdit, save, busy }: { p: ProjectCard; today: string
   );
 }
 
-export default function ProjectsPlanner({ data, cleaning }: { data: ProjectsData; cleaning: CleaningSession[] }) {
+export default function ProjectsPlanner({ data, cleaning, scheduled }: { data: ProjectsData; cleaning: CleaningSession[]; scheduled: ScheduledCleaning[] }) {
   const [items, setItems] = useState<ProjectCard[]>([...data.active, ...data.someday]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -209,7 +210,7 @@ export default function ProjectsPlanner({ data, cleaning }: { data: ProjectsData
           <details className="hc-category" open>
             <summary>Home <span>{household.length + cleaning.filter((s) => s.status === "active").length} active</span></summary>
             <div className="hc-category-body">
-              <CleaningHome initial={cleaning} />
+              <CleaningHome initial={cleaning} scheduled={scheduled} />
               <div className="hc-household">
                 <h3>Household Projects</h3>
                 {household.length === 0 ? <p className="hc-muted">Your larger home projects from Notion will appear here.</p> : (

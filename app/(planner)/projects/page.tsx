@@ -2,6 +2,7 @@ import { getProjects } from "@/lib/projects";
 import { TodaySetupError } from "@/lib/today";
 import ProjectsPlanner from "./ProjectsPlanner";
 import { getSessions } from "@/lib/cleaning-system";
+import { getScheduledCleaning } from "@/lib/scheduled-cleaning";
 import "./cleaning.css";
 
 // Always read Notion fresh; this page is behind the portal password.
@@ -24,11 +25,11 @@ export default async function ProjectsPage() {
     </>
   );
   try {
-    const [data, cleaning] = await Promise.all([getProjects(), getSessions()]);
+    const [data, cleaning, scheduled] = await Promise.all([getProjects(), getSessions(), getScheduledCleaning()]);
     return (
       <>
         {fonts}
-        <ProjectsPlanner data={data} cleaning={cleaning} />
+        <ProjectsPlanner data={data} cleaning={cleaning} scheduled={scheduled} />
       </>
     );
   } catch (err) {

@@ -72,3 +72,7 @@
 .tp .hc-sync, .tp .hc-safety { font-size:13px; color:var(--muted); margin:18px 0; }
 .tp .hc-sync button { margin-left:8px; min-height:40px; }
 @media(max-width:560px) { .tp .hc-titleline h1 { font-size:24px; } .tp .hc-all-row { flex-direction:column; align-items:flex-start; } .tp .hc-all-actions { width:100%; justify-content:flex-start; } }
+
+.tp .hc-scheduled { margin:14px 0; background:#f6f1e7; border-radius:12px; padding:14px; }
+.tp .hc-scheduled>strong { color:var(--navy); font:700 14px "DM Sans",sans-serif; }
+.tp .hc-scheduled-row { margin-top:8px; padding:9px 0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; border-top:1px solid var(--line); font-size:13px; color:var(--ink); }

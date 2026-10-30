@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { loadDeepCleanProgress } from "@/lib/deep-clean-store";
 import { config, notion, readBool, readText } from "@/lib/today";
 import { getTemplate, allIds } from "@/lib/cleaning-templates";
+import { getScheduledCleaning } from "@/lib/scheduled-cleaning";
 import type { CleaningType, Resolution, CleaningSession, CleaningPhase } from "@/lib/cleaning-templates";
 
 const LEGACY_ID = "legacy-2026-10-30";
@@ -54,12 +55,22 @@ export async function getSessions(): Promise<CleaningSession[]> {
   if (!out.some((s) => s.id === LEGACY_ID)) out.push(await legacySession());
   return out.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
-export async function startSession(templateId: CleaningType, startFresh: boolean): Promise<CleaningSession> {
+export async function startSession(templateId: CleaningType, startFresh: boolean, scheduledId?: string): Promise<CleaningSession> {
   const template = getTemplate(templateId);
   if (!template) throw new Error("Unknown cleaning routine.");
+  const scheduled = scheduledId ? (await getScheduledCleaning()).find((group) => group.id === scheduledId && group.templateId === templateId) : null;
+  if (scheduledId && !scheduled) throw new Error("That scheduled cleaning session was not found in Notion.");
   const sessions = await getSessions();
   const existing = sessions.find((s) => s.templateId === templateId && s.status === "active");
-  if (existing && !startFresh) return existing;
+  if (existing && !startFresh) {
+    if (scheduled && existing.phases.length === 0) {
+      const linked = { ...existing, phases: scheduled.phases, updatedAt: new Date().toISOString() };
+      const hit = await stored(existing.id);
+      await put(linked, hit?.etag ?? null);
+      return linked;
+    }
+    return existing;
+  }
   if (existing) {
     const hit = await stored(existing.id);
     const incomplete = { ...existing, status: "incomplete" as const, finishedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
@@ -67,7 +78,7 @@ export async function startSession(templateId: CleaningType, startFresh: boolean
   }
   const now = new Date().toISOString();
   const created: CleaningSession = { id: randomUUID(), templateId, status: "active", startedAt: now,
-    updatedAt: now, resolutions: {}, queue: allIds(template), phases: [] };
+    updatedAt: now, resolutions: {}, queue: allIds(template), phases: scheduled?.phases ?? [] };
   await put(created, null);
   return created;
 }

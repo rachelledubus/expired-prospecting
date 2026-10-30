@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) return fail(403, "Request must come from your portal.");
   const body = await request.json().catch(() => null);
   if (!body || typeof body.templateId !== "string" || !getTemplate(body.templateId) || typeof body.startFresh !== "boolean") return fail(400, "Choose a valid cleaning routine.");
-  try { return NextResponse.json({ ok: true, session: await startSession(body.templateId, body.startFresh) }); }
+  if (body.scheduledId !== undefined && (typeof body.scheduledId !== "string" || body.scheduledId.length > 120)) return fail(400, "Invalid scheduled session.");
+  try { return NextResponse.json({ ok: true, session: await startSession(body.templateId, body.startFresh, body.scheduledId) }); }
   catch (err) { return fail(503, err instanceof Error ? err.message : "Could not start cleaning."); }
 }
