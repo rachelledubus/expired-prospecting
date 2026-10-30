@@ -1,1 +1,0 @@
-Future Matrix expired exports may include any of these optional ownership identifiers; the portal should normalize them into Folio Number without making them required: Folio Number, Folio, Tax ID, Tax ID #, Parcel ID, Property ID, Tax Folio Number.
