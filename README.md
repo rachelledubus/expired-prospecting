@@ -157,3 +157,8 @@ snapshot as of that timestamp," not a guarantee.
 - Market-stats aggregation (median price/DOM/absorption) and buyer-inventory
   matching — deliberately skipped; the former overlaps with the
   `local-market-report-analyst` skill, and neither has a real need yet
+
+
+## Whole-home deep clean tracker
+
+The password-protected planner now has a **Clean** tab at `/home/deep-clean`. It contains the Friday, October 30, 2026 room-by-room deep-clean checklist, timed sections and breaks, and cloud-saved checkboxes backed by a site-wide strongly consistent Netlify Blobs store. This is a one-day tracker; it does not change recurring Notion cleaning routines. The three dated Notion time blocks link to this route.
