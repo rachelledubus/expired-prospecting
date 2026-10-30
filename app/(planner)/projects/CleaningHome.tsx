@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CLEANING_TEMPLATES, getTemplate, allIds } from "@/lib/cleaning-system";
-import type { CleaningSession, CleaningType } from "@/lib/cleaning-system";
+import { CLEANING_TEMPLATES, getTemplate, allIds } from "@/lib/cleaning-templates";
+import type { CleaningSession, CleaningType } from "@/lib/cleaning-templates";
 
 const dateText = (iso: string) => new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }).format(new Date(iso));
 export default function CleaningHome({ initial }: { initial: CleaningSession[] }) {

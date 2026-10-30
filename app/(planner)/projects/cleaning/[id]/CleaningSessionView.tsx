@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { allIds, getTemplate } from "@/lib/cleaning-system";
-import type { CleaningSession, Resolution } from "@/lib/cleaning-system";
+import { allIds, getTemplate } from "@/lib/cleaning-templates";
+import type { CleaningSession, Resolution } from "@/lib/cleaning-templates";
 
 export default function CleaningSessionView({ initial }: { initial: CleaningSession }) {
   const [session, setSession] = useState(initial);
