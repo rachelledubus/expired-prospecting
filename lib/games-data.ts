@@ -1,6 +1,7 @@
 import { getStardewQuestSubtasks } from "./stardew-quest-subtasks";
 import { TERRARIA_GAME, type TerrariaGame } from "./terraria-spirit-data";
 import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
+import { WOW_GAME, type WowGame } from "./wow-forever-data";
 import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey, dreamlightCharacterVisibilityKey } from "./dreamlight-character-quests";
 
 // Game progression checklists for the /games planner page.
@@ -382,7 +383,7 @@ export type CompletionGame = {
   sections: CompletionSection[];
 };
 
-export type Game = ChecklistGame | BundleGame | CompletionGame | TerrariaGame | DreamlightGame;
+export type Game = ChecklistGame | BundleGame | CompletionGame | TerrariaGame | DreamlightGame | WowGame;
 
 export type GameProgress = {
   checks: Record<string, true>;
@@ -423,11 +424,18 @@ export const completionTargetsKey = (gameId: string, categoryId: string) => `${g
 export const isBundleGame = (game: Game): game is BundleGame => game.kind === "bundles";
 export const isTerrariaGame = (game: Game): game is TerrariaGame => game.kind === "terraria";
 export const isDreamlightGame = (game: Game): game is DreamlightGame => game.kind === "dreamlight";
+export const isWoWGame = (game: Game): game is WowGame => game.kind === "wow";
 export const isCompletionGame = (game: Game): game is CompletionGame => game.kind === "completion";
 
 /** Every box key a game can have, used to reject anything else on save. */
 export function knownCheckKeys(game: Game): Set<string> {
   const keys = new Set<string>();
+  if (isWoWGame(game)) {
+    for (const stage of game.stages) {
+      for (const step of stage.steps) keys.add(questKey(game.id, "wow-" + stage.id, step.id));
+    }
+    return keys;
+  }
   if (isDreamlightGame(game)) {
     for (const stage of game.stages) {
       for (const step of stage.steps) keys.add(questKey(game.id, "dreamlight-" + stage.id, step.id));
@@ -480,6 +488,7 @@ export function knownCheckKeys(game: Game): Set<string> {
 
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
+  if (isWoWGame(game)) return new Set<string>([game.id + "|level", game.id + "|faction", game.id + "|pet-name"]);
   if (isDreamlightGame(game)) return new Set<string>(
     DREAMLIGHT_CHARACTERS.map(character => dreamlightCharacterVisibilityKey(game.id, character.id)),
   );
@@ -8398,4 +8407,5 @@ export const GAMES: Game[] = [
   completionTracker,
   TERRARIA_GAME,
   DREAMLIGHT_GAME,
+  WOW_GAME,
 ];
