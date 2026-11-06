@@ -14,6 +14,7 @@ import {
   isCompletionGame,
   isTerrariaGame,
   isDreamlightGame,
+  isWoWGame,
   itemKey,
   mainQuestKey,
   questKey,
@@ -40,6 +41,7 @@ import {
 import Lookup from "./Lookup";
 import TerrariaSpiritView from "./TerrariaSpiritView";
 import DreamlightView from "./DreamlightView";
+import WoWForeverView from "./WoWForeverView";
 import { getStardewQuestSubtasks, type StardewQuestSubtask } from "@/lib/stardew-quest-subtasks";
 
 type Status = "idle" | "saving" | "saved" | "error" | "signedout" | "loadfail";
@@ -1739,7 +1741,7 @@ function CompletionView({ game, prog, setCheck, setField }: ViewProps<Completion
 
 export default function GamesPlanner({ initial, loaded }: { initial: Record<string, GameProgress>; loaded: boolean }) {
   const [gameId, setGameId] = useState(GAMES[0].id);
-  const [openLibrary, setOpenLibrary] = useState<"stardew" | "terraria" | "dreamlight" | null>(null);
+  const [openLibrary, setOpenLibrary] = useState<"stardew" | "terraria" | "dreamlight" | "wow" | null>(null);
   const [progress, setProgress] = useState<Record<string, GameProgress>>(initial);
   const [status, setStatus] = useState<Status>(loaded ? "idle" : "loadfail");
   const [armed, setArmed] = useState(false);
@@ -1750,15 +1752,16 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
   const prog = progress[game.id] ?? emptyProgress();
   const storyGame = GAMES.find((g): g is ChecklistGame => g.kind === "checklist") ?? (GAMES[0] as ChecklistGame);
   const storyProg = progress[storyGame.id] ?? emptyProgress();
-  const openGameLibrary = (family: "stardew" | "terraria" | "dreamlight") => {
+  const openGameLibrary = (family: "stardew" | "terraria" | "dreamlight" | "wow") => {
     setOpenLibrary(family);
-    setGameId(family === "stardew" ? "stardew-mega-mod" : family === "terraria" ? "terraria-spirit" : "dreamlight-valley");
+    setGameId(family === "stardew" ? "stardew-mega-mod" : family === "terraria" ? "terraria-spirit" : family === "wow" ? "wow-forever-skyborne-hunter" : "dreamlight-valley");
     setArmed(false);
     setLastCheck(null);
   };
   const chosenTitle = openLibrary === "stardew" ? "Stardew Valley"
     : openLibrary === "terraria" ? "Terraria · Spirit Classic"
-    : openLibrary === "dreamlight" ? "Disney Dreamlight Valley" : "My Game Library";
+    : openLibrary === "dreamlight" ? "Disney Dreamlight Valley"
+    : openLibrary === "wow" ? "WoW Forever · Skyborne Hunter" : "My Game Library";
 
   // Saving: changes queue up, then go to the server together half a second after the last tap.
   const pending = useRef<Record<string, GameProgressPatch>>({});
@@ -1970,6 +1973,9 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
                   { id: "dreamlight", icon: "✨", name: "Disney Dreamlight Valley",
                     sub: "Main story, realms, friendships, projects & collections",
                     ids: ["dreamlight-valley"] },
+                  { id: "wow", icon: "🏹", name: "WoW Forever · Skyborne Hunter",
+                    sub: "Beast Mastery 1–60, quests, pet training, talents, keybinds & racials",
+                    ids: ["wow-forever-skyborne-hunter"] },
                 ] as const).map((entry) => {
                   const marked = entry.ids.reduce((n, id) => n + Object.keys(progress[id]?.checks ?? {}).length, 0);
                   return (
@@ -1981,7 +1987,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
                         <p className="gm-note" style={{ marginTop: 12 }}>{marked ? `${marked} saved checkmarks` : "New playthrough guide"}</p>
                       </div>
                       <button type="button" className="gm-pill" onClick={() => openGameLibrary(entry.id)}>
-                        Open {entry.id === "stardew" ? "Stardew" : entry.id === "terraria" ? "Terraria" : "Dreamlight"} guide
+                        Open {entry.id === "stardew" ? "Stardew" : entry.id === "terraria" ? "Terraria" : entry.id === "wow" ? "WoW Forever" : "Dreamlight"} guide
                       </button>
                     </div>
                   );
@@ -2044,6 +2050,8 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
             <TerrariaSpiritView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : isDreamlightGame(game) ? (
             <DreamlightView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
+          ) : isWoWGame(game) ? (
+            <WoWForeverView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} />
           ) : (
             <ChecklistView key={game.id} game={game} prog={prog} setCheck={setCheck} setField={setField} onOpenFarm={() => setGameId("community-center")} />
           )}
@@ -2062,7 +2070,7 @@ export default function GamesPlanner({ initial, loaded }: { initial: Record<stri
               {statusText}
             </span>
             <button type="button" className={"gm-pill ghost" + (armed ? " arm" : "")} onClick={resetGame}>
-              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : isTerrariaGame(game) ? "Reset Terraria" : isDreamlightGame(game) ? "Reset Dreamlight Valley" : "Reset Story & Quests"}
+              {armed ? "Tap again to confirm" : isBundleGame(game) ? "Reset Farm & Progression" : isCompletionGame(game) ? "Reset Completion" : isTerrariaGame(game) ? "Reset Terraria" : isDreamlightGame(game) ? "Reset Dreamlight Valley" : isWoWGame(game) ? "Reset WoW Hunter" : "Reset Story & Quests"}
             </button>
           </div>
             </>
