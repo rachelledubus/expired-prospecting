@@ -10,10 +10,11 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
 };
-type View = "next" | "roadmap" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "lookup";
+type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
+  {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
   {id:"talents",label:"🌿 Talents",help:"Exact leveling point at every level"},
   {id:"combat",label:"🏹 Combat & keys",help:"Rotations, keybinds and macros"},
   {id:"pets",label:"🐾 Pet guide",help:"Taming, training, feeding and control"},
@@ -62,6 +63,15 @@ const SPELLS = [
   {name:"Freezing Trap",level:0,usage:"Control one enemy; traps share a cooldown in Forever."},
   {name:"Hunter's Mark",level:0,usage:"Mark a longer-lived target before pulling."},
   {name:"Disengage",level:0,usage:"Classic-style threat reduction in melee; not a backward leap."}
+];
+const ZONE_ROUTES = [
+  {min:1,max:12,alliance:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",horde:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",dungeons:"None required",tip:"Finish the Skyborne introduction and the level-10 Hunter pet quest."},
+  {min:13,max:19,alliance:"Westfall; alternatives: Loch Modan or Darkshore",horde:"The Barrens; alternative: Silverpine Forest",dungeons:"Hall of Thanes / Ragefire Chasm (13–18); Wailing Caverns (15–25); The Deadmines (18–23)",tip:"Get flight paths early and choose the same quest area as your Paladin partner."},
+  {min:20,max:29,alliance:"Redridge Mountains → Duskwood / Wetlands / Ashenvale",horde:"Stonetalon Mountains → Ashenvale / Hillsbrad Foothills",dungeons:"Shadowfang Keep (22–30); Blackfathom Deeps (24–32); Excavation Site: Wetlands (24–29); Scarlet Monastery: Graveyard (28–38)",tip:"Pick up a strong ranged-weapon upgrade and train Aimed Shot at level 20."},
+  {min:30,max:39,alliance:"Arathi Highlands / Stranglethorn Vale / Desolace / Riverglades",horde:"Thousand Needles / Arathi Highlands / Stranglethorn Vale / Riverglades",dungeons:"Scarlet Monastery (29–45 by wing); Gnomeregan (29–38); Razorfen Kraul (30–40); The Drowned City (35–40)",tip:"Level 30 brings Intimidation and Feign Death; use these before risky elite pulls."},
+  {min:40,max:49,alliance:"Dustwallow Marsh → Tanaris / Feralas / Hinterlands / Searing Gorge",horde:"Dustwallow Marsh → Tanaris / Feralas / Hinterlands / Searing Gorge",dungeons:"Krol'dok Stronghold (40–45); Uldaman (42–52); Zul'Farrak (44–54); Maraudon wings (45–57)",tip:"Bestial Wrath at 40; continue your pet-first fighting style."},
+  {min:50,max:59,alliance:"Un'Goro Crater / Felwood / Burning Steppes / Western & Eastern Plaguelands / Winterspring",horde:"Un'Goro Crater / Felwood / Burning Steppes / Western & Eastern Plaguelands / Winterspring",dungeons:"Sunken Temple (50–60); Blackrock Depths (52–60); Blackmaw Hold (55–60); Lower Blackrock Spire (55–60)",tip:"Replace outdated ammunition and weapon; get ready for level-60 activities."},
+  {min:60,max:60,alliance:"Finish chosen stories, endgame dungeons or Mount Hyjal content",horde:"Finish chosen stories, endgame dungeons or Mount Hyjal content",dungeons:"Scholomance, Stratholme, Dire Maul, Upper Blackrock Spire, Shaper's Terrace",tip:"The leveling build is a starting point; consult the current patch for high-end content."}
 ];
 function Counter({done,total}:{done:number;total:number}) {
   return <div style={{margin:"10px 0 15px"}}>
@@ -122,6 +132,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const done=(stage:WowStage,step:WowStep)=>!!prog.checks[K(game.id,stage.id,step.id)];
   const count=game.stages.reduce((n,s)=>n+s.steps.filter(t=>done(s,t)).length,0);
   const total=game.stages.reduce((n,s)=>n+s.steps.length,0);
+  const zoneAtLevel=ZONE_ROUTES.find(z=>currentLevel>=z.min&&currentLevel<=z.max)??ZONE_ROUTES[0];
   const stageAtLevel=game.stages.find(s=>currentLevel>=s.from&&currentLevel<=s.to) ??
     [...game.stages].reverse().find(s=>currentLevel>=s.from) ?? game.stages[0];
   const stageNow=stageAtLevel.steps.some(s=>!done(stageAtLevel,s))
@@ -174,6 +185,11 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         {currentLevel<10 && <p className="gm-note">Big power spike ahead: your first permanent pet at level 10.</p>}
       </div>
       <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
+      <SmallInfo title={"Where to quest next · level "+currentLevel}>
+        <p><b>Suggested areas:</b> {faction==="horde"?zoneAtLevel.horde:zoneAtLevel.alliance}</p>
+        <p><b>Dungeon options:</b> {zoneAtLevel.dungeons}</p>
+        <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
+      </SmallInfo>
       <SmallInfo title="Simple fight routine">
         <ol style={{paddingLeft:20,margin:"6px 0"}}>
           <li>Choose one target. Mark it for a longer fight.</li>
@@ -200,6 +216,22 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           {stage.steps.map(step=><Action key={step.id} gameId={game.id} stage={stage} step={step} done={done(stage,step)} setCheck={setCheck}/>)}
         </details>;
       })}
+    </>}
+
+    {view==="zones" && <>
+      <SmallInfo title="Suggested zone route · choose by your actual level">
+        These are flexible areas, not a strict quest-by-quest rail. Choose a nearby zone with quests around your level; if your Paladin partner is there, play together. Dungeon level bands are approximate and may be adjusted in patches.
+      </SmallInfo>
+      {ZONE_ROUTES.map(z=><div key={z.min} className="gm-card" style={{...card,border:z===zoneAtLevel?"2px solid var(--accent,#659e8b)":undefined}}>
+        <div className="gm-panel-label">Levels {z.min}–{z.max}{z===zoneAtLevel?" · YOUR CURRENT BRACKET":""}</div>
+        <h3 style={{margin:"7px 0"}}>{faction==="horde"?"Horde":"Alliance"} questing route</h3>
+        <p style={note}><b>Go to:</b> {faction==="horde"?z.horde:z.alliance}</p>
+        <p style={note}><b>Dungeons:</b> {z.dungeons}</p>
+        <p className="gm-note">{z.tip}</p>
+      </div>)}
+      <SmallInfo title="Simple travel rules">
+        Pick up flight paths, bind your Hearthstone at a useful hub, combine quests in the same subzone, and skip dangerous elite quests until your partner or a group is available. A dungeon is optional, not a mandatory step.
+      </SmallInfo>
     </>}
 
     {view==="talents" && <>
@@ -359,6 +391,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p>This personal guide summarizes major milestones. For all individual Skyborne side quests, detailed maps, complete pet ability databases and current beta tuning, use these original references:</p>
         <div style={{display:"grid",gap:9}}>
           {WOW_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.label} ↗</a>)}
+          <a href="https://www.wowhead.com/forever/guide/dungeons-overview-locations-details" target="_blank" rel="noopener noreferrer">Wowhead: Forever dungeon levels ↗</a>
+          <a href="https://topbuilds.gg/wow-forever/leveling-zones/" target="_blank" rel="noopener noreferrer">WoW Forever leveling zone overview ↗</a>
         </div>
         <p className="gm-note" style={{marginTop:12}}>Updated guide research: November 6, 2026. Check game tooltips for differences from published guides.</p>
       </SmallInfo>
