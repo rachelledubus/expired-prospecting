@@ -11,7 +11,7 @@ export const WOW_GAME: WowGame = {
       summary: "Follow the Skyborne introduction, practice ranged distance and unlock your racial. Hunter is slower before a pet, so don't rush difficult pulls.",
       steps: [
         {id:"coming-age",title:"Finish Coming of Age and Harmony in Balance",how:"Talk to Rorian the Dayseeker in Thendal Grove, then defeat the Vuldren Juveniles required by Harmony in Balance."},
-        {id:"intro-combat",title:"Learn to open at range and keep Auto Shot firing",how:"Pull one enemy at a time. Stop briefly for each Auto Shot, move away if an enemy closes, and use Arcane Shot once trained."},
+        {id:"intro-combat",title:"Learn to open at range and keep Auto Shot firing",how:"Use your Target + Auto Shot macro on key 1 or Mouse 4 to select an enemy if none/dead and start shooting. Stop briefly to let Auto Shot fire. Move away if an enemy closes, and use Arcane Shot when trained."},
         {id:"flies",title:"Complete Infestation Investigation and The Cirrusfly Queen",how:"Defeat cirrusflies in Thendal Grove and then the Cirrusfly Queen; pick up nearby objectives before setting out."},
         {id:"walk-air",title:"Complete Falling With Style",how:"Go to the watchtower in Thendal Grove and use Walk on Air while falling. Keep this racial bound somewhere accessible."},
         {id:"pylons",title:"Do The Anchors of Zephras and Elemental Unrest",how:"Talk with Halaan Hawk-Eye and Yala Windwatcher for the island's failing-pylon storyline."},
@@ -34,7 +34,7 @@ export const WOW_GAME: WowGame = {
       steps: [
         {id:"taming",title:"Complete the level-10 Tame Beast class quest",how:"Speak with a Hunter trainer/class quest giver, complete the taming tasks and learn Tame Beast, Feed Pet and Revive Pet. This is higher priority than optional side quests."},
         {id:"first-pet",title:"Tame a pet and check Growl, food and happiness",how:"Pick an available pet you like, keep it fed, teach available pet skills and set Growl to autocast for solo questing. No need to wait for a rare cat."},
-        {id:"mouse-macros",title:"Bind Mouse 4 to Pet Attack and Mouse 5 to Pet Passive / Follow",how:"Create the pet macros in /macro, drag them onto action bars and bind the slots under Keybindings. Practice recalling before crossing crowded areas."},
+        {id:"mouse-macros",title:"Bind scroll up to Pet Attack and scroll down to Pet Recall",how:"Create the macros in /macro, drag them onto action bars, and bind the slots in Options > Keybindings > Action Bars. Set Mouse 4 or key 1 to your Target + Auto Shot macro; set Mouse 5 or key 2 to Arcane Shot + Auto Shot. Rebind camera zoom if necessary."},
         {id:"valanaar",title:"Clear Valanaar's main investigations and nearby quests",how:"Look for The High Elder's Request, Tower Defense, Unnerving Silence, The Cult's True Plans and the pylon/Al'Aketh story. Do quests together by area."},
         {id:"shrine",title:"Finish the Shrine of Akir story",how:"Follow Prepare for Battle, Making Our Move and any remaining faction-specific steps for The Fate of Zephras."},
         {id:"skyboat",title:"Complete What Comes Next and leave Zephras Isle",how:"Horde: The Earthen Ring, take the west dock skyboat toward Mulgore/Thunder Bluff. Alliance: The Magical City of Dalaran, take the east dock ship to Dalaran."}
