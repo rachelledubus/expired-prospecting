@@ -29,14 +29,18 @@ const chip: React.CSSProperties = { borderRadius:99, padding:"9px 13px",minHeigh
 const note: React.CSSProperties = { fontSize:14, lineHeight:1.55 };
 const card: React.CSSProperties = { padding:16, marginTop:12 };
 const BASE_MACROS = [
-  {title:"Mouse 4 · Pet Attack",code:"#showtooltip\n/petattack\n/cast Dash\n/cast Dive\n/cast Charge",help:"Send your pet to your target and try its available charge/speed ability."},
-  {title:"Mouse 5 · Pet Recall",code:"#showtooltip\n/petpassive\n/petfollow",help:"Stop attacks, switch to Passive, and call your pet back."}
+  {title:"Scroll up · Pet Attack",code:"#showtooltip\n/petattack\n/cast Dash\n/cast Dive\n/cast Charge",help:"Send your pet to the selected target; try an available pet movement ability."},
+  {title:"Scroll down · Pet Recall",code:"#showtooltip\n/petpassive\n/petfollow",help:"Stop attacking, switch your pet to Passive, and call it back."},
+  {title:"Mouse 4 / key 1 · Target + Auto Shot",code:"#showtooltip Auto Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast !Auto Shot",help:"If the current target is dead, friendly or missing, select a nearby enemy and start shooting. Repeated presses do not toggle Auto Shot off."},
+  {title:"Mouse 5 / key 2 · Arcane Shot + Auto Shot",code:"#showtooltip Arcane Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Arcane Shot\n/cast !Auto Shot",help:"Cast Arcane Shot, then keep Auto Shot active. Also acquires a new enemy when you have no valid hostile target."},
+  {title:"Key 3 · Aimed Shot + Auto Shot",code:"#showtooltip Aimed Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Aimed Shot\n/cast !Auto Shot",help:"Single-target ranged attack at level 20; keeps Auto Shot active. Do not expect it to fire while moving."},
+  {title:"Key E · Serpent Sting + Auto Shot",code:"#showtooltip Serpent Sting\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Serpent Sting\n/cast !Auto Shot",help:"Apply the damage-over-time effect on longer-lived targets, and start or maintain Auto Shot."}
 ];
 const KEY_PRIMARY = [
-  ["1","Auto Shot"],["2","Arcane Shot"],["3","Aimed Shot"],["4","Multi-Shot"],["5","Volley"],
+  ["1","Target + Auto Shot"],["2","Arcane + Auto"],["3","Aimed + Auto"],["4","Multi-Shot"],["5","Volley"],
   ["Q","Summon Hawk"],["E","Serpent Sting"],["R","Mend Pet"],["T","Hunter's Mark"],
   ["F","Intimidation"],["G","Wing Clip"],["Z","Aspect of the Hawk"],["X","Aspect of the Cheetah"],
-  ["C","Feign Death"],["V","Concussive Shot"],["Mouse 4","Pet Attack"],["Mouse 5","Pet Passive + Follow"]
+  ["C","Feign Death"],["V","Concussive Shot"],["Wheel ↑","Pet Attack"],["Wheel ↓","Pet Recall"],["Mouse 4","Target + Auto Shot"],["Mouse 5","Arcane + Auto"]
 ];
 const KEY_SHIFT = [
   ["Shift+1","Bestial Wrath"],["Shift+2","Rapid Fire"],["Shift+3","Health potion"],
@@ -181,7 +185,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <h3 style={{margin:"7px 0"}}>{nextUnfinished?nextUnfinished.title:"Chapter finished!"}</h3>
         <p className="gm-note" style={note}>{nextUnfinished?nextUnfinished.how:"Open the roadmap to check earlier goals or move on to your next level."}</p>
         <p className="gm-note">Recommended chapter: <strong>{stageNow.title}</strong></p>
-        {currentLevel>=10 && <p className="gm-note">For combat: Mouse 4 = attack; Mouse 5 = recall; R = Mend Pet. Keep your pet happy and its skills trained.</p>}
+        {currentLevel>=10 && <p className="gm-note">For combat: Scroll up = pet attack; scroll down = recall; Mouse 4 / key 1 = target + Auto Shot; Mouse 5 / key 2 = Arcane Shot. R = Mend Pet.</p>}
         {currentLevel<10 && <p className="gm-note">Big power spike ahead: your first permanent pet at level 10.</p>}
       </div>
       <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
@@ -193,10 +197,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <SmallInfo title="Simple fight routine">
         <ol style={{paddingLeft:20,margin:"6px 0"}}>
           <li>Choose one target. Mark it for a longer fight.</li>
-          <li>Send your pet with Mouse 4 (after level 10).</li>
-          <li>Auto Shot + Arcane Shot; use Aimed Shot once learned.</li>
+          <li>Scroll up to send your pet (after level 10).</li>
+          <li>Click Mouse 4 (or key 1) to select a new nearby enemy and start Auto Shot. Mouse 5 (or key 2) adds Arcane Shot; use Aimed Shot once learned.</li>
           <li>Serpent Sting for targets living long enough; save Hawk for sustained fights after level 25.</li>
-          <li>Use R to heal your pet; Mouse 5 to recall before moving.</li>
+          <li>Use R to heal your pet; scroll down to recall it before moving.</li>
         </ol>
         <p style={{marginBottom:0}}>With your Paladin partner: let the person tanking establish threat before sending your pet to a different enemy.</p>
       </SmallInfo>
@@ -267,10 +271,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p><b>Short fights:</b> Send pet → Auto Shot → Arcane Shot → Aimed Shot when available. Add Serpent Sting if the target will live long enough.</p>
         <p><b>Long fights / elites (25+):</b> Mark first → send pet → keep Auto Shot and pet attacks active → Aimed Shot → use Summon Hawk for sustained damage (up to two Hawks). Hawk shares Arcane Shot cooldown.</p>
         <p><b>Several enemies:</b> Use Multi-Shot instead of Aimed Shot. AoE traps/Volley are situational and mana hungry. Aimed and Multi share a cooldown; all traps now share one cooldown.</p>
-        <p><b>In trouble:</b> Mend Pet (R), Intimidation (F at 30), Concussive Shot (V), Feign Death (C at 30), or Mouse 5 to recall.</p>
+        <p><b>In trouble:</b> Mend Pet (R), Intimidation (F at 30), Concussive Shot (V), Feign Death (C at 30), or scroll down to recall.</p>
       </SmallInfo>
-      <SmallInfo title="WASD + two-button mouse · primary binds">
-        <p>Use A/D to strafe and your right mouse button to turn. Don't unbind movement to fit additional combat spells. Place your most-used damage on 1–4, Q, E.</p>
+      <SmallInfo title="WASD + scroll wheel pet control + two attack side buttons">
+        <p>Use A/D to strafe and hold the right mouse button to turn. Scroll UP sends your pet; scroll DOWN recalls it. Mouse 4 starts a new target and Auto Shot; Mouse 5 uses Arcane Shot and keeps Auto Shot active. Keep 1 and 2 as keyboard backups. Unbind ordinary camera zoom from wheel up/down, or move zoom to modified wheel bindings.</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,200px),1fr))",gap:7}}>
           {KEY_PRIMARY.map(([key,spell])=><div key={key} style={{display:"flex",gap:12,alignItems:"center",padding:"7px 9px",borderRadius:8,background:"rgba(128,128,128,.08)"}}>
             <kbd style={{fontWeight:700,minWidth:58}}>{key}</kbd><span>{spell}</span></div>)}
@@ -283,14 +287,14 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         </details>
         <p className="gm-note" style={{marginTop:12}}>These are suggested bindings, not Forever defaults. Some replace familiar shortcuts (C, R, V). Leave an ability's slot empty until you learn it.</p>
       </SmallInfo>
-      <SmallInfo title="Mouse macros · tap to copy">
+      <SmallInfo title="Scroll-wheel pet + auto-target shooting macros · tap to copy">
         {BASE_MACROS.map(m=><div key={m.title} style={{marginTop:14}}>
           <b>{m.title}</b><p className="gm-note">{m.help}</p>
           <pre style={{whiteSpace:"pre-wrap",background:"rgba(128,128,128,.1)",padding:12,borderRadius:8,fontSize:12}}>{m.code}</pre>
           <button type="button" className="gm-pill" onClick={()=>void copy(m.code,m.title)}>Copy macro</button>
         </div>)}
         {copied && <p role="status" className="gm-note">{copied==="Unable to copy. Select the macro text instead."?copied:("Copied: "+copied)}</p>}
-        <p className="gm-note" style={{marginTop:12}}>Type /macro in WoW → New → paste → drag to bar → bind Mouse 4 or Mouse 5. Test in a safe spot before relying on a pet movement cast.</p>
+        <p className="gm-note" style={{marginTop:12}}>Type /macro → New → paste → drag each macro to an action bar slot. In Options → Keybindings → Action Bars, bind Pet Attack to Mouse Wheel Up, Pet Recall to Mouse Wheel Down, Target + Auto Shot to Mouse 4 or 1, and Arcane + Auto to Mouse 5 or 2. Clear the default camera zoom wheel bindings first. In dungeons, be careful: automatic enemy selection can pick a nearby enemy you did not intend to pull. The !Auto Shot prefix works in documented Classic macros but has not been verified here in your current Forever client. Test on a safe training target.</p>
       </SmallInfo>
     </>}
 
@@ -301,7 +305,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           <li>Tame a nearby useful pet first; don't delay leveling to camp a rare spawn.</li>
           <li>Keep it fed, monitor happiness, and learn Mend Pet / Revive Pet.</li>
           <li>Train Growl and appropriate Claw or Bite ranks; recheck skill ranks as you level.</li>
-          <li>Bind Pet Attack and Pet Passive/Follow to your mouse side buttons.</li>
+          <li>Bind Pet Attack to scroll up, Pet Passive/Follow to scroll down, and Target + Auto Shot / Arcane + Auto to your two mouse side buttons.</li>
         </ol>
       </SmallInfo>
       <SmallInfo title="Which pet should I use?">
@@ -310,7 +314,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p><b>Higher-level pet:</b> Revisit pet ability ranks and special skills. Not every pet ability can simply be bought from the trainer.</p>
       </SmallInfo>
       <SmallInfo title="Pet controls and troubleshooting">
-        <p><b>Pet runs away:</b> Click Mouse 5, ensure Passive/Follow worked, and avoid sending it through dense enemy groups.</p>
+        <p><b>Pet runs away:</b> Scroll down to recall, ensure Passive/Follow worked, and avoid sending it through dense enemy groups.</p>
         <p><b>Pet dies fast:</b> Upgrade training, heal earlier, pull one target, and use a sturdier pet if needed.</p>
         <p><b>Can't hold threat while solo:</b> Growl autocast ON; train its rank and improve your pet's damage.</p>
         <p><b>Pet pulls off the dungeon tank:</b> Turn Growl OFF and attack the tank's chosen enemy.</p>
