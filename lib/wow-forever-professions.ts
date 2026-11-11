@@ -49,7 +49,7 @@ export const WOW_RECIPES: WowRecipe[] = [
     learnAt: 145, yellowAt: 165, greenAt: 175, grayAt: 185,
     reagents: [{ name: "Cured Heavy Hide", quantity: 2 }, { name: "Heavy Leather", quantity: 4 }, { name: "Fine Thread", quantity: 1 }, { name: "Iron Buckle", quantity: 1 }],
     acquisition: "auction",
-    source: "Pattern: Guardian Belt — check your Auction House for a Kalimdor-accessible copy; availability is not guaranteed.",
+    source: "Pattern: Guardian Belt — check your Auction House or source listing. Availability is not guaranteed.",
     sourceUrl: "https://theforeverera.com/en/recipes/leatherworking/guardian-belt/",
   },
   {
@@ -57,7 +57,7 @@ export const WOW_RECIPES: WowRecipe[] = [
     learnAt: 140, yellowAt: 160, greenAt: 170, grayAt: 180,
     reagents: [{ name: "Raptor Hide", quantity: 6 }, { name: "Heavy Leather", quantity: 4 }, { name: "Fine Thread", quantity: 2 }],
     acquisition: "auction",
-    source: "Pattern: Raptor Hide Harness — check your Auction House; original vendor routes may require leaving Kalimdor.",
+    source: "Pattern: Raptor Hide Harness — check the Auction House or the original pattern vendor listing; consider sources on either continent.",
     sourceUrl: "https://theforeverera.com/en/recipes/leatherworking/raptor-hide-harness/",
   },
   {
@@ -65,7 +65,7 @@ export const WOW_RECIPES: WowRecipe[] = [
     learnAt: 140, yellowAt: 160, greenAt: 170, grayAt: 180,
     reagents: [{ name: "Raptor Hide", quantity: 4 }, { name: "Heavy Leather", quantity: 4 }, { name: "Fine Thread", quantity: 2 }],
     acquisition: "auction",
-    source: "Pattern: Raptor Hide Belt — look on your Auction House; vendor source is in Arathi Highlands.",
+    source: "Pattern: Raptor Hide Belt — check your Auction House or vendor sources in Arathi Highlands (Eastern Kingdoms).",
     sourceUrl: "https://theforeverera.com/en/recipes/leatherworking/raptor-hide-belt/",
   },
   {
