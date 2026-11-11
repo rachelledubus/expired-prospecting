@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import {
-  WOW_PROFESSIONS, WOW_RECIPES, professionField, recipeLearnedKey, recipeStatus,
+  WOW_PROFESSIONS, WOW_RECIPES, WOW_RECIPE_CATALOG, professionField, recipeLearnedKey, recipeStatus,
   type WowProfessionId, type WowRecipe,
 } from "@/lib/wow-forever-professions";
 
@@ -29,10 +29,11 @@ const statusLabels = {
   gray: "Gray · no skill-up",
 };
 
-const ranking = (r: WowRecipe, skill: number, learned: boolean, goal: string, kalimdorOnly: boolean) => {
+const ranking = (r: WowRecipe, skill: number, learned: boolean, goal: string, preferKalimdor: boolean, faction: string) => {
   const state = recipeStatus(r, skill);
   const statusRank = ({ orange: 0, yellow: 1, chance: 2, green: 3, locked: 4, gray: 5 } as const)[state];
-  const localPenalty = kalimdorOnly && r.acquisition === "auction" ? 1 : 0;
+  const accessible = r.sourceLocations.filter(l => l.faction === faction || l.faction === "neutral");
+  const localPenalty = preferKalimdor && accessible.length && !accessible.some(l => l.continent === "kalimdor") ? 1 : 0;
   const reagents = r.reagents.reduce((n, m) => n + m.quantity, 0);
   // No gold/profit estimates without real user-entered market prices.
   if (goal === "fewest") return [statusRank, reagents, learned ? 0 : 1, localPenalty];
@@ -56,6 +57,9 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const [learnedOnly, setLearnedOnly] = useState(false);
   const [copied, setCopied] = useState("");
   const [confirmed, setConfirmed] = useState("");
+  const [query, setQuery] = useState("");
+  const [continentFilter, setContinentFilter] = useState("all");
+  const [shown, setShown] = useState(35);
 
   const skillFor = (id: WowProfessionId) => {
     const initial = WOW_PROFESSIONS.find(p => p.id === id)?.initial ?? 0;
@@ -65,16 +69,23 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const skill = skillFor(selected);
   const goal = prog.fields[professionField(gameId, "goal")] || "guaranteed";
   const region = prog.fields[professionField(gameId, "region")] || "any";
+  const faction = prog.fields[gameId + "|faction"] || "horde";
   const isLearned = (id: string) => !!prog.checks[recipeLearnedKey(gameId, id)];
-  const recipes = useMemo(() => WOW_RECIPES
+  const baseRecipes = useMemo(() => WOW_RECIPES
     .filter(r => r.profession === selected && (showGray || recipeStatus(r, skill) !== "gray"))
-    .filter(r => !learnedOnly || isLearned(r.id))
     .sort((a, b) => compareRank(
-      ranking(a, skill, isLearned(a.id), goal, region === "kalimdor"),
-      ranking(b, skill, isLearned(b.id), goal, region === "kalimdor"),
-    )), [selected, skill, goal, region, showGray, learnedOnly, prog.checks]);
-  const next = recipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
-    || recipes.find(r => recipeStatus(r, skill) === "orange");
+      ranking(a, skill, isLearned(a.id), goal, region === "kalimdor", faction),
+      ranking(b, skill, isLearned(b.id), goal, region === "kalimdor", faction),
+    )), [selected, skill, goal, region, showGray, faction, prog.checks]);
+  const recipes = useMemo(() => baseRecipes
+    .filter(r => !learnedOnly || isLearned(r.id))
+    .filter(r => !query.trim() || (r.name + " " + r.category + " " + r.reagents.map(m => m.name).join(" ") + " " +
+      r.sourceLocations.map(loc => loc.zone + " " + loc.npc).join(" ")).toLowerCase().includes(query.trim().toLowerCase()))
+    .filter(r => continentFilter === "all" || r.sourceLocations.some(loc =>
+      loc.continent === continentFilter && (loc.faction === faction || loc.faction === "neutral"))),
+      [baseRecipes, query, continentFilter, faction, learnedOnly, prog.checks]);
+  const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
+    || baseRecipes.find(r => recipeStatus(r, skill) === "orange");
 
   const confirmCraft = (r: WowRecipe) => {
     // Player confirms the craft actually happened; NEVER infer skill gained from game state.
@@ -156,7 +167,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       </div>}
       {!next && <div className="gm-card" style={panel}>
         <h3 style={{ margin: "0 0 6px" }}>No verified orange recipe in this starter catalog</h3>
-        <p className="gm-note" style={small}>Try the next recipe listed below, or check a current Forever profession database. We will not invent a guaranteed craft when the catalog is incomplete.</p>
+        <p className="gm-note" style={small}>No orange craft in the current client snapshot at this skill. Check trainer unlocks and whether the game has received a newer patch before buying materials.</p>
       </div>}
 
       <div className="gm-card" style={panel}>
@@ -169,16 +180,26 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             <input type="checkbox" checked={showGray} onChange={e => setShowGray(e.target.checked)}/> Include gray recipes
           </label>
         </div>
-        <p className="gm-note" style={small}>{recipes.length} verified starter-catalog recipe(s). An Auction House pattern may or may not be listed on your realm.</p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "12px 0" }}>
+          <input type="search" aria-label="Search recipes, reagents or vendor zones" placeholder="Search recipes, materials or vendor…" value={query}
+            onChange={e => { setQuery(e.target.value); setShown(35); }} style={{ ...input, flex: 1, minWidth: 170 }}/>
+          <select aria-label="Continent source filter" style={input} value={continentFilter}
+            onChange={e => { setContinentFilter(e.target.value); setShown(35); }}>
+            <option value="all">All recipes / both continents</option>
+            <option value="eastern-kingdoms">Known Eastern Kingdoms sources</option>
+            <option value="kalimdor">Known Kalimdor sources</option>
+          </select>
+        </div>
+        <p className="gm-note" style={small}>{recipes.length} of {WOW_RECIPES.filter(r => r.profession === selected).length} client-snapshot recipes match. A continent filter shows recipes with a recorded usable vendor location; unknown locations are excluded by that filter, not from the database.</p>
         {recipes.length === 0 && <p className="gm-note">No results with these filters. Clear “Learned recipes only” or include gray recipes.</p>}
-        {recipes.map(r => {
+        {recipes.slice(0, shown).map(r => {
           const state = recipeStatus(r, skill);
           const learned = isLearned(r.id);
           return <div key={r.id} style={{ padding: "13px 0", borderTop: "1px solid var(--border,#ddd)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
               <div>
                 <b>{r.name}</b>
-                <div style={small}>{statusLabels[state]} · Learn at {r.learnAt} · Yellow at {r.yellowAt} · Gray at {r.grayAt}</div>
+                <div style={small}>{statusLabels[state]} · {r.learnAt === null ? "Trainer unlock skill not verified" : "Learn at " + r.learnAt} · Yellow at {r.yellowAt} · Gray at {r.grayAt}</div>
               </div>
               <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <input type="checkbox" checked={learned} onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
@@ -188,18 +209,36 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             <div style={{ ...small, marginTop: 7 }}>
               <b>Per craft:</b> {r.reagents.map(m => String(m.quantity) + "× " + m.name).join(" · ")}
             </div>
-            <div style={{ ...small, marginTop: 4 }}><b>Source:</b> {r.source}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 7 }}>
-              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" style={small}>Verify recipe details ↗</a>
-              {r.waypoint && <button type="button" className="gm-pill" onClick={() => copyWaypoint(r.waypoint!)}>Copy TomTom waypoint</button>}
+            <div style={{ ...small, marginTop: 4 }}><b>How learned:</b> {r.acquisition === "trainer" ? "Trainer (unlock skill may require checking in game)" : r.acquisition === "pattern" ? "Pattern / recipe item (check its acquisition source)" : "Unknown"}</div>
+            {r.sourceLocations.length > 0 ? <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+              {r.sourceLocations.map((loc, idx) => {
+                const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
+                const availableToFaction = loc.faction === "neutral" || loc.faction === faction;
+                return <div key={idx} style={{ ...small, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                  <span><b>{loc.npc}</b> · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
+                  <span style={{ opacity: 0.8 }}>(Classic location reference)</span>
+                  {availableToFaction && <button type="button" className="gm-pill"
+                    onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>}
+                </div>;
+              })}
+            </div> : <div style={{ ...small, marginTop: 4, opacity: 0.8 }}>Detailed vendor or drop location not yet verified; check source reference.</div>}
+            <div style={{ marginTop: 8 }}>
+              <a href={"https://www.zockify.com/forever/professions/" + (selected === "first-aid" ? "first-aid" : selected) + "/recipes/"}
+                target="_blank" rel="noopener noreferrer" style={small}>Browse source database ↗</a>
             </div>
-            {r.waypoint && <div style={{ ...small, fontFamily: "monospace", marginTop: 4 }}>{r.waypoint}</div>}
             {state === "orange" && <p className="gm-note" style={{ ...small, marginTop: 5 }}>
               {r.yellowAt - skill} confirmed +1 crafts possible before this recipe turns yellow.
             </p>}
           </div>;
         })}
+        {recipes.length > shown && <button type="button" className="gm-pill"
+          onClick={() => setShown(v => v + 35)}>Show 35 more ({recipes.length - shown} remaining)</button>}
         {copied && <p role="status" className="gm-note" style={small}>{copied}</p>}
+        <p className="gm-note" style={{ ...small, marginTop: 15 }}>
+          {WOW_RECIPE_CATALOG.build} game-client snapshot · {WOW_RECIPES.length} recipes across Leatherworking, Cooking and First Aid.
+          Not every recipe is obtainable; many live vendor/drop locations remain unconfirmed.
+          <a href={WOW_RECIPE_CATALOG.sourceUrl} target="_blank" rel="noopener noreferrer"> Source data ↗</a>
+        </p>
       </div>
     </>}
   </section>;
