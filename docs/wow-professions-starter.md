@@ -1,46 +1,45 @@
-# WoW Forever Profession Planner — starter release
+# WoW Forever Profession Planner — expanded recipe catalog
 
-Scope: additive tab inside the existing WoW Forever Games view. No changes to the real-estate tools or other games.
+Additive Professions tab inside existing Games → WoW Forever guide. Real-estate tools and other games unchanged.
 
-## What works now
-- Four editable skill values (Leatherworking, Skinning, Cooking, First Aid).
-- Last-reported starting defaults: 152, 222, 104, 87. These are placeholders until edited; not a live game connection.
-- Gold-on-hand and recipe location preference/goal saved using existing game fields. Both continents are the default; Kalimdor preference only affects ordering, not eligibility.
-- Source-linked recipe starter catalog with Forever yellow/green/gray thresholds.
-- Recipe colors recalculate when a saved skill changes.
-- Saved "Pattern learned" checkboxes.
-- Manual confirmation of a guaranteed orange craft advances the corresponding saved skill by one point.
-- Copy TomTom command for listed vendor coordinates; add waypoints for both continents as those sources are verified.
-- The existing game-progress Netlify Blob record is reused, with keys explicitly registered in lib/games-data.ts.
+## Included
+- 669 recipes from a single WoW Forever game-client snapshot: 512 Leatherworking, 125 Cooking, 32 First Aid. Skinning has its own skill tracker.
+- Each recipe includes stable spell ID, skill thresholds (yellow, green, gray), ingredients and source type. Pattern learning skill is present when known; trainer unlock skill may be unknown.
+- Existing nine starter learned-pattern checkbox IDs are preserved.
+- Search by recipe, material, vendor, or zone; show 35 recipes at once with Show More.
+- Both continents are eligible by default. Optional Prefer Kalimdor is sorting-only; known-source filters can show Eastern Kingdoms or Kalimdor.
+- Eastern Kingdoms source locations include Arathi Highlands, Hillsbrad, Undercity, Tirisfal, and Stranglethorn. These vendor coordinates come from Classic-baseline references, not confirmed current Forever stock.
+- Known usable source locations have copyable TomTom waypoints.
+- Saved profession levels, gold, learned recipe checkboxes and goal/location preference reuse the game-progress Netlify Blob flow.
 
-## Deliberately NOT implemented
-- Automated WoW client skill or bag scanning.
-- Automatic game patch/recipe catalog updates.
-- Real-time Auction House prices, vendor-sale profit, or optimized cost-per-point rankings.
-- Exhaustive 1–300 recipe coverage.
-- Inventory deductions or crafting cost tracking.
-- A claim that a pattern is stocked at its cited vendor.
-- Complete source coverage on both continents; the current catalog is a small starter set.
+## Provenance and limitations
+- Client recipe data sourced from ChristianPresley/wow-forever: https://github.com/ChristianPresley/wow-forever/tree/main/tools/professions/recipes
+- Snapshot build: 1.60.1.70862 (November 2026). Recipe colors and availability can change after patches.
+- Vendor reference sources: https://forever.undrwrldcub.com/professions/leatherworking/ ; https://forever.undrwrldcub.com/professions/cooking/ ; https://forever.undrwrldcub.com/professions/first-aid/
+- Most vendor coordinates are Classic reference positions; no guarantee of current stock or same spawn in Forever.
+- The client can include recipes whose pattern is unobtainable. Trainer unlock skill may be absent: store null rather than assume minimum training requirement.
+- Yellow and gray thresholds derive from the client dataset; green ranges may be interpolated by the community and must be treated as estimates. Do not claim the current in-game color is guaranteed after a patch.
+- These 669 recipes are a comprehensive snapshot from the chosen source, NOT a verified complete live game database of every new patch, acquisition source, NPC, or farming route.
+- This is an unofficial, personal fan project. Blizzard owns the game data.
+- No real-time Auction House feeds, auto-imported game character skills, crafting profit guarantees, or material stock sync.
 
-## Recipe data quality
-The curated seed lives in lib/wow-forever-professions.ts. Every entry has a sourceUrl. When updating data:
-1. Verify recipe minimum, yellow and gray thresholds using WoW Forever client data (not regular Classic data).
-2. If green threshold cannot be established, use null rather than inventing a color.
-3. Verify materials and the acquisition source independently. Region-specific vendor inventory is less certain than client recipe data.
-4. Add a stable ID, then register the learned-recipe key using WOW_RECIPES in knownCheckKeys.
-5. Do not change an existing ID, or the saved "learned" checkbox will appear reset.
-6. Do not imply current Auction House profitability without a price, fee, and sale-likelihood model.
+## Manual acceptance checks before merging
+1. Next.js build passes and preview deploy reports ready.
+2. WoW Forever Professions opens, old Hunter tabs still work.
+3. Counts are 512 Leatherworking, 125 Cooking, and 32 First Aid (669).
+4. Default location selector is Both continents on a new profile.
+5. Leatherworking 152: Barbaric Leggings and Raptor Hide patterns orange; skill 160: Raptor patterns not orange; skill 165: Barbaric Leggings not orange.
+6. Existing nine starter pattern checkboxes remain learned when previously checked.
+7. Search for Roast Raptor or Keena; source card shows Eastern Kingdoms / Arathi and Classic-reference caveat.
+8. Filter Eastern Kingdoms: known Horde/neutral locations appear; recipes with unknown source stay discoverable on All recipes.
+9. Skinning has no crafting recipes; save and refresh retain its skill.
+10. Mark one pattern learned; confirm an orange craft; skill increases by 1 and remains after refresh.
+11. Unlearned pattern does not enable the +1 craft button.
+12. Existing WoW quest checkmarks and Stardew/Terraria/Dreamlight trackers remain intact.
+13. Unknown trainer learning skill is marked unknown, not invented.
+14. No live AH prices or guaranteed vendor stock claims.
 
-## Manual acceptance checks before merge
-- /games → WoW Forever → Professions opens, existing Hunter tabs still function.
-- Leatherworking 152: Barbaric Leggings / Guardian Belt orange, Raptor Hide Belt / Harness orange; +1 records one skill point when pattern learned.
-- Leatherworking 160: Raptor items become yellow, Barbaric Leggings stays orange.
-- Leatherworking 165: Barbaric Leggings becomes yellow and its guaranteed button is no longer offered.
-- Cooking 104: Crispy Lizard Tail orange; Strider Stew is green and remains visible until gray at 130.
-- First Aid 87: Wool Bandage orange. Skinning has no crafting recipes.
-- Learned checkbox and skill fields persist after a refresh and a second-device read.
-- Existing WoW quest checkmarks and the Stardew/Terraria/Dreamlight trackers remain intact.
-- No recipe is shown as "guaranteed" once its yellow threshold is reached.
-- An unavailable or unverified source is never presented as a guaranteed current vendor stock.
-- With no saved region setting, the dropdown defaults to Both continents and does not penalize Eastern Kingdoms or auction-sourced recipes.
-- Selecting Prefer Kalimdor only changes source ordering; it does not hide recipes from the Eastern Kingdoms.
+## Next improvements
+- Build-diffed recipe catalog refreshes that preserve saved learned patterns.
+- More confirmed vendor coordinates and reputation/stock/price metadata.
+- User-entered Auctionator pricing, materials inventory, and cost-per-skill-point planning.
