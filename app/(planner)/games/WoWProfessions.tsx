@@ -64,7 +64,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   };
   const skill = skillFor(selected);
   const goal = prog.fields[professionField(gameId, "goal")] || "guaranteed";
-  const region = prog.fields[professionField(gameId, "region")] || "kalimdor";
+  const region = prog.fields[professionField(gameId, "region")] || "any";
   const isLearned = (id: string) => !!prog.checks[recipeLearnedKey(gameId, id)];
   const recipes = useMemo(() => WOW_RECIPES
     .filter(r => r.profession === selected && (showGray || recipeStatus(r, skill) !== "gray"))
@@ -109,14 +109,14 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Goal
           <select value={goal} style={input} onChange={e => setField(professionField(gameId, "goal"), e.target.value)}>
             <option value="guaranteed">Guaranteed skill-ups first</option>
-            <option value="farm">Kalimdor / easy access first</option>
+            <option value="farm">Prioritize easy-to-access recipe sources</option>
             <option value="fewest">Fewest total material units</option>
           </select>
         </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Preferred continent
+        <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Recipe location preference
           <select value={region} style={input} onChange={e => setField(professionField(gameId, "region"), e.target.value)}>
-            <option value="kalimdor">Stay on Kalimdor</option>
-            <option value="any">Either continent</option>
+            <option value="any">Both continents (default)</option>
+            <option value="kalimdor">Prefer Kalimdor vendors</option>
           </select>
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Gold on hand (optional)
@@ -126,7 +126,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         </label>
       </div>
       <p className="gm-note" style={{ ...small, marginTop: 12 }}>
-        This first release has no live Auction House feed. Fewest materials does not mean lowest gold cost or highest profit.
+        Recipes from both continents are eligible by default. Preferring Kalimdor changes sorting only and never excludes Eastern Kingdoms sources. This starter catalog is not yet geographically comprehensive. This first release has no live Auction House feed. Fewest materials does not mean lowest gold cost or highest profit.
         Recipe colors are calculated from a limited, verified Forever catalog; always trust your current in-game orange/yellow color if a patch differs.
       </p>
     </div>
