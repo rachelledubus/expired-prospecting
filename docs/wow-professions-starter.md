@@ -35,7 +35,7 @@ The curated seed lives in lib/wow-forever-professions.ts. Every entry has a sour
 - Leatherworking 152: Barbaric Leggings / Guardian Belt orange, Raptor Hide Belt / Harness orange; +1 records one skill point when pattern learned.
 - Leatherworking 160: Raptor items become yellow, Barbaric Leggings stays orange.
 - Leatherworking 165: Barbaric Leggings becomes yellow and its guaranteed button is no longer offered.
-- Cooking 104: Crispy Lizard Tail orange; Strider Stew hidden by default because gray at 130 only (at 104 it is green).
+- Cooking 104: Crispy Lizard Tail orange; Strider Stew is green and remains visible until gray at 130.
 - First Aid 87: Wool Bandage orange. Skinning has no crafting recipes.
 - Learned checkbox and skill fields persist after a refresh and a second-device read.
 - Existing WoW quest checkmarks and the Stardew/Terraria/Dreamlight trackers remain intact.
