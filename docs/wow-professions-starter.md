@@ -5,12 +5,12 @@ Scope: additive tab inside the existing WoW Forever Games view. No changes to th
 ## What works now
 - Four editable skill values (Leatherworking, Skinning, Cooking, First Aid).
 - Last-reported starting defaults: 152, 222, 104, 87. These are placeholders until edited; not a live game connection.
-- Gold-on-hand and preferred continent/goal saved using existing game fields.
+- Gold-on-hand and recipe location preference/goal saved using existing game fields. Both continents are the default; Kalimdor preference only affects ordering, not eligibility.
 - Source-linked recipe starter catalog with Forever yellow/green/gray thresholds.
 - Recipe colors recalculate when a saved skill changes.
 - Saved "Pattern learned" checkboxes.
 - Manual confirmation of a guaranteed orange craft advances the corresponding saved skill by one point.
-- Copy TomTom command for verified Kalimdor vendor coordinates.
+- Copy TomTom command for listed vendor coordinates; add waypoints for both continents as those sources are verified.
 - The existing game-progress Netlify Blob record is reused, with keys explicitly registered in lib/games-data.ts.
 
 ## Deliberately NOT implemented
@@ -20,6 +20,7 @@ Scope: additive tab inside the existing WoW Forever Games view. No changes to th
 - Exhaustive 1–300 recipe coverage.
 - Inventory deductions or crafting cost tracking.
 - A claim that a pattern is stocked at its cited vendor.
+- Complete source coverage on both continents; the current catalog is a small starter set.
 
 ## Recipe data quality
 The curated seed lives in lib/wow-forever-professions.ts. Every entry has a sourceUrl. When updating data:
@@ -41,3 +42,5 @@ The curated seed lives in lib/wow-forever-professions.ts. Every entry has a sour
 - Existing WoW quest checkmarks and the Stardew/Terraria/Dreamlight trackers remain intact.
 - No recipe is shown as "guaranteed" once its yellow threshold is reached.
 - An unavailable or unverified source is never presented as a guaranteed current vendor stock.
+- With no saved region setting, the dropdown defaults to Both continents and does not penalize Eastern Kingdoms or auction-sourced recipes.
+- Selecting Prefer Kalimdor only changes source ordering; it does not hide recipes from the Eastern Kingdoms.
