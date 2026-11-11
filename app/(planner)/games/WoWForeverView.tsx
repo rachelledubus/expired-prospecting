@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
+import WoWProfessions from "./WoWProfessions";
 
 type Props = {
   game: WowGame;
@@ -10,7 +11,7 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
 };
-type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "lookup";
+type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
@@ -20,6 +21,7 @@ const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"pets",label:"🐾 Pet guide",help:"Taming, training, feeding and control"},
   {id:"skyborne",label:"🌬️ Skyborne",help:"Racials, convergence and faction routes"},
   {id:"gear",label:"🎒 Gear & groups",help:"Stats, professions, dungeons and duo play"},
+  {id:"professions",label:"🧵 Professions",help:"Saved profession skills, recipe colors and next guaranteed crafts"},
   {id:"lookup",label:"🔎 Find anything",help:"Search goals, abilities and sources"}
 ];
 const K = (gameId: string, stageId: string, stepId: string) => questKey(gameId, "wow-" + stageId, stepId);
@@ -343,6 +345,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p>The linked Zephras Isle directory in Find anything has individual quest names, hubs and step requirements for side quests.</p>
       </SmallInfo>
     </>}
+
+    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
 
     {view==="gear" && <>
       <SmallInfo title="Simple leveling gear priorities">
