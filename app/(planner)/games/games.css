@@ -649,3 +649,22 @@
   .tp.gm .gm-wow-professions .gm-wow-profile-card, .tp.gm .gm-wow-professions .gm-wow-finder-card { padding: 12px !important; }
   .tp.gm .gm-wow-professions .gm-wow-skill-field { font-size: 12px; }
 }
+
+
+/* Compact Hunter header: keep the frequently edited level visible, other fields expandable. */
+.tp.gm .gm-wow-intro-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tp.gm .gm-wow-intro-row h2 { min-width: 0; color: var(--navy); }
+.tp.gm .gm-wow-level { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; font: 600 13px "DM Sans",system-ui,sans-serif; margin: 0; }
+.tp.gm .gm-wow-level input { width: 80px; min-width: 70px; min-height: 44px; font-size: 16px; }
+.tp.gm .gm-wow-character-settings { border-top: 1px solid var(--line); margin: 8px 0 0; }
+.tp.gm .gm-wow-character-settings > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font: 700 13px "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-wow-character-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 6px 0 14px; }
+.tp.gm .gm-wow-character-fields > label { min-width: 0; display: grid; gap: 5px; font-size: 13px; }
+.tp.gm .gm-wow-character-fields input, .tp.gm .gm-wow-character-fields select { min-width: 0; width: 100%; min-height: 44px; padding: 9px 11px; background: var(--sand); color: var(--navy); border: 1px solid var(--line); border-radius: 9px; font-size: 16px; }
+.tp.gm .gm-wow-nav-hint { display: none; font-size: 12px; color: var(--muted); text-align: right; margin: -11px 0 10px; }
+@media (max-width: 680px) {
+  .tp.gm .gm-wow-character-fields { grid-template-columns: minmax(0,1fr); }
+  .tp.gm .gm-wow-nav-hint { display: block; }
+  .tp.gm .gm-wow-intro-row { gap: 6px 12px; }
+  .tp.gm .gm-wow-intro-row h2 { font-size: 20px; }
+}
