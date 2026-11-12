@@ -695,3 +695,11 @@
 .tp.gm .gm-wow-other-faction { border-top: 1px solid var(--line); margin: 10px 0 12px; }
 .tp.gm .gm-wow-other-faction > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.45; }
 .tp.gm .gm-wow-other-faction > .gm-wow-locations { margin-top: 6px; }
+
+/* Recipe finder uses skill-required ascending order rather than recommendation ranking. */
+.tp.gm .gm-wow-sort-note {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
