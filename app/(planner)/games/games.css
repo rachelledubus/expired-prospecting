@@ -668,3 +668,22 @@
   .tp.gm .gm-wow-intro-row { gap: 6px 12px; }
   .tp.gm .gm-wow-intro-row h2 { font-size: 20px; }
 }
+
+
+/* Visible disclosure chevrons: native summary markers may disappear with flex display. */
+.tp.gm .gm-wow-character-settings > summary,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary { gap: 10px; list-style: none; }
+.tp.gm .gm-wow-character-settings > summary::-webkit-details-marker,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary::-webkit-details-marker,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-wow-character-settings > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary::before {
+  content: ""; width: 8px; height: 8px; flex: none;
+  border-right: 2px solid var(--sage); border-bottom: 2px solid var(--sage);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+.tp.gm .gm-wow-character-settings[open] > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-settings[open] > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details[open] > summary::before { transform: rotate(45deg); }
