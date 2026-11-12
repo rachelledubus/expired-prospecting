@@ -103,3 +103,28 @@ Additive Professions tab inside existing Games → WoW Forever guide. Real-estat
 3. Unverified trainer-skill recipes appear last with "Trainer skill unknown," never with a fabricated required skill.
 4. Searches, continent filters, hidden view, and Show 12 More preserve ascending skill order.
 5. Next Craft remains independent and continues excluding opposing-faction-only acquisition routes for unlearned patterns.
+
+## Hunter-gear-aware dungeon priorities (November 12, 2026)
+- The original dungeon list in Play Next and Where to Go was level-only. A new dynamic Hunter dungeon planner now appears in **Play Next** (top two), **Where to Go** (full list), and **Gear & Groups** (full list).
+- Sources for named targets: https://forever.undrwrldcub.com/warband/orc-hunter/dungeons/ ; https://theforeverera.com/en/guides/classes/hunter/ ; https://aistat.app/wowforever/hunter/reference.en.html . Class-relevant source data include Forever server records mixed with Classic-baseline boss references; user-facing card caveats reflect that.
+- The planner ranks currently level-appropriate dungeons by **remaining, character-level-eligible Hunter items**, favoring high-value ranged weapons and Agility/Attack Power gear. These are *potential* upgrades, not a computed improvement over equipped gear.
+- Each target has a saved **Have / skip** checkbox. A check means the player already owns the item, or their current gear is better and it is not worth farming. Checked targets no longer count toward the dungeon's priority score, and the priority list recalculates.
+- Only targets appropriate to the saved Horde/Alliance faction contribute to rankings (e.g. Seal of Sylvanas is Horde-specific).
+- Boss names, quest/drop type, item level requirements, and warnings are displayed. Rare bosses and unconfirmed acquisition sources are clearly identified; don't imply a guaranteed drop.
+- Sources with incomplete Hunter loot data appear as other options with **loot not verified**, *not* rated as objectively bad dungeons.
+- Underlevel or earlier-level dungeons are identified separately; original questing-zone route data remains available without claiming the old static dungeon strings are gear-ranked.
+- Saved gear target keys use stable dungeon and item IDs registered with the existing Netlify Blobs save whitelist. No existing quest/profession keys change.
+- The UI is touch-friendly and scoped to WoW without restyling other games.
+
+### Dungeon acceptance checks
+1. At level 30 with no gear checked, Razorfen Kraul should outrank Gnomeregan, then Scarlet Monastery Graveyard, because of its tracked ranged-weapon options and other useful Hunter gear.
+2. In Razorfen Kraul, mark Nightstalker Bow, Quilboar Blaster and the other targets covered; the dungeon loses priority without affecting recipe ownership, character level, or other games.
+3. Refresh and reopen on a second device: your target checkmarks and revised ranking persist.
+4. At level 30, new high-level dungeons (e.g. SM Armory) are not labeled safe level-appropriate runs; when nearby they appear under Coming Up Soon.
+5. Changing Hunter level updates dungeon group bands and item eligibility without modifying recorded gear.
+6. At level 40 and 50, new dungeons appear with the relevant named Hunter loot targets; newly introduced Forever dungeons with unknown drops are explicitly labeled unverified.
+7. At level 60, the planner does not claim its curated entries represent a complete or current best-in-slot gearing guide.
+8. Horde-only quest rewards are not recommended to Alliance characters.
+9. A Hunter can still run a dungeon for quests, XP, friends, or another reason, even if all tracked gear was marked covered.
+10. Mobile widths 320/375/430px have no horizontal overflow; all lists and checkboxes are accessible by touch.
+11. The Next Craft Professions feature, Hidden Recipes, and existing Hunter guide checkboxes still work unchanged.
