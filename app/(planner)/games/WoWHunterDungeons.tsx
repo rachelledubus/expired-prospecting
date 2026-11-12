@@ -36,7 +36,7 @@ function TargetRow({
     <input type="checkbox" checked={owned} onChange={value => setCheck(key,value.target.checked)}/>
     <span className="gm-wow-dungeon-target-copy">
       <b>{item.name}</b>
-      <span>{slotLabels[item.slot]} · Requires level {item.requiredLevel} · {item.kind === "quest" ? "Quest reward" : item.from}</span>
+      <span>{slotLabels[item.slot]} · {item.kind === "quest" ? "Quest accessible around level " : "Requires level "}{item.requiredLevel} · {item.kind === "quest" ? item.from : item.from}</span>
       {item.note && <span className="gm-wow-dungeon-source-note">{item.note}</span>}
     </span>
     <span className="gm-wow-dungeon-owned-state">{owned ? "Covered" : "Have / skip"}</span>
