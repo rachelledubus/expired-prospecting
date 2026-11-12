@@ -687,3 +687,11 @@
 .tp.gm .gm-wow-character-settings[open] > summary::before,
 .tp.gm .gm-wow-professions .gm-wow-settings[open] > summary::before,
 .tp.gm .gm-wow-professions .gm-wow-recipe-details[open] > summary::before { transform: rotate(45deg); }
+
+
+/* Horde and Alliance vendors are reference data, not interchangeable purchase routes. */
+.tp.gm .gm-wow-source-warning { color: #8a3e24; background: #fff0e8; border: 1px solid #e5bcae; border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-recipe-heading > .gm-wow-source-warning { display: block; max-width: 100%; }
+.tp.gm .gm-wow-other-faction { border-top: 1px solid var(--line); margin: 10px 0 12px; }
+.tp.gm .gm-wow-other-faction > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.45; }
+.tp.gm .gm-wow-other-faction > .gm-wow-locations { margin-top: 6px; }
