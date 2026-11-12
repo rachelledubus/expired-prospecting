@@ -90,3 +90,16 @@ Additive Professions tab inside existing Games → WoW Forever guide. Real-estat
 5. With no saved vendor metadata, display an unverified-source message rather than a fabricated NPC or a claim of impossible acquisition.
 6. Learned pattern remains craft-recommendable even if its only documented vendor is the opposing faction.
 7. Existing hidden/learned flags, continent filters, and saved character settings remain unchanged.
+
+## Recipe list order
+- The Recipe Finder now sorts by the profession skill requirement to **learn** each recipe, from lowest to highest (ascending). Recipes sharing a threshold are sorted alphabetically for predictable results.
+- Trainer recipes without a verifiable unlock skill (learnAt = null) appear **after** known-level recipes rather than incorrectly claiming they are available at level 0.
+- All filters and searches retain this progression order. Hidden Recipes also uses the same order.
+- The Next Craft panel is intentionally unchanged and separately recommends orange crafts based on skill-up status, learned state, and faction-safe acquisition references.
+
+### Sorting acceptance checks
+1. At Leatherworking 152, Recipe Finder shows lower learned-skill recipes before higher ones, not simply the orange or easiest craft first.
+2. Recipes with the same required skill are alphabetical.
+3. Unverified trainer-skill recipes appear last with "Trainer skill unknown," never with a fabricated required skill.
+4. Searches, continent filters, hidden view, and Show 12 More preserve ascending skill order.
+5. Next Craft remains independent and continues excluding opposing-faction-only acquisition routes for unlearned patterns.
