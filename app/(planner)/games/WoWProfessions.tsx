@@ -25,16 +25,31 @@ const statusLabels = {
   gray: "Gray · no skill-up",
 };
 
+// The catalog contains Classic-baseline vendor data for both factions. An
+// opposing-faction vendor is a reference, never an actionable purchase route.
+const usableVendorLocations = (r: WowRecipe, faction: string) =>
+  r.sourceLocations.filter(l => l.faction === faction || l.faction === "neutral");
+const otherFactionLocations = (r: WowRecipe, faction: string) =>
+  r.sourceLocations.filter(l => l.faction !== faction && l.faction !== "neutral");
+const opposingVendorsOnly = (r: WowRecipe, faction: string) =>
+  r.sourceLocations.length > 0 && usableVendorLocations(r, faction).length === 0;
+const acquisitionRank = (r: WowRecipe, learned: boolean, faction: string) => {
+  if (learned || r.acquisition === "trainer" || usableVendorLocations(r, faction).length > 0) return 0;
+  if (opposingVendorsOnly(r, faction)) return 2;
+  return 1; // source is not yet documented, not automatically unavailable
+};
+
 const ranking = (r: WowRecipe, skill: number, learned: boolean, goal: string, preferKalimdor: boolean, faction: string) => {
   const state = recipeStatus(r, skill);
   const statusRank = ({ orange: 0, yellow: 1, chance: 2, green: 3, locked: 4, gray: 5 } as const)[state];
-  const accessible = r.sourceLocations.filter(l => l.faction === faction || l.faction === "neutral");
+  const accessible = usableVendorLocations(r, faction);
   const localPenalty = preferKalimdor && accessible.length && !accessible.some(l => l.continent === "kalimdor") ? 1 : 0;
+  const sourcePenalty = acquisitionRank(r, learned, faction);
   const reagents = r.reagents.reduce((n, m) => n + m.quantity, 0);
-  // No gold/profit estimates without real user-entered market prices.
-  if (goal === "fewest") return [statusRank, reagents, learned ? 0 : 1, localPenalty];
-  if (goal === "farm") return [statusRank, localPenalty, learned ? 0 : 1, reagents];
-  return [statusRank, learned ? 0 : 1, localPenalty, reagents];
+  // Vendor accessibility must outrank material quantity. Neither guarantees current vendor stock.
+  if (goal === "fewest") return [statusRank, learned ? 0 : 1, sourcePenalty, reagents, localPenalty];
+  if (goal === "farm") return [statusRank, learned ? 0 : 1, sourcePenalty, localPenalty, reagents];
+  return [statusRank, learned ? 0 : 1, sourcePenalty, localPenalty, reagents];
 };
 const compareRank = (a: number[], b: number[]) => {
   for (let i = 0; i < Math.min(a.length, b.length); i += 1) {
@@ -97,7 +112,9 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       loc.continent === continentFilter && (loc.faction === faction || loc.faction === "neutral"))),
       [baseRecipes, query, continentFilter, faction, learnedOnly, showHidden, selected, prog.checks]);
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
-    || baseRecipes.find(r => recipeStatus(r, skill) === "orange");
+    || baseRecipes.find(r => recipeStatus(r, skill) === "orange" && !opposingVendorsOnly(r, faction));
+  // Unlearned recipes with only opposing-faction vendor records stay searchable
+  // but will not be presented as your next vendor acquisition.
 
   const confirmCraft = (r: WowRecipe) => {
     // Player confirms the craft actually happened; NEVER infer skill gained from game state.
@@ -176,7 +193,13 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <h3 style={{ margin: "8px 0 4px" }}>{next.name}</h3>
         <p className="gm-note" style={small}>
           Orange until {next.yellowAt - 1}: {Math.max(0, next.yellowAt - skill)} guaranteed skill-ups remaining.
-          {" "}{isLearned(next.id) ? "You marked this pattern learned." : "You have not marked this pattern learned yet: acquire it before crafting."}
+          {" "}{isLearned(next.id)
+            ? "You marked this recipe learned."
+            : usableVendorLocations(next, faction).length
+              ? "You have not learned this recipe. A vendor reference exists for your faction; check current stock before traveling."
+              : next.acquisition === "trainer"
+                ? "You have not learned this recipe. Check a profession trainer for its current unlock requirement."
+                : "You have not learned this recipe. Its Horde/neutral acquisition source is not yet confirmed; check before traveling."}
         </p>
         <div className="gm-wow-next-actions">
           <button className="gm-pill" type="button" disabled={!isLearned(next.id) || recipeStatus(next, skill) !== "orange"}
@@ -188,8 +211,8 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         {confirmed && <p role="status" className="gm-note" style={small}>{confirmed}</p>}
       </div>}
       {!next && <div className="gm-card" style={panel}>
-        <h3 style={{ margin: "0 0 6px" }}>No verified orange recipe in this starter catalog</h3>
-        <p className="gm-note" style={small}>No orange craft in the current client snapshot at this skill. Check trainer unlocks and whether the game has received a newer patch before buying materials.</p>
+        <h3 style={{ margin: "0 0 6px" }}>No eligible orange recipe recommended</h3>
+        <p className="gm-note" style={small}>There may be orange recipes in the catalog, but no suitable unhidden recipe with a non-opposing acquisition route is available at this skill. Review recipes, learned status, and current trainers before traveling.</p>
       </div>}
 
       <div className="gm-card gm-wow-finder-card" style={panel}>
@@ -246,6 +269,9 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                     {r.learnAt === null ? "Trainer skill unknown" : "Learn at " + r.learnAt}
                     {" · Yellow " + r.yellowAt + " · Gray " + r.grayAt}
                   </span>
+                  {!learned && opposingVendorsOnly(r, faction) && <span className="gm-wow-source-warning">
+                    Only {faction === "horde" ? "Alliance" : "Horde"} vendor references known — not a usable purchase route
+                  </span>}
                 </div>
                 <div className="gm-wow-recipe-actions">
                   <label className="gm-wow-learned">
@@ -265,18 +291,32 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                 <div className="gm-wow-recipe-detail-body">
                   <p><b>For one craft:</b> {r.reagents.map(m => m.quantity + "× " + m.name).join(" · ")}</p>
                   <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
-                  {r.sourceLocations.length ? <div className="gm-wow-locations">
-                    {r.sourceLocations.map((loc, idx) => {
+                  {usableVendorLocations(r, faction).length > 0 ? <div className="gm-wow-locations">
+                    <b>{faction === "horde" ? "Horde" : "Alliance"} / neutral vendor references</b>
+                    {usableVendorLocations(r, faction).map((loc, idx) => {
                       const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
-                      const factionUsable = loc.faction === "neutral" || loc.faction === faction;
                       return <div key={idx} className="gm-wow-location">
                         <span><b>{loc.npc}</b> · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
-                        <span className="gm-wow-reference">Classic location reference; live Forever stock unverified</span>
-                        {factionUsable && <button type="button" className="gm-pill"
-                          onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>}
+                        <span className="gm-wow-reference">Classic location reference; current Forever stock and route safety unverified</span>
+                        <button type="button" className="gm-pill"
+                          onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>
                       </div>;
                     })}
-                  </div> : <p>Detailed vendor or drop location is not yet verified.</p>}
+                  </div> : <p className={opposingVendorsOnly(r, faction) ? "gm-wow-source-warning" : undefined}>
+                    {opposingVendorsOnly(r, faction)
+                      ? "No known " + (faction === "horde" ? "Horde" : "Alliance") + "/neutral vendor. The listed opposing-faction vendor cannot sell to your character."
+                      : "A usable vendor or drop location has not been verified for your faction."}
+                    {r.acquisition === "pattern" && !r.recipeItemBoP ? " A tradeable copy may be available through the Auction House, but check in-game." : ""}
+                  </p>}
+                  {otherFactionLocations(r, faction).length > 0 && <details className="gm-wow-other-faction">
+                    <summary>Other-faction vendor references ({otherFactionLocations(r, faction).length}) — not usable</summary>
+                    <div className="gm-wow-locations">
+                      {otherFactionLocations(r, faction).map((loc, idx) => <div key={idx} className="gm-wow-location">
+                        <span><b>{loc.npc}</b> · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"}</span>
+                        <span className="gm-wow-reference">{loc.faction} vendor — cannot purchase as {faction}. No waypoint offered.</span>
+                      </div>)}
+                    </div>
+                  </details>}
                   {state === "orange" && <p>{Math.max(0, r.yellowAt - skill)} possible +1 crafts before this recipe becomes yellow, based on the catalog's thresholds.</p>}
                   <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">View recipe data ↗</a>
                 </div>
