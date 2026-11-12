@@ -9,11 +9,12 @@
 export type HunterLootTarget = {
   id: string;
   name: string;
-  slot: "ranged" | "melee" | "head" | "shoulders" | "chest" | "hands" | "legs" | "back" | "feet" | "ring" | "neck" | "waist";
+  slot: "ranged" | "melee" | "head" | "shoulders" | "chest" | "hands" | "wrist" | "legs" | "back" | "feet" | "ring" | "neck" | "waist";
   requiredLevel: number;
   priority: number; // Curated Hunter relevance; ranged is most valuable.
   from: string;
   kind: "boss" | "trash" | "quest";
+  faction?: "horde" | "alliance"; // Restrict faction-specific quest reward claims
   note?: string;
 };
 export type HunterDungeon = {
@@ -47,7 +48,7 @@ export const WOW_HUNTER_DUNGEONS: HunterDungeon[] = [
   ]},
   {id:"ruins-lordaeron",name:"Ruins of Lordaeron",min:15,max:20,region:"Tirisfal Glades",sourceUrl:wiki,loot:[],sourceNote:"Loot coverage is incomplete; not ranked as a strong Hunter gear farm."},
   {id:"shadowfang",name:"Shadowfang Keep",min:22,max:30,region:"Silverpine Forest",sourceUrl:wiki,loot:[
-    {id:"seal-sylvanas",name:"Seal of Sylvanas",slot:"ring",requiredLevel:22,priority:3,from:"Dungeon quest reward (source unverified)",kind:"quest",note:"Check whether the quest reward is available to your faction in Forever."},
+    {id:"seal-sylvanas",name:"Seal of Sylvanas",slot:"ring",requiredLevel:22,priority:3,from:"Horde dungeon quest reward (source unverified)",kind:"quest",faction:"horde",note:"Horde-only reward; confirm the Forever quest before entering."},
   ]},
   {id:"blackfathom",name:"Blackfathom Deeps",min:24,max:32,region:"Ashenvale / Zoram Strand",sourceUrl:wiki,loot:[
     {id:"naga-heartpiercer",name:"Naga Heartpiercer",slot:"ranged",requiredLevel:22,priority:7,from:"Lady Sarevess",kind:"boss"},
@@ -82,7 +83,7 @@ export const WOW_HUNTER_DUNGEONS: HunterDungeon[] = [
     {id:"raging-berserkers-helm",name:"Raging Berserker's Helm",slot:"head",requiredLevel:37,priority:3,from:"Herod",kind:"boss"},
   ]},
   {id:"sm-cathedral",name:"Scarlet Monastery: Cathedral",min:36,max:46,region:"Tirisfal Glades",sourceUrl:wiki,loot:[
-    {id:"branded-leather-bracers",name:"Branded Leather Bracers",slot:"hands",requiredLevel:37,priority:2,from:"High Inquisitor Fairbanks",kind:"boss",note:"Compare the actual item slot and stats in game."},
+    {id:"branded-leather-bracers",name:"Branded Leather Bracers",slot:"wrist",requiredLevel:37,priority:2,from:"High Inquisitor Fairbanks",kind:"boss"},
     {id:"mograine-might",name:"Mograine's Might",slot:"melee",requiredLevel:39,priority:2,from:"Scarlet Commander Mograine",kind:"boss"},
   ]},
   {id:"razorfen-downs",name:"Razorfen Downs",min:37,max:46,region:"Southern Barrens",sourceUrl:classGuide,loot:[
@@ -140,15 +141,17 @@ export type HunterDungeonAssessment = {
 export function rankHunterDungeons(
   level: number,
   owned: (dungeonId: string, itemId: string) => boolean,
+  faction: "horde" | "alliance" = "horde",
 ): HunterDungeonAssessment[] {
   const assessments: HunterDungeonAssessment[] = [];
   for (const dungeon of WOW_HUNTER_DUNGEONS) {
     const band: HunterDungeonAssessment["band"] = level < dungeon.min ? "soon" : level > dungeon.max ? "past" : "current";
     // Show dungeons relevant to the present and immediately next level bracket.
     if (level < dungeon.min - 4 || level > dungeon.max + 2) continue;
-    const gearTargets = dungeon.loot.filter(item => item.requiredLevel <= level && !owned(dungeon.id, item.id));
-    const upcomingTargets = dungeon.loot.filter(item => item.requiredLevel > level && item.requiredLevel <= level + 4 && !owned(dungeon.id, item.id));
-    const acquiredCount = dungeon.loot.filter(item => owned(dungeon.id, item.id)).length;
+    const loot = dungeon.loot.filter(item => !item.faction || item.faction === faction);
+    const gearTargets = loot.filter(item => item.requiredLevel <= level && !owned(dungeon.id, item.id));
+    const upcomingTargets = loot.filter(item => item.requiredLevel > level && item.requiredLevel <= level + 4 && !owned(dungeon.id, item.id));
+    const acquiredCount = loot.filter(item => owned(dungeon.id, item.id)).length;
     const gearValue = gearTargets.reduce((sum, item) => sum + item.priority, 0);
     // Level appropriate run first; near-future runs are displayed but not "run now".
     // Late older dungeons get downweighted; their loot may still be useful if missing.
