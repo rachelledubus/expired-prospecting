@@ -19,6 +19,12 @@ export default function Dashboard() {
         <div className="muted">Your schedule, what to focus on now, and your other priorities. Read from Notion, nothing else on the page.</div>
       </a>
 
+      <div className="section-label">Home tools</div>
+      <a className="action-card" href="/groceries">
+        <div className="action-title">Weekly Grocery Planner</div>
+        <div className="muted">Plan servings for the week, subtract what you already have, and see exactly how many packages to buy.</div>
+      </a>
+
       <div className="section-label">Daily safety gate</div>
       <a className="action-card" href="/status-refresh">
         <div className="action-title">1. Refresh Backlog Market Status</div>
