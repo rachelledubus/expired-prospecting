@@ -210,6 +210,11 @@ export default function ProjectsPlanner({ data, cleaning, scheduled, cleaningWar
           <details className="hc-category" open>
             <summary>Home <span>{household.length + cleaning.filter((s) => s.status === "active").length} active</span></summary>
             <div className="hc-category-body">
+              <a href="/groceries" className="pj-card" style={{ display: "block", textDecoration: "none", color: "inherit", marginBottom: 16 }}>
+                <div className="pj-name">Weekly Grocery Planner</div>
+                <div className="pj-next">Choose servings, check what's already in the kitchen, and generate a shopping list with package counts.</div>
+                <div className="pj-meta">Open grocery planner →</div>
+              </a>
               <CleaningHome initial={cleaning} scheduled={scheduled} warning={cleaningWarning} />
               <div className="hc-household">
                 <h3>Household Projects</h3>
