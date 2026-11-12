@@ -60,7 +60,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const [confirmed, setConfirmed] = useState("");
   const [query, setQuery] = useState("");
   const [continentFilter, setContinentFilter] = useState("all");
-  const [shown, setShown] = useState(35);
+  const [shown, setShown] = useState(12);
 
   const skillFor = (id: WowProfessionId) => {
     const initial = WOW_PROFESSIONS.find(p => p.id === id)?.initial ?? 0;
@@ -80,7 +80,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   };
   const toggleHiddenView = () => {
     setShowHidden(v => !v);
-    setShown(35);
+    setShown(12);
     setQuery("");
     setContinentFilter("all");
     setLearnedOnly(false);
@@ -119,46 +119,51 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
     }
   };
 
-  return <section aria-label="WoW Forever professions">
-    <div className="gm-card" style={panel}>
-      <h3 style={{ margin: "0 0 7px" }}>My profession skills</h3>
-      <p className="gm-note" style={small}>Edit your skill after playing. The starting values come from our last conversation and become saved once you change them. The site does not read your WoW client automatically.</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginTop: 12 }}>
-        {WOW_PROFESSIONS.map(p => <label key={p.id} style={{ display: "grid", gap: 5, fontSize: 13 }}>
-          {p.label}
+  return <section className="gm-wow-professions" aria-label="WoW Forever professions">
+    <div className="gm-card gm-wow-profile-card" style={panel}>
+      <div className="gm-wow-section-head">
+        <h3 style={{ margin: 0 }}>My profession skills</h3>
+        <span className="gm-wow-subtitle">Tap a number to update</span>
+      </div>
+      <div className="gm-wow-skill-grid">
+        {WOW_PROFESSIONS.map(p => <label key={p.id} className="gm-wow-skill-field">
+          <span>{p.label}</span>
           <input type="number" inputMode="numeric" min={0} max={300}
-            aria-label={p.label + " skill"} style={{ ...input, width: 110 }}
+            aria-label={p.label + " skill"} className="gm-wow-skill-input"
             value={skillFor(p.id)}
             onChange={e => setField(professionField(gameId, "skill-" + p.id), clampSkill(e.target.value))}/>
         </label>)}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 15 }}>
-        <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Goal
-          <select value={goal} style={input} onChange={e => setField(professionField(gameId, "goal"), e.target.value)}>
-            <option value="guaranteed">Guaranteed skill-ups first</option>
-            <option value="farm">Prioritize easy-to-access recipe sources</option>
-            <option value="fewest">Fewest total material units</option>
-          </select>
-        </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Recipe location preference
-          <select value={region} style={input} onChange={e => setField(professionField(gameId, "region"), e.target.value)}>
-            <option value="any">Both continents (default)</option>
-            <option value="kalimdor">Prefer Kalimdor vendors</option>
-          </select>
-        </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 13 }}>Gold on hand (optional)
-          <input value={prog.fields[professionField(gameId, "gold")] ?? "19"} aria-label="Gold on hand"
-            onChange={e => setField(professionField(gameId, "gold"), e.target.value.replace(/[^0-9.]/g, "").slice(0, 10))}
-            type="text" inputMode="decimal" style={{ ...input, width: 95 }}/>
-        </label>
-      </div>
-      <p className="gm-note" style={{ ...small, marginTop: 12 }}>
-        Recipes from both continents are eligible by default. Preferring Kalimdor changes sorting only and never excludes Eastern Kingdoms sources. This starter catalog is not yet geographically comprehensive. This first release has no live Auction House feed. Fewest materials does not mean lowest gold cost or highest profit.
-        Recipe colors are calculated from a limited, verified Forever catalog; always trust your current in-game orange/yellow color if a patch differs.
-      </p>
+      <details className="gm-wow-settings">
+        <summary>Preferences &amp; gold</summary>
+        <div className="gm-wow-setting-grid">
+          <label>Goal
+            <select value={goal} onChange={e => setField(professionField(gameId, "goal"), e.target.value)}>
+              <option value="guaranteed">Guaranteed skill-ups first</option>
+              <option value="farm">Prioritize easy-to-access recipe sources</option>
+              <option value="fewest">Fewest total material units</option>
+            </select>
+          </label>
+          <label>Recipe locations
+            <select value={region} onChange={e => setField(professionField(gameId, "region"), e.target.value)}>
+              <option value="any">Both continents (default)</option>
+              <option value="kalimdor">Prefer Kalimdor vendors</option>
+            </select>
+          </label>
+          <label>Gold on hand (optional)
+            <input value={prog.fields[professionField(gameId, "gold")] ?? "19"} aria-label="Gold on hand"
+              onChange={e => setField(professionField(gameId, "gold"), e.target.value.replace(/[^0-9.]/g, "").slice(0, 10))}
+              type="text" inputMode="decimal"/>
+          </label>
+        </div>
+        <p className="gm-note" style={small}>
+          Both continents are included by default. The catalog is a game-client snapshot, not a live WoW or Auction House connection.
+          Skill levels, learned patterns, and hidden recipes must be updated here; in-game recipe colors take precedence after patches.
+        </p>
+      </details>
     </div>
 
-    <nav aria-label="Choose a profession" className="gm-chips" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+    <nav aria-label="Choose a profession" className="gm-chips gm-wow-profession-tabs">
       {WOW_PROFESSIONS.map(p => <button key={p.id} type="button"
         className={"gm-chip" + (selected === p.id ? " on" : "")}
         aria-pressed={selected === p.id} onClick={() => { setSelected(p.id); setConfirmed(""); }}>
@@ -170,14 +175,14 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       <h3 style={{ margin: 0 }}>Skinning · {skill}</h3>
       <p className="gm-note" style={small}>Skinning has no crafted recipes. Train the next rank when eligible and skin appropriately leveled creatures. This tracker is separate from your crafting recipe list.</p>
     </div> : <>
-      {next && <div className="gm-card" style={panel}>
+      {next && <div className="gm-card gm-wow-next-card" style={panel}>
         <div className="gm-panel-label">Recommended next · {selected}</div>
         <h3 style={{ margin: "8px 0 4px" }}>{next.name}</h3>
         <p className="gm-note" style={small}>
           Orange until {next.yellowAt - 1}: {Math.max(0, next.yellowAt - skill)} guaranteed skill-ups remaining.
           {" "}{isLearned(next.id) ? "You marked this pattern learned." : "You have not marked this pattern learned yet: acquire it before crafting."}
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 9 }}>
+        <div className="gm-wow-next-actions">
           <button className="gm-pill" type="button" disabled={!isLearned(next.id) || recipeStatus(next, skill) !== "orange"}
             onClick={() => confirmCraft(next)}>I crafted it and gained +1 skill</button>
           <button className="gm-pill" type="button"
@@ -191,8 +196,8 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <p className="gm-note" style={small}>No orange craft in the current client snapshot at this skill. Check trainer unlocks and whether the game has received a newer patch before buying materials.</p>
       </div>}
 
-      <div className="gm-card" style={panel}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div className="gm-card gm-wow-finder-card" style={panel}>
+        <div className="gm-wow-finder-head">
           <h3 style={{ margin: 0 }}>{showHidden ? "Hidden recipes" : "Recipe finder"}</h3>
           <button className="gm-pill" type="button" aria-pressed={showHidden}
             onClick={toggleHiddenView}>
@@ -204,7 +209,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
             : "Not interested in a pattern? Hide it without marking it learned. You can restore it from Hidden recipes."}
         </p>
-        {!showHidden && <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        {!showHidden && <div className="gm-wow-filter-toggles">
           <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <input type="checkbox" checked={learnedOnly} onChange={e => setLearnedOnly(e.target.checked)}/> Learned recipes only
           </label>
@@ -212,11 +217,11 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             <input type="checkbox" checked={showGray} onChange={e => setShowGray(e.target.checked)}/> Include gray recipes
           </label>
         </div>}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "12px 0" }}>
+        <div className="gm-wow-filter-row">
           <input type="search" aria-label="Search recipes, reagents or vendor zones" placeholder="Search recipes, materials or vendor…" value={query}
-            onChange={e => { setQuery(e.target.value); setShown(35); }} style={{ ...input, flex: 1, minWidth: 170 }}/>
-          {!showHidden && <select aria-label="Continent source filter" style={input} value={continentFilter}
-            onChange={e => { setContinentFilter(e.target.value); setShown(35); }}>
+            onChange={e => { setQuery(e.target.value); setShown(12); }} className="gm-wow-search"/>
+          {!showHidden && <select aria-label="Continent source filter" className="gm-wow-continent-filter" value={continentFilter}
+            onChange={e => { setContinentFilter(e.target.value); setShown(12); }}>
             <option value="all">All recipes / both continents</option>
             <option value="eastern-kingdoms">Known Eastern Kingdoms sources</option>
             <option value="kalimdor">Known Kalimdor sources</option>
@@ -232,54 +237,59 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         {recipes.length === 0 && <p className="gm-note">
           {showHidden ? "No hidden recipes found for this profession or search." : "No matching recipes. Try clearing your search, filters, or including gray recipes."}
         </p>}
-        {recipes.slice(0, shown).map(r => {
-          const state = recipeStatus(r, skill);
-          const learned = isLearned(r.id);
-          return <div key={r.id} style={{ padding: "13px 0", borderTop: "1px solid var(--border,#ddd)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <b>{r.name}</b>
-                <div style={small}>{statusLabels[state]} · {r.learnAt === null ? "Trainer unlock skill not verified" : "Learn at " + r.learnAt} · Yellow at {r.yellowAt} · Gray at {r.grayAt}</div>
+        <div className="gm-wow-recipe-list">
+          {recipes.slice(0, shown).map(r => {
+            const state = recipeStatus(r, skill);
+            const learned = isLearned(r.id);
+            return <article key={r.id} className="gm-wow-recipe">
+              <div className="gm-wow-recipe-head">
+                <div className="gm-wow-recipe-heading">
+                  <b>{r.name}</b>
+                  <span className={"gm-wow-recipe-status gm-wow-status-" + state}>{statusLabels[state]}</span>
+                  <span className="gm-wow-recipe-skill">
+                    {r.learnAt === null ? "Trainer skill unknown" : "Learn at " + r.learnAt}
+                    {" · Yellow " + r.yellowAt + " · Gray " + r.grayAt}
+                  </span>
+                </div>
+                <div className="gm-wow-recipe-actions">
+                  <label className="gm-wow-learned">
+                    <input type="checkbox" checked={learned}
+                      onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
+                    Learned
+                  </label>
+                  <button type="button" className="gm-pill gm-wow-hide-btn"
+                    aria-label={(showHidden ? "Restore " : "Hide ") + r.name}
+                    onClick={() => setHidden(r.id, !showHidden)}>
+                    {showHidden ? "Restore" : "Hide"}
+                  </button>
+                </div>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <input type="checkbox" checked={learned} onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
-                  Learned
-                </label>
-                <button type="button" className="gm-pill"
-                  aria-label={(showHidden ? "Restore " : "Hide ") + r.name}
-                  onClick={() => setHidden(r.id, !showHidden)}>
-                  {showHidden ? "Restore" : "Hide"}
-                </button>
-              </div>
-            </div>
-            <div style={{ ...small, marginTop: 7 }}>
-              <b>Per craft:</b> {r.reagents.map(m => String(m.quantity) + "× " + m.name).join(" · ")}
-            </div>
-            <div style={{ ...small, marginTop: 4 }}><b>How learned:</b> {r.acquisition === "trainer" ? "Trainer (unlock skill may require checking in game)" : r.acquisition === "pattern" ? "Pattern / recipe item (check its acquisition source)" : "Unknown"}</div>
-            {r.sourceLocations.length > 0 ? <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
-              {r.sourceLocations.map((loc, idx) => {
-                const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
-                const availableToFaction = loc.faction === "neutral" || loc.faction === faction;
-                return <div key={idx} style={{ ...small, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                  <span><b>{loc.npc}</b> · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
-                  <span style={{ opacity: 0.8 }}>(Classic location reference)</span>
-                  {availableToFaction && <button type="button" className="gm-pill"
-                    onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>}
-                </div>;
-              })}
-            </div> : <div style={{ ...small, marginTop: 4, opacity: 0.8 }}>Detailed vendor or drop location not yet verified; check source reference.</div>}
-            <div style={{ marginTop: 8 }}>
-              <a href={"https://www.zockify.com/forever/professions/" + (selected === "first-aid" ? "first-aid" : selected) + "/recipes/"}
-                target="_blank" rel="noopener noreferrer" style={small}>Browse source database ↗</a>
-            </div>
-            {state === "orange" && <p className="gm-note" style={{ ...small, marginTop: 5 }}>
-              {r.yellowAt - skill} confirmed +1 crafts possible before this recipe turns yellow.
-            </p>}
-          </div>;
-        })}
+              <details className="gm-wow-recipe-details">
+                <summary>Materials, sources &amp; skill details</summary>
+                <div className="gm-wow-recipe-detail-body">
+                  <p><b>For one craft:</b> {r.reagents.map(m => m.quantity + "× " + m.name).join(" · ")}</p>
+                  <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
+                  {r.sourceLocations.length ? <div className="gm-wow-locations">
+                    {r.sourceLocations.map((loc, idx) => {
+                      const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
+                      const factionUsable = loc.faction === "neutral" || loc.faction === faction;
+                      return <div key={idx} className="gm-wow-location">
+                        <span><b>{loc.npc}</b> · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
+                        <span className="gm-wow-reference">Classic location reference; live Forever stock unverified</span>
+                        {factionUsable && <button type="button" className="gm-pill"
+                          onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>}
+                      </div>;
+                    })}
+                  </div> : <p>Detailed vendor or drop location is not yet verified.</p>}
+                  {state === "orange" && <p>{Math.max(0, r.yellowAt - skill)} possible +1 crafts before this recipe becomes yellow, based on the catalog's thresholds.</p>}
+                  <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">View recipe data ↗</a>
+                </div>
+              </details>
+            </article>;
+          })}
+        </div>
         {recipes.length > shown && <button type="button" className="gm-pill"
-          onClick={() => setShown(v => v + 35)}>Show 35 more ({recipes.length - shown} remaining)</button>}
+          onClick={() => setShown(v => v + 12)}>Show 12 more ({recipes.length - shown} remaining)</button>}
         {copied && <p role="status" className="gm-note" style={small}>{copied}</p>}
         <p className="gm-note" style={{ ...small, marginTop: 15 }}>
           {WOW_RECIPE_CATALOG.build} game-client snapshot · {WOW_RECIPES.length} recipes across Leatherworking, Cooking and First Aid.
