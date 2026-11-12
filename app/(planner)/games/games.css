@@ -703,3 +703,44 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+
+/* WoW Forever: gear-aware dungeon choices. Scoped to Games, no effect on other pages. */
+.tp.gm .gm-wow-dungeon-planner { margin-top: 12px; padding: 16px; min-width: 0; }
+.tp.gm .gm-wow-dungeon-planner h3 { color: var(--navy); font: 700 18px/1.35 "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-dungeon-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin-top: 12px; }
+.tp.gm .gm-wow-dungeon-card { min-width: 0; background: var(--sand); border: 1px solid var(--line); border-radius: 13px; overflow: hidden; }
+.tp.gm .gm-wow-dungeon-card.featured { border: 2px solid var(--sage); }
+.tp.gm .gm-wow-dungeon-summary { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 14px; min-height: 74px; cursor: pointer; list-style: none; }
+.tp.gm .gm-wow-dungeon-summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-wow-dungeon-summary:focus-visible, .tp.gm .gm-wow-dungeon-target:focus-within, .tp.gm .gm-wow-dungeon-more>summary:focus-visible { outline: 2px solid var(--sage); outline-offset: -2px; }
+.tp.gm .gm-wow-dungeon-heading { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-heading b { color: var(--navy); font: 700 16px/1.35 "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-dungeon-heading>span { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.tp.gm .gm-wow-dungeon-heading .gm-wow-dungeon-preview { font-size: 13px; line-height: 1.4; color: var(--ink); }
+.tp.gm .gm-wow-dungeon-priority { flex: 0 0 auto; font: 700 11px "DM Sans",system-ui,sans-serif; color: var(--navy); background: #E6F0E3; border-radius: 999px; padding: 5px 9px; white-space: nowrap; }
+.tp.gm .gm-wow-dungeon-body { padding: 0 14px 14px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-body>p { font-size: 13px; line-height: 1.5; margin: 10px 0; color: var(--ink); }
+.tp.gm .gm-wow-dungeon-body .gm-wow-dungeon-caption, .tp.gm .gm-wow-dungeon-footnote { color: var(--muted); }
+.tp.gm .gm-wow-dungeon-targets { display: grid; gap: 0; margin-top: 10px; border-block: 1px solid var(--line); }
+.tp.gm .gm-wow-dungeon-target { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; margin: 0; min-height: 55px; cursor: pointer; }
+.tp.gm .gm-wow-dungeon-target+.gm-wow-dungeon-target { border-top: 1px solid var(--line); }
+.tp.gm .gm-wow-dungeon-target>input { flex: 0 0 auto; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--sage); }
+.tp.gm .gm-wow-dungeon-target-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.tp.gm .gm-wow-dungeon-target-copy b { font: 700 14px/1.35 "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-wow-dungeon-target-copy span { font-size: 12px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-target.owned .gm-wow-dungeon-target-copy b { color: var(--muted); text-decoration: line-through; }
+.tp.gm .gm-wow-dungeon-owned-state { flex: 0 0 auto; padding-top: 4px; font-size: 11px; color: var(--muted); text-align: right; }
+.tp.gm .gm-wow-dungeon-target.owned .gm-wow-dungeon-owned-state { color: var(--sage); font-weight: 700; }
+.tp.gm .gm-wow-dungeon-body .gm-wow-dungeon-caution { border-left: 3px solid var(--warn,#b8860b); background: #FCF3DD; color: #6b5231; padding: 8px 10px; border-radius: 7px; }
+.tp.gm .gm-wow-dungeon-more { border-top: 1px solid var(--line); margin-top: 12px; }
+.tp.gm .gm-wow-dungeon-more > summary { color: var(--navy); font: 700 13px "DM Sans",system-ui,sans-serif; cursor: pointer; min-height: 44px; padding: 12px 0; }
+.tp.gm .gm-wow-dungeon-planner .gm-wow-dungeon-footnote { font-size: 12px; line-height: 1.5; margin: 15px 0 0; }
+@media (max-width: 520px) {
+  .tp.gm .gm-wow-dungeon-planner { padding: 12px; }
+  .tp.gm .gm-wow-dungeon-summary { padding: 12px; flex-wrap: wrap; }
+  .tp.gm .gm-wow-dungeon-priority { margin-left: 0; }
+  .tp.gm .gm-wow-dungeon-body { padding: 0 12px 12px; }
+  .tp.gm .gm-wow-dungeon-owned-state { display: none; }
+  .tp.gm .gm-wow-dungeon-heading { flex-basis: 65%; }
+}
