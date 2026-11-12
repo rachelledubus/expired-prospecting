@@ -231,7 +231,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         </p>
         {recipes.length === 0 && <p className="gm-note">
           {showHidden ? "No hidden recipes found for this profession or search." : "No matching recipes. Try clearing your search, filters, or including gray recipes."}
-        </p>
+        </p>}
         {recipes.slice(0, shown).map(r => {
           const state = recipeStatus(r, skill);
           const learned = isLearned(r.id);
