@@ -153,33 +153,40 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const spellMatches=filter.trim()?SPELLS.filter(x=>(x.name+" "+x.usage).toLowerCase().includes(filter.toLowerCase().trim())):[];
   const copy=async(code:string,title:string)=>{try{await navigator.clipboard.writeText(code);setCopied(title);}catch{setCopied("Unable to copy. Select the macro text instead.");}};
   return <div className="gm-wow-guide" style={{marginTop:14}}>
-    <div className="gm-card" style={{...card,marginTop:0}}>
+    <div className="gm-card gm-wow-intro" style={{...card,marginTop:0}}>
       <div className="gm-panel-label">🌬️ Your playthrough · Skyborne Beast Mastery</div>
-      <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
-      <p className="gm-note" style={note}>A low-pressure route from Zephras Isle to level 60. Your next objective is based on your level; each checkbox saves with the other Games trackers.</p>
-      <div style={{display:"flex",flexWrap:"wrap",alignItems:"end",gap:12,marginTop:14}}>
-        <label style={{display:"grid",gap:5,fontSize:13}}>My level
-          <input type="number" inputMode="numeric" min={1} max={60} value={prog.fields[F(game.id,"level")]??"1"}
+      <div className="gm-wow-intro-row">
+        <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
+        <label className="gm-wow-level">My level
+          <input type="number" inputMode="numeric" min={1} max={60}
+            value={prog.fields[F(game.id,"level")]??"1"}
             onChange={e=>setField(F(game.id,"level"),String(Math.max(1,Math.min(60,Number(e.target.value)||1))))}
-            style={{...uiInput,width:90}} aria-label="Hunter level"/>
-        </label>
-        <label style={{display:"grid",gap:5,fontSize:13}}>Skyborne faction
-          <select value={faction} onChange={e=>setField(F(game.id,"faction"),e.target.value)} style={{...uiInput,minWidth:170}} aria-label="Skyborne faction">
-            <option value="horde">Horde · Windshaper</option><option value="alliance">Alliance · High Order</option>
-          </select>
-        </label>
-        <label style={{display:"grid",gap:5,fontSize:13}}>My pet's name (optional)
-          <input type="text" maxLength={70} value={prog.fields[F(game.id,"pet-name")]||""} placeholder="My companion"
-            onChange={e=>setField(F(game.id,"pet-name"),e.target.value)} style={{...uiInput,width:160}}/>
+            style={{...uiInput,width:80}} aria-label="Hunter level"/>
         </label>
       </div>
+      <details className="gm-wow-character-settings">
+        <summary>Character settings &amp; guide notes</summary>
+        <div className="gm-wow-character-fields">
+          <label>Skyborne faction
+            <select value={faction} onChange={e=>setField(F(game.id,"faction"),e.target.value)} aria-label="Skyborne faction">
+              <option value="horde">Horde · Windshaper</option><option value="alliance">Alliance · High Order</option>
+            </select>
+          </label>
+          <label>My pet's name (optional)
+            <input type="text" maxLength={70} value={prog.fields[F(game.id,"pet-name")]||""}
+              placeholder="My companion" onChange={e=>setField(F(game.id,"pet-name"),e.target.value)}/>
+          </label>
+        </div>
+        <p className="gm-note" style={note}>Your next objective is based on character level. Checkboxes save with the other Games trackers.</p>
+        <p className="gm-note" style={{fontSize:12}}>WoW Forever systems may change after patches; the leveling talent path is a dated guide, not a permanent best-in-slot claim.</p>
+      </details>
       <Counter done={count} total={total}/>
-      <p className="gm-note" style={{fontSize:12}}>Patch note: WoW Forever systems and talent tuning are still changing. The talent path is a Nov 4 published 1–60 leveling build, not a promise of permanent best-in-slot.</p>
     </div>
     <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
         onClick={()=>setView(v.id)} style={chip}>{v.label}</button>)}
     </nav>
+    <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
 
     {view==="next" && <>
       <div className="gm-card" style={card}>
