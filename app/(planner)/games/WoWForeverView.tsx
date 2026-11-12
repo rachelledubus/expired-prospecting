@@ -14,6 +14,7 @@ type Props = {
 type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
+  {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipes, and crafting recommendations"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
   {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
   {id:"talents",label:"🌿 Talents",help:"Exact leveling point at every level"},
@@ -21,7 +22,6 @@ const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"pets",label:"🐾 Pet guide",help:"Taming, training, feeding and control"},
   {id:"skyborne",label:"🌬️ Skyborne",help:"Racials, convergence and faction routes"},
   {id:"gear",label:"🎒 Gear & groups",help:"Stats, professions, dungeons and duo play"},
-  {id:"professions",label:"🧵 Professions",help:"Saved profession skills, recipe colors and next guaranteed crafts"},
   {id:"lookup",label:"🔎 Find anything",help:"Search goals, abilities and sources"}
 ];
 const K = (gameId: string, stageId: string, stepId: string) => questKey(gameId, "wow-" + stageId, stepId);
@@ -152,7 +152,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   },[filter,game.stages]);
   const spellMatches=filter.trim()?SPELLS.filter(x=>(x.name+" "+x.usage).toLowerCase().includes(filter.toLowerCase().trim())):[];
   const copy=async(code:string,title:string)=>{try{await navigator.clipboard.writeText(code);setCopied(title);}catch{setCopied("Unable to copy. Select the macro text instead.");}};
-  return <div style={{marginTop:14}}>
+  return <div className="gm-wow-guide" style={{marginTop:14}}>
     <div className="gm-card" style={{...card,marginTop:0}}>
       <div className="gm-panel-label">🌬️ Your playthrough · Skyborne Beast Mastery</div>
       <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
@@ -176,7 +176,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <Counter done={count} total={total}/>
       <p className="gm-note" style={{fontSize:12}}>Patch note: WoW Forever systems and talent tuning are still changing. The talent path is a Nov 4 published 1–60 leveling build, not a promise of permanent best-in-slot.</p>
     </div>
-    <nav aria-label="WoW Forever guide sections" className="gm-chips" style={{display:"flex",flexWrap:"wrap",gap:8,margin:"16px 0"}}>
+    <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
         onClick={()=>setView(v.id)} style={chip}>{v.label}</button>)}
     </nav>
