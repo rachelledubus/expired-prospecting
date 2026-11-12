@@ -57,6 +57,15 @@ const compareRank = (a: number[], b: number[]) => {
   }
   return 0;
 };
+
+// The recipe finder is a progression list, not an optimization ranking.
+// Unknown trainer unlock levels must not be invented or sorted as level 0.
+const compareLearnLevel = (a: WowRecipe, b: WowRecipe) => {
+  const aLevel = a.learnAt ?? Number.POSITIVE_INFINITY;
+  const bLevel = b.learnAt ?? Number.POSITIVE_INFINITY;
+  if (aLevel !== bLevel) return aLevel - bLevel;
+  return a.name.localeCompare(b.name);
+};
 const clampSkill = (text: string) => {
   const n = Number(text);
   return String(Math.max(0, Math.min(300, Number.isFinite(n) ? Math.floor(n) : 0)));
@@ -109,7 +118,8 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
     .filter(r => !query.trim() || (r.name + " " + r.category + " " + r.reagents.map(m => m.name).join(" ") + " " +
       r.sourceLocations.map(loc => loc.zone + " " + loc.npc).join(" ")).toLowerCase().includes(query.trim().toLowerCase()))
     .filter(r => showHidden || continentFilter === "all" || r.sourceLocations.some(loc =>
-      loc.continent === continentFilter && (loc.faction === faction || loc.faction === "neutral"))),
+      loc.continent === continentFilter && (loc.faction === faction || loc.faction === "neutral")))
+    .sort(compareLearnLevel),
       [baseRecipes, query, continentFilter, faction, learnedOnly, showHidden, selected, prog.checks]);
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
     || baseRecipes.find(r => recipeStatus(r, skill) === "orange" && !opposingVendorsOnly(r, faction));
@@ -227,6 +237,10 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
           {showHidden
             ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
             : "Not interested in a pattern? Hide it without marking it learned. You can restore it from Hidden recipes."}
+        </p>
+        <p className="gm-wow-sort-note">
+          Sorted by profession skill needed to learn: lowest to highest.
+          Trainer recipes with an unknown unlock skill appear last. “Next Craft” uses a separate recommendation order.
         </p>
         {!showHidden && <div className="gm-wow-filter-toggles">
           <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
