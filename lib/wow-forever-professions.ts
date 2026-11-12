@@ -52,6 +52,8 @@ export const WOW_RECIPE_CATALOG = catalog.metadata;
 
 export const professionField = (gameId: string, id: string) => gameId + "|profession-" + id;
 export const recipeLearnedKey = (gameId: string, id: string) => gameId + "|learned-recipe|" + id;
+// User-controlled visibility; hiding does not mark the recipe learned or delete it.
+export const recipeHiddenKey = (gameId: string, id: string) => gameId + "|hidden-recipe|" + id;
 
 export type RecipeStatus = "locked" | "orange" | "yellow" | "green" | "chance" | "gray";
 export function recipeStatus(recipe: WowRecipe, skill: number): RecipeStatus {
