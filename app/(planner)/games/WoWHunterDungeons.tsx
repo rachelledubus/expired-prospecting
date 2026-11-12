@@ -36,7 +36,7 @@ function TargetRow({
     <input type="checkbox" checked={owned} onChange={value => setCheck(key,value.target.checked)}/>
     <span className="gm-wow-dungeon-target-copy">
       <b>{item.name}</b>
-      <span>{slotLabels[item.slot]} · {item.kind === "quest" ? "Quest accessible around level " : "Requires level "}{item.requiredLevel} · {item.kind === "quest" ? item.from : item.from}</span>
+      <span>{slotLabels[item.slot]} · {item.kind === "quest" ? "Quest accessible around level " : "Requires level "}{item.requiredLevel} · {item.from}</span>
       {item.note && <span className="gm-wow-dungeon-source-note">{item.note}</span>}
     </span>
     <span className="gm-wow-dungeon-owned-state">{owned ? "Covered" : "Have / skip"}</span>
@@ -106,6 +106,7 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,mo
   const current=ranked.filter(x=>x.band==="current");
   const currentWithTargets=current.filter(x=>x.gearTargets.length>0);
   const soon=ranked.filter(x=>x.band==="soon");
+  const recent=ranked.filter(x=>x.band==="past" && x.gearTargets.length > 0);
   const strongest=currentWithTargets.slice(0,mode==="summary"?2:6);
   const otherCurrent=mode==="full" ? current.filter(x=>!strongest.includes(x)) : [];
   return <section className="gm-card gm-wow-dungeon-planner" aria-label="Hunter-gear dungeon recommendations">
@@ -131,6 +132,10 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,mo
       {soon.length>0 && <details className="gm-wow-dungeon-more">
         <summary>Coming up soon ({soon.length})</summary>
         <div className="gm-wow-dungeon-list">{soon.map(r=><DungeonCard key={r.dungeon.id} result={r} gameId={gameId} level={level} faction={faction} prog={prog} setCheck={setCheck}/>)}</div>
+      </details>}
+      {recent.length>0 && <details className="gm-wow-dungeon-more">
+        <summary>Recently outleveled — missed targets ({recent.length})</summary>
+        <div className="gm-wow-dungeon-list">{recent.map(r=><DungeonCard key={r.dungeon.id} result={r} gameId={gameId} level={level} faction={faction} prog={prog} setCheck={setCheck}/>)}</div>
       </details>}
     </>}
     <p className="gm-wow-dungeon-footnote">
