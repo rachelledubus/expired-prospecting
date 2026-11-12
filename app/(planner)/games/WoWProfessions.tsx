@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import {
-  WOW_PROFESSIONS, WOW_RECIPES, WOW_RECIPE_CATALOG, professionField, recipeLearnedKey, recipeStatus,
+  WOW_PROFESSIONS, WOW_RECIPES, WOW_RECIPE_CATALOG, professionField, recipeLearnedKey, recipeHiddenKey, recipeStatus,
   type WowProfessionId, type WowRecipe,
 } from "@/lib/wow-forever-professions";
 
@@ -55,6 +55,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
   const [showGray, setShowGray] = useState(false);
   const [learnedOnly, setLearnedOnly] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState("");
   const [confirmed, setConfirmed] = useState("");
   const [query, setQuery] = useState("");
@@ -71,19 +72,34 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const region = prog.fields[professionField(gameId, "region")] || "any";
   const faction = prog.fields[gameId + "|faction"] || "horde";
   const isLearned = (id: string) => !!prog.checks[recipeLearnedKey(gameId, id)];
+  const isHidden = (id: string) => !!prog.checks[recipeHiddenKey(gameId, id)];
+  const hiddenCount = WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id)).length;
+  const setHidden = (id: string, hidden: boolean) => {
+    setCheck(recipeHiddenKey(gameId, id), hidden);
+    setConfirmed(hidden ? "Recipe hidden. Recommendations updated." : "Recipe restored.");
+  };
+  const toggleHiddenView = () => {
+    setShowHidden(v => !v);
+    setShown(35);
+    setQuery("");
+    setContinentFilter("all");
+    setLearnedOnly(false);
+  };
   const baseRecipes = useMemo(() => WOW_RECIPES
-    .filter(r => r.profession === selected && (showGray || recipeStatus(r, skill) !== "gray"))
+    .filter(r => r.profession === selected && !isHidden(r.id) && (showGray || recipeStatus(r, skill) !== "gray"))
     .sort((a, b) => compareRank(
       ranking(a, skill, isLearned(a.id), goal, region === "kalimdor", faction),
       ranking(b, skill, isLearned(b.id), goal, region === "kalimdor", faction),
     )), [selected, skill, goal, region, showGray, faction, prog.checks]);
-  const recipes = useMemo(() => baseRecipes
-    .filter(r => !learnedOnly || isLearned(r.id))
+  const recipes = useMemo(() => (showHidden
+    ? WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id))
+    : baseRecipes)
+    .filter(r => showHidden || !learnedOnly || isLearned(r.id))
     .filter(r => !query.trim() || (r.name + " " + r.category + " " + r.reagents.map(m => m.name).join(" ") + " " +
       r.sourceLocations.map(loc => loc.zone + " " + loc.npc).join(" ")).toLowerCase().includes(query.trim().toLowerCase()))
-    .filter(r => continentFilter === "all" || r.sourceLocations.some(loc =>
+    .filter(r => showHidden || continentFilter === "all" || r.sourceLocations.some(loc =>
       loc.continent === continentFilter && (loc.faction === faction || loc.faction === "neutral"))),
-      [baseRecipes, query, continentFilter, faction, learnedOnly, prog.checks]);
+      [baseRecipes, query, continentFilter, faction, learnedOnly, showHidden, selected, prog.checks]);
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
     || baseRecipes.find(r => recipeStatus(r, skill) === "orange");
 
@@ -161,8 +177,13 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
           Orange until {next.yellowAt - 1}: {Math.max(0, next.yellowAt - skill)} guaranteed skill-ups remaining.
           {" "}{isLearned(next.id) ? "You marked this pattern learned." : "You have not marked this pattern learned yet: acquire it before crafting."}
         </p>
-        <button className="gm-pill" type="button" disabled={!isLearned(next.id) || recipeStatus(next, skill) !== "orange"}
-          onClick={() => confirmCraft(next)}>I crafted it and gained +1 skill</button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 9 }}>
+          <button className="gm-pill" type="button" disabled={!isLearned(next.id) || recipeStatus(next, skill) !== "orange"}
+            onClick={() => confirmCraft(next)}>I crafted it and gained +1 skill</button>
+          <button className="gm-pill" type="button"
+            aria-label={"Hide " + next.name + " from future recommendations"}
+            onClick={() => setHidden(next.id, true)}>Hide this recipe</button>
+        </div>
         {confirmed && <p role="status" className="gm-note" style={small}>{confirmed}</p>}
       </div>}
       {!next && <div className="gm-card" style={panel}>
@@ -171,27 +192,46 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       </div>}
 
       <div className="gm-card" style={panel}>
-        <h3 style={{ margin: "0 0 9px" }}>Recipe finder</h3>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <h3 style={{ margin: 0 }}>{showHidden ? "Hidden recipes" : "Recipe finder"}</h3>
+          <button className="gm-pill" type="button" aria-pressed={showHidden}
+            onClick={toggleHiddenView}>
+            {showHidden ? "Back to recipes" : "Hidden recipes (" + hiddenCount + ")"}
+          </button>
+        </div>
+        <p className="gm-note" style={small}>
+          {showHidden
+            ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
+            : "Not interested in a pattern? Hide it without marking it learned. You can restore it from Hidden recipes."}
+        </p>
+        {!showHidden && <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <input type="checkbox" checked={learnedOnly} onChange={e => setLearnedOnly(e.target.checked)}/> Learned recipes only
           </label>
           <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <input type="checkbox" checked={showGray} onChange={e => setShowGray(e.target.checked)}/> Include gray recipes
           </label>
-        </div>
+        </div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "12px 0" }}>
           <input type="search" aria-label="Search recipes, reagents or vendor zones" placeholder="Search recipes, materials or vendor…" value={query}
             onChange={e => { setQuery(e.target.value); setShown(35); }} style={{ ...input, flex: 1, minWidth: 170 }}/>
-          <select aria-label="Continent source filter" style={input} value={continentFilter}
+          {!showHidden && <select aria-label="Continent source filter" style={input} value={continentFilter}
             onChange={e => { setContinentFilter(e.target.value); setShown(35); }}>
             <option value="all">All recipes / both continents</option>
             <option value="eastern-kingdoms">Known Eastern Kingdoms sources</option>
             <option value="kalimdor">Known Kalimdor sources</option>
-          </select>
+          </select>}
         </div>
-        <p className="gm-note" style={small}>{recipes.length} of {WOW_RECIPES.filter(r => r.profession === selected).length} client-snapshot recipes match. A continent filter shows recipes with a recorded usable vendor location; unknown locations are excluded by that filter, not from the database.</p>
-        {recipes.length === 0 && <p className="gm-note">No results with these filters. Clear “Learned recipes only” or include gray recipes.</p>}
+        <p className="gm-note" style={small}>
+          {showHidden
+            ? recipes.length + " hidden " + selected + " recipes match."
+            : recipes.length + " available in search · " + hiddenCount + " hidden · " +
+              WOW_RECIPES.filter(r => r.profession === selected).length +
+              " total catalog entries. Continent filtering only includes recorded usable vendor sources."}
+        </p>
+        {recipes.length === 0 && <p className="gm-note">
+          {showHidden ? "No hidden recipes found for this profession or search." : "No matching recipes. Try clearing your search, filters, or including gray recipes."}
+        </p>
         {recipes.slice(0, shown).map(r => {
           const state = recipeStatus(r, skill);
           const learned = isLearned(r.id);
@@ -201,10 +241,17 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                 <b>{r.name}</b>
                 <div style={small}>{statusLabels[state]} · {r.learnAt === null ? "Trainer unlock skill not verified" : "Learn at " + r.learnAt} · Yellow at {r.yellowAt} · Gray at {r.grayAt}</div>
               </div>
-              <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <input type="checkbox" checked={learned} onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
-                Pattern learned
-              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <input type="checkbox" checked={learned} onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
+                  Learned
+                </label>
+                <button type="button" className="gm-pill"
+                  aria-label={(showHidden ? "Restore " : "Hide ") + r.name}
+                  onClick={() => setHidden(r.id, !showHidden)}>
+                  {showHidden ? "Restore" : "Hide"}
+                </button>
+              </div>
             </div>
             <div style={{ ...small, marginTop: 7 }}>
               <b>Per craft:</b> {r.reagents.map(m => String(m.quantity) + "× " + m.name).join(" · ")}
@@ -236,7 +283,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         {copied && <p role="status" className="gm-note" style={small}>{copied}</p>}
         <p className="gm-note" style={{ ...small, marginTop: 15 }}>
           {WOW_RECIPE_CATALOG.build} game-client snapshot · {WOW_RECIPES.length} recipes across Leatherworking, Cooking and First Aid.
-          Not every recipe is obtainable; many live vendor/drop locations remain unconfirmed.
+          Hidden entries stay saved but excluded from normal recommendations. Not every recipe is obtainable; many vendor/drop locations remain unconfirmed.
           <a href={WOW_RECIPE_CATALOG.sourceUrl} target="_blank" rel="noopener noreferrer"> Source data ↗</a>
         </p>
       </div>
