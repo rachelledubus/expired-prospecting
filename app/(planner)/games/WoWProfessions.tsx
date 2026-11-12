@@ -15,10 +15,6 @@ type Props = {
 };
 
 const panel: React.CSSProperties = { padding: 16, marginTop: 12 };
-const input: React.CSSProperties = {
-  padding: "9px 11px", borderRadius: 9, border: "1px solid var(--border,#ddd)",
-  background: "var(--panel,#fff)", color: "var(--text,#222)", maxWidth: "100%", font: "inherit",
-};
 const small: React.CSSProperties = { fontSize: 13, opacity: 0.85, lineHeight: 1.5 };
 const statusLabels = {
   locked: "Not yet learnable",
