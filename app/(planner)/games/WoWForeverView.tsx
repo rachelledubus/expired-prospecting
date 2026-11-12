@@ -204,7 +204,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p>For dungeon runs, use the Hunter gear priorities below rather than picking solely by level.</p>
         <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
       </SmallInfo>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} prog={prog} setCheck={setCheck} mode="summary"/>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} mode="summary"/>
       <SmallInfo title="Simple fight routine">
         <ol style={{paddingLeft:20,margin:"6px 0"}}>
           <li>Choose one target. Mark it for a longer fight.</li>
@@ -237,7 +237,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <SmallInfo title="Suggested zone route · choose by your actual level">
         These are flexible areas, not a strict quest-by-quest rail. Choose a nearby zone with quests around your level; if your Paladin partner is there, play together. Dungeon level bands are approximate and may be adjusted in patches.
       </SmallInfo>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} prog={prog} setCheck={setCheck}/>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck}/>
       {ZONE_ROUTES.map(z=><div key={z.min} className="gm-card" style={{...card,border:z===zoneAtLevel?"2px solid var(--accent,#659e8b)":undefined}}>
         <div className="gm-panel-label">Levels {z.min}–{z.max}{z===zoneAtLevel?" · YOUR CURRENT BRACKET":""}</div>
         <h3 style={{margin:"7px 0"}}>{faction==="horde"?"Horde":"Alliance"} questing route</h3>
@@ -359,7 +359,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
 
     {view==="gear" && <>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} prog={prog} setCheck={setCheck}/>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck}/>
       <SmallInfo title="Simple leveling gear priorities">
         <ol style={{paddingLeft:20,margin:0}}>
           <li><b>Ranged weapon damage:</b> Check upgrades often; a better bow/gun/crossbow greatly affects Auto Shot.</li>
