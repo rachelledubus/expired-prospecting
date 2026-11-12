@@ -38,13 +38,14 @@ export const WOW_HUNTER_DUNGEONS: HunterDungeon[] = [
   ]},
   {id:"hall-thanes",name:"Hall of Thanes",min:13,max:18,region:"Ironforge",sourceUrl:wiki,loot:[],travelNote:"Deep within Alliance-controlled Ironforge: risky access for Horde.",sourceNote:"Hunter-specific upgrade value has not been established from currently available data."},
   {id:"wailing",name:"Wailing Caverns",min:17,max:24,region:"The Barrens",sourceUrl:classGuide,loot:[
-    {id:"glowing-lizardscale-cloak",name:"Glowing Lizardscale Cloak",slot:"back",requiredLevel:17,priority:4,from:"Dungeon drop (check boss)",kind:"boss",note:"Hunter leveling-gear pick; confirm the boss in Forever."},
-    {id:"gloves-fang",name:"Gloves of the Fang",slot:"hands",requiredLevel:17,priority:4,from:"Dungeon drop (check boss)",kind:"boss",note:"Hunter leveling-gear pick; confirm the boss in Forever."},
-    {id:"serpents-shoulders",name:"Serpent's Shoulders",slot:"shoulders",requiredLevel:17,priority:3,from:"Dungeon drop (check boss)",kind:"boss"},
+    {id:"glowing-lizardscale-cloak",name:"Glowing Lizardscale Cloak",slot:"back",requiredLevel:18,priority:4,from:"Skum",kind:"boss",note:"Hunter leveling-gear pick; verify drops after patches."},
+    {id:"gloves-fang",name:"Gloves of the Fang",slot:"hands",requiredLevel:14,priority:4,from:"Dungeon trash",kind:"trash",note:"Hunter leveling-gear pick; verify drops after patches."},
+    {id:"serpents-shoulders",name:"Serpent's Shoulders",slot:"shoulders",requiredLevel:18,priority:3,from:"Lady Anacondra",kind:"boss"},
+    {id:"venomstrike",name:"Venomstrike",slot:"ranged",requiredLevel:19,priority:8,from:"Lord Serpentis",kind:"boss"},
   ]},
   {id:"deadmines",name:"The Deadmines",min:17,max:26,region:"Westfall",sourceUrl:classGuide,travelNote:"Alliance-zone travel through Westfall can be inconvenient or dangerous as Horde.",loot:[
     {id:"blackened-defias-belt",name:"Blackened Defias Belt",slot:"waist",requiredLevel:17,priority:4,from:"Dungeon drop (check boss)",kind:"boss"},
-    {id:"cruel-barb",name:"Cruel Barb",slot:"melee",requiredLevel:17,priority:2,from:"Dungeon drop (check boss)",kind:"boss"},
+    {id:"cruel-barb",name:"Cruel Barb",slot:"melee",requiredLevel:19,priority:2,from:"Edwin VanCleef",kind:"boss"},
   ]},
   {id:"ruins-lordaeron",name:"Ruins of Lordaeron",min:15,max:20,region:"Tirisfal Glades",sourceUrl:wiki,loot:[],sourceNote:"Loot coverage is incomplete; not ranked as a strong Hunter gear farm."},
   {id:"shadowfang",name:"Shadowfang Keep",min:22,max:30,region:"Silverpine Forest",sourceUrl:wiki,loot:[
@@ -62,7 +63,7 @@ export const WOW_HUNTER_DUNGEONS: HunterDungeon[] = [
   ],sourceNote:"Partial Hunter loot coverage only."},
   {id:"gnomeregan",name:"Gnomeregan",min:29,max:38,region:"Dun Morogh",sourceUrl:gearGuide,loot:[
     {id:"glass-shooter",name:"Glass Shooter",slot:"ranged",requiredLevel:30,priority:8,from:"Dark Iron Ambassador",kind:"boss",note:"Forever stats verified separately from boss location; confirm current boss drop."},
-    {id:"petrolspill-leggings",name:"Petrolspill Leggings",slot:"legs",requiredLevel:29,priority:4,from:"Dungeon loot (confirm boss)",kind:"boss",note:"Hunter-leveling gear pick; boss source not independently confirmed."},
+    {id:"petrolspill-leggings",name:"Petrolspill Leggings",slot:"legs",requiredLevel:25,priority:4,from:"Gnomeregan trash (very rare)",kind:"trash",note:"Forever stats verified; very rare world/dungeon drop, so do not assume a specific boss drops it."},
   ],travelNote:"The dungeon entrance is in Alliance territory; choose a safe route as Horde."},
   {id:"sm-graveyard",name:"Scarlet Monastery: Graveyard",min:30,max:38,region:"Tirisfal Glades",sourceUrl:wiki,loot:[
     {id:"ebon-vise",name:"Ebon Vise",slot:"hands",requiredLevel:30,priority:4,from:"Fallen Champion (rare)",kind:"boss"},
@@ -87,7 +88,7 @@ export const WOW_HUNTER_DUNGEONS: HunterDungeon[] = [
     {id:"mograine-might",name:"Mograine's Might",slot:"melee",requiredLevel:39,priority:2,from:"Scarlet Commander Mograine",kind:"boss"},
   ]},
   {id:"razorfen-downs",name:"Razorfen Downs",min:37,max:46,region:"Southern Barrens",sourceUrl:classGuide,loot:[
-    {id:"quillward-harness",name:"Quillward Harness",slot:"chest",requiredLevel:37,priority:5,from:"Dungeon source not confirmed",kind:"boss",note:"Hunter gearing pick; verify acquisition in Forever."},
+    {id:"quillward-harness",name:"Quillward Harness",slot:"chest",requiredLevel:34,priority:5,from:"Razorfen Downs trash",kind:"trash",note:"Classic-baseline trash-drop source; verify Forever loot before farming."},
     {id:"fleshhide-shoulders",name:"Fleshhide Shoulders",slot:"shoulders",requiredLevel:37,priority:3,from:"Glutton",kind:"boss"},
   ]},
   {id:"kroldok",name:"Krol'dok Stronghold",min:40,max:45,region:"Riverglades",sourceUrl:wiki,loot:[],sourceNote:"New Forever dungeon. Hunter-specific drops are not yet verified."},
