@@ -2,7 +2,7 @@ import { getStardewQuestSubtasks } from "./stardew-quest-subtasks";
 import { TERRARIA_GAME, type TerrariaGame } from "./terraria-spirit-data";
 import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
 import { WOW_GAME, type WowGame } from "./wow-forever-data";
-import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, professionField } from "./wow-forever-professions";
+import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, recipeHiddenKey, professionField } from "./wow-forever-professions";
 import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey, dreamlightCharacterVisibilityKey } from "./dreamlight-character-quests";
 
 // Game progression checklists for the /games planner page.
@@ -435,7 +435,10 @@ export function knownCheckKeys(game: Game): Set<string> {
     for (const stage of game.stages) {
       for (const step of stage.steps) keys.add(questKey(game.id, "wow-" + stage.id, step.id));
     }
-    for (const recipe of WOW_RECIPES) keys.add(recipeLearnedKey(game.id, recipe.id));
+    for (const recipe of WOW_RECIPES) {
+      keys.add(recipeLearnedKey(game.id, recipe.id));
+      keys.add(recipeHiddenKey(game.id, recipe.id));
+    }
     return keys;
   }
   if (isDreamlightGame(game)) {
