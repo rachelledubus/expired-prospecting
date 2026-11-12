@@ -73,3 +73,20 @@ Additive Professions tab inside existing Games → WoW Forever guide. Real-estat
 7. The Hidden recipes view shows hidden entries even if gray; Restore brings an entry back.
 8. Desktop remains responsive and does not get forced into the small-screen arrangement.
 9. Existing saved checkbox keys and backend validation are unchanged by this styling-only work.
+
+## Faction-specific vendor correction
+- Vendor lists default to the current character's saved faction plus neutral NPCs. Horde characters never receive copyable TomTom directions for Alliance-only vendors; the reverse holds for Alliance characters.
+- Opposing-faction vendors remain optional **reference-only** information in a collapsed section, clearly marked not purchasable and without copyable waypoints.
+- If the only documented vendor records are for the opposite faction, the recipe card says so instead of presenting the location as an accessible source.
+- Unlearned recipes with only opposing-faction vendor records are excluded from the Next Craft recommendation. Learned recipes remain eligible because the player already knows how to craft them.
+- Recipes with no verified faction-specific vendor source remain searchable and are explicitly labeled as unverified; they are not falsely declared impossible to obtain.
+- A potentially tradeable recipe may be found on the Auction House, but this is never presented as guaranteed stock.
+
+### Faction regression checks
+1. Set Skyborne faction to Horde. Search the Green Leather Armor recipe (Hillsbrad): show George Candarte (Horde), not Wenna Silkbeard (Alliance) as a main route.
+2. Search Raptor Hide Harness as Horde: Tunkk (Hammerfall/Horde) offers a vendor reference and copyable waypoint.
+3. Search Raptor Hide Belt as Horde: Alliance vendor Androd Fadran is reference-only; no copyable waypoint and no recommendation to travel to Refuge Pointe.
+4. Switch to Alliance and confirm faction-specific vendor display reverses.
+5. With no saved vendor metadata, display an unverified-source message rather than a fabricated NPC or a claim of impossible acquisition.
+6. Learned pattern remains craft-recommendable even if its only documented vendor is the opposing faction.
+7. Existing hidden/learned flags, continent filters, and saved character settings remain unchanged.
