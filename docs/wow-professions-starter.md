@@ -52,3 +52,24 @@ Additive Professions tab inside existing Games → WoW Forever guide. Real-estat
 - Build-diffed recipe catalog refreshes that preserve saved learned patterns.
 - More confirmed vendor coordinates and reputation/stock/price metadata.
 - User-entered Auctionator pricing, materials inventory, and cost-per-skill-point planning.
+
+## Mobile layout refresh (November 11–12, 2026)
+- On phone widths, the ten Hunter guide tabs use a single swipeable horizontal row; Professions is placed immediately after Play Next, with a visual swipe hint.
+- Hunter character settings are collapsible; character level remains directly editable in the compact header.
+- Profession skill inputs form a two-column grid with large 44px+ controls.
+- Optional profession preferences and gold are under an expandable panel, reducing the scrolling needed to see recommendations.
+- Search and continent filters stack at narrow widths, with 16px input text to avoid iOS Safari's automatic field zoom.
+- Recipe list shows 12 compact entries per page rather than 35 expanded rows; each recipe keeps Learned and Hide/Restore controls accessible, and details expand only when requested.
+- Recipe and location content wraps within the available viewport; vendor TomTom buttons are 44px+ touch targets.
+- A media-specific CSS addition is scoped under WoW classes so Stardew, DDV, Terraria, and real-estate pages are not restyled.
+
+### Acceptance checks
+1. At 320, 375, and 430px viewport widths, all controls remain inside the horizontal viewport (no full-page sideways scrolling).
+2. The WoW tab row scrolls horizontally and the Professions tab is visible near the front.
+3. Changing character level, all four profession skills, goal, location preference, learned and hidden checkboxes still persists.
+4. Recipe search and continent selector are both easy to tap and do not make iPhone Safari zoom in.
+5. Recipe details open and close, and only expanded recipes show materials/vendor paragraphs.
+6. Known vendor rows wrap without clipping; Copy TomTom works.
+7. The Hidden recipes view shows hidden entries even if gray; Restore brings an entry back.
+8. Desktop remains responsive and does not get forced into the small-screen arrangement.
+9. Existing saved checkbox keys and backend validation are unchanged by this styling-only work.
