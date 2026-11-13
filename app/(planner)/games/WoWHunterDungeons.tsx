@@ -3,7 +3,8 @@
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { dungeonProfessionDrops } from "@/lib/wow-forever-dungeon-professions";
-import { recipeLearnedKey, recipeHiddenKey } from "@/lib/wow-forever-professions";
+import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, recipeHiddenKey, recipeStatus, professionField } from "@/lib/wow-forever-professions";
+import { WOW_FARMS, grayMobThreshold, wowExtraField, wowMaterialKey } from "@/lib/wow-portal-extras";
 import WoWDungeonProfessionDrops from "./WoWDungeonProfessionDrops";
 import { WOW_DUNGEON_ENTRANCES } from "@/lib/wow-portal-extras";
 import {
@@ -50,10 +51,10 @@ function TargetRow({
 }
 
 function DungeonCard({
-  result,gameId,level,faction,prog,setCheck,setField,featured=false,
+  result,gameId,level,faction,prog,setCheck,setField,featured=false,focusLabel,
 }: {
   result: HunterDungeonAssessment;gameId:string;level:number;faction:"horde"|"alliance";
-  prog:GameProgress;setCheck:Props["setCheck"];setField:Props["setField"];featured?:boolean;
+  prog:GameProgress;setCheck:Props["setCheck"];setField:Props["setField"];featured?:boolean;focusLabel?:string;
 }) {
   const d=result.dungeon;
   const entrance=WOW_DUNGEON_ENTRANCES[d.id];
@@ -81,7 +82,8 @@ function DungeonCard({
           </span>}
         </div>
         <span className="gm-wow-dungeon-priority">
-          {result.band==="soon" ? "Soon" :
+          {focusLabel ? focusLabel :
+            result.band==="soon" ? "Soon" :
             result.band==="past" ? "Older" :
             result.gearTargets.length ? "Hunter gear" :
             remaining.length===0 && loot.length ? "Gear covered" :
@@ -134,6 +136,63 @@ function DungeonCard({
 
 export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,setField,mode="full"}:Props) {
   const ranked=rankHunterDungeons(level,(dId,itemId)=>!!prog.checks[dungeonLootOwnedKey(gameId,dId,itemId)],faction);
+  const goalValue=prog.fields[wowExtraField(gameId,"dungeon-goal")]??"gear";
+  const dungeonGoal=goalValue==="professions"||goalValue==="no-xp"||goalValue==="gold" ? goalValue : "gear";
+  const grayCutoff=grayMobThreshold(level);
+  const activeMaterial=prog.fields[wowExtraField(gameId,"session-material")]??"Moss Agate";
+  const skillFor=(profession:string)=>{
+    const value=prog.fields[professionField(gameId,"skill-"+profession)];
+    return value===undefined ? WOW_PROFESSIONS.find(p=>p.id===profession)?.initial??0 : Math.max(0,Number(value)||0);
+  };
+  const activeMaterials=new Set(WOW_RECIPES.filter(r=>
+    prog.checks[recipeLearnedKey(gameId,r.id)] &&
+    !prog.checks[recipeHiddenKey(gameId,r.id)] &&
+    r.learnAt!==null && recipeStatus(r,skillFor(r.profession))==="orange"
+  ).flatMap(r=>r.reagents.map(m=>m.name.toLowerCase())));
+  const knownFarmByDungeon:Record<string,string>={ragefire:"rfc",wailing:"wc",deadmines:"deadmines",shadowfang:"sfk",blackfathom:"bfd"};
+  const scoredDungeons=WOW_HUNTER_DUNGEONS.map(d=>{
+    const eligible=d.loot.filter(t=>!t.faction||t.faction===faction);
+    const gearTargets=eligible.filter(t=>t.requiredLevel<=level&&!prog.checks[dungeonLootOwnedKey(gameId,d.id,t.id)]);
+    const upcomingTargets=eligible.filter(t=>t.requiredLevel>level&&t.requiredLevel<=level+4&&!prog.checks[dungeonLootOwnedKey(gameId,d.id,t.id)]);
+    const drops=dungeonProfessionDrops(d.id).filter(item=>!item.recipe||(
+      !prog.checks[recipeLearnedKey(gameId,item.recipe.id)]&&!prog.checks[recipeHiddenKey(gameId,item.recipe.id)]
+    ));
+    const patterns=drops.filter(item=>item.kind==="pattern" && item.recipe &&
+      item.recipe.learnAt!==null && item.recipe.learnAt<=skillFor(item.recipe.profession)+20);
+    const materials=drops.filter(item=>item.kind==="material");
+    const neededMaterials=materials.filter(item=>item.itemName.toLowerCase()===activeMaterial.toLowerCase()||
+      activeMaterials.has(item.itemName.toLowerCase()));
+    const band=level<d.min?"soon" as const:level>d.max?"past" as const:"current" as const;
+    const possibleFarm=WOW_FARMS.find(f=>f.id===knownFarmByDungeon[d.id]);
+    const grayRangeKnown=!!possibleFarm&&possibleFarm.maxMob<=grayCutoff;
+    const onLevel=level>=d.min&&level<=d.max+2;
+    const travelPenalty=(faction==="horde" && /Alliance|Ironforge|Westfall|Dun Morogh/i.test(d.travelNote||""))?8:0;
+    const professionScore=patterns.length*5+neededMaterials.length*7+materials.length+
+      (onLevel?7:level<d.min?-40-(d.min-level):0)-travelPenalty;
+    const farmGold=possibleFarm ? (()=>{
+      const v=Number(prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-gold")]);
+      const m=Number(prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-minutes")]);
+      const valid=prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-gold")]!==undefined &&
+        prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-minutes")]!==undefined;
+      return valid&&m>0?60*v/m:0;
+    })():0;
+    const goldScore=(grayRangeKnown?30:-40)+(possibleFarm?.requiresSkinning?8:0)+
+      Math.min(35,Math.max(0,farmGold))+materials.length-travelPenalty;
+    const xpScore=grayRangeKnown?100-(possibleFarm!.maxMob)+materials.length-travelPenalty : -100;
+    const score=dungeonGoal==="professions"?professionScore:dungeonGoal==="gold"?goldScore:xpScore;
+    const assessment:HunterDungeonAssessment={
+      dungeon:d,score,gearTargets,upcomingTargets,
+      acquiredCount:eligible.length-gearTargets.length-upcomingTargets.length,
+      band
+    };
+    return {assessment,patterns:patterns.length,materials:materials.length,needed:neededMaterials.length,grayRangeKnown,hasFarm:!!possibleFarm};
+  });
+  const preferred=scoredDungeons.filter(x=>
+    dungeonGoal==="professions"?x.patterns+x.materials>0:
+      x.hasFarm
+  ).sort((a,b)=>b.assessment.score-a.assessment.score||a.assessment.dungeon.min-b.assessment.dungeon.min);
+  const rankedPreferred=dungeonGoal==="no-xp"?preferred.filter(x=>x.grayRangeKnown):preferred;
+
   const current=ranked.filter(x=>x.band==="current");
   const currentWithTargets=current.filter(x=>x.gearTargets.length>0);
   const soon=ranked.filter(x=>x.band==="soon");
@@ -154,13 +213,42 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,se
   return <section className="gm-card gm-wow-dungeon-planner" aria-label="Hunter-gear dungeon recommendations">
     <div className="gm-panel-label">Dungeon priorities · Hunter gear + profession drops</div>
     <h3 style={{margin:"6px 0"}}>Where to run for gear and profession items at level {level}</h3>
+    <label className="gm-wow-dungeon-goal">Prioritize dungeons for
+      <select value={dungeonGoal} onChange={e=>setField(wowExtraField(gameId,"dungeon-goal"),e.target.value)}>
+        <option value="gear">Hunter equipment upgrades</option>
+        <option value="professions">Leatherworking / Cooking / First Aid</option>
+        <option value="gold">Gold and skinning</option>
+        <option value="no-xp">Strict gray-mob candidates (verify in game)</option>
+      </select>
+    </label>
     <p className="gm-note">
-      Prioritized by your level and <b>Hunter gear you still want</b>. Ranged weapons matter most,
-      followed by Agility/Attack Power gear. Dungeon cards also list profession materials, patterns,
+      {dungeonGoal==="gear"?"Prioritized by your level and Hunter gear you still want. Ranged weapons matter most, followed by useful stats.":
+        dungeonGoal==="professions"?"Prioritized by unlearned reported patterns near your profession skill and materials used by known orange recipes. Includes older instances.":
+        dungeonGoal==="gold"?"Prioritized by recorded gold/hour when available, known loot types and the mob-level reference. Check vendors and your actual gold per run.":
+        "Only curated dungeon farms whose approximate highest mob level is within your estimated gray threshold appear. Individual creatures and quest XP still require manual checking."}
+      {" "}Dungeon cards list possible gear, profession materials, patterns,
       reported bosses and current inventory. Older profession farms remain available below.
       These are possible upgrades; the site cannot read your equipped items.
     </p>
-    {current.length===0 && <p className="gm-note">No dungeons in your current level band. Quest and level up, then check the recommendations again.</p>}
+    {dungeonGoal!=="gear"&&<div className="gm-wow-dungeon-focus">
+      <p className="gm-wow-dungeon-caption">
+        {dungeonGoal==="no-xp"?"Gray estimate: level "+grayCutoff+" and below. This is NOT a guarantee of zero XP in Forever.":
+          dungeonGoal==="professions"?"Current material focus: "+activeMaterial+". Sources are reported or Classic-derived; drops are never guaranteed.":
+          "Gold/hour uses only farming sessions you've entered. Missing sessions have no measured profitability."}
+      </p>
+      {rankedPreferred.length===0?<p className="gm-note">No documented dungeon meets these criteria. Try another dungeon goal or inspect gray mobs directly.</p>:
+        <div className="gm-wow-dungeon-list">{rankedPreferred.slice(0,6).map((x,i)=>
+          <DungeonCard key={x.assessment.dungeon.id} result={x.assessment} gameId={gameId} level={level}
+            faction={faction} prog={prog} setCheck={setCheck} setField={setField} featured={i===0}
+            focusLabel={dungeonGoal==="professions"?"Profession loot":dungeonGoal==="no-xp"?"XP check":"Gold farm"}/>)}</div>}
+      {rankedPreferred.length>6&&<details className="gm-wow-dungeon-more"><summary>More matching dungeons ({rankedPreferred.length-6})</summary>
+        <div className="gm-wow-dungeon-list">{rankedPreferred.slice(6).map(x=>
+          <DungeonCard key={x.assessment.dungeon.id} result={x.assessment} gameId={gameId} level={level}
+            faction={faction} prog={prog} setCheck={setCheck} setField={setField}
+            focusLabel="Additional option"/>)}</div>
+      </details>}
+    </div>}
+    {dungeonGoal==="gear"&&<>{current.length===0 && <p className="gm-note">No dungeons in your current level band. Quest and level up, then check the recommendations again.</p>}
     {current.length>0 && currentWithTargets.length===0 && <p className="gm-note">
       No remaining documented Hunter gear targets in your current dungeon band.
       Dungeons listed below may still offer profession materials, patterns, quests, XP and unverified drops.
@@ -193,6 +281,7 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,se
         <summary>Recently outleveled — gear or profession drops ({recent.length})</summary>
         <div className="gm-wow-dungeon-list">{recent.map(r=><DungeonCard key={r.dungeon.id} result={r} gameId={gameId} level={level} faction={faction} prog={prog} setCheck={setCheck} setField={setField}/>)}</div>
       </details>}
+    </>}
     </>}
     <p className="gm-wow-dungeon-footnote">
       Dungeon ranges are approximate; named loot and boss sources may change with Forever patches.
