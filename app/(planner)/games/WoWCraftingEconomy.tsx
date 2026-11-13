@@ -3,12 +3,12 @@ import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_RECIPES, recipeLearnedKey, type WowProfessionId, type WowRecipe } from "@/lib/wow-forever-professions";
 import { wowExtraField, wowMaterialKey } from "@/lib/wow-portal-extras";
-type Props={gameId:string;profession:WowProfessionId;prog:GameProgress;setField:(key:string,value:string)=>void};
+type Props={gameId:string;profession:WowProfessionId;prog:GameProgress;setField:(key:string,value:string)=>void;onFindMaterial?:(name:string)=>void};
 const inp:React.CSSProperties={width:"100%",minWidth:0,padding:"8px 10px",borderRadius:8,border:"1px solid var(--border,#ccc)",background:"var(--panel,#fff)",color:"var(--text,#222)",font:"inherit"};
 const small:React.CSSProperties={fontSize:13,opacity:.86,lineHeight:1.5};
 const toNum=(v:string)=>{const n=Number(v);return Number.isFinite(n)&&n>=0?n:0;};
 const g=(n:number)=>n.toFixed(2)+"g";
-export default function WoWCraftingEconomy({gameId,profession,prog,setField}:Props){
+export default function WoWCraftingEconomy({gameId,profession,prog,setField,onFindMaterial}:Props){
  const [selected,setSelected]=useState("");
  const [batch,setBatch]=useState("1");
  const [fee,setFee]=useState("5");
@@ -60,6 +60,8 @@ export default function WoWCraftingEconomy({gameId,profession,prog,setField}:Pro
        const needed=m.quantity*count;const missing=owned===""?null:Math.max(0,needed-toNum(owned));
        return <div key={m.name} style={{border:"1px solid var(--border,#ddd)",padding:10,borderRadius:9}}>
         <p style={{...small,margin:"0 0 7px"}}><b>{m.name}</b> · Need {needed} {missing===null?"· Stock not entered":"· Buy "+missing}</p>
+        {onFindMaterial&&<button type="button" className="gm-pill" onClick={()=>onFindMaterial(m.name)}
+          style={{margin:"0 0 9px"}}>Where to farm {m.name}</button>}
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:9}}>
          <label style={small}>Price per unit (g)
           <input style={inp} type="number" min={0} step=".01" value={read("price-"+id)} onChange={e=>save("price-"+id,e.target.value)}/>
