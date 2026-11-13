@@ -15,6 +15,7 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
   initialQuery?: string;
+  onFindMaterial?: (name: string) => void;
 };
 
 const panel: React.CSSProperties = { padding: 16, marginTop: 12 };
@@ -107,7 +108,7 @@ const clampSkill = (text: string) => {
   return String(Math.max(0, Math.min(300, Number.isFinite(n) ? Math.floor(n) : 0)));
 };
 
-export default function WoWProfessions({ gameId, prog, setCheck, setField, initialQuery = "" }: Props) {
+export default function WoWProfessions({ gameId, prog, setCheck, setField, initialQuery = "", onFindMaterial }: Props) {
   const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
   const [showGray, setShowGray] = useState(Boolean(initialQuery));
   const [showHidden, setShowHidden] = useState(false);
@@ -251,6 +252,12 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
                 <summary>Materials, sources &amp; skill details</summary>
                 <div className="gm-wow-recipe-detail-body">
                   <p><b>For one craft:</b> {r.reagents.map(m => m.quantity + "× " + m.name).join(" · ")}</p>
+                  {onFindMaterial && <div style={{display:"flex",gap:7,flexWrap:"wrap",margin:"8px 0"}}>
+                    {r.reagents.map(m=><button key={m.name} type="button" className="gm-pill"
+                      onClick={()=>onFindMaterial(m.name)}>
+                      Farm {m.name}
+                    </button>)}
+                  </div>}
                   <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
                    <p className="gm-note" style={small}><b>Source details:</b> {r.source}</p>
                   {usableVendorLocations(r, faction).length > 0 ? <div className="gm-wow-locations">
@@ -423,7 +430,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
         <label className="gm-wow-learned"><input type="checkbox" checked={isLearned(nextToLearn.id)}
           onChange={e=>setCheck(recipeLearnedKey(gameId,nextToLearn.id),e.target.checked)}/> Learned this recipe</label>
       </div>}
-      <WoWCraftingEconomy gameId={gameId} profession={selected} prog={prog} setField={setField}/>
+      <WoWCraftingEconomy gameId={gameId} profession={selected} prog={prog} setField={setField} onFindMaterial={onFindMaterial}/>
       <div className="gm-card gm-wow-finder-card" style={panel}>
         <div className="gm-wow-finder-head">
           <h3 style={{ margin: 0 }}>{showHidden ? "Hidden recipes" : "Recipe finder"}</h3>
