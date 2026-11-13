@@ -781,3 +781,38 @@
 @media (max-width: 520px) {
   .tp.gm .gm-wow-guide a.gm-wowhead-search { width: 100%; }
 }
+
+/* In-game WoW session card: one objective, fast waypoint copying, mobile first. */
+.tp.gm .gm-wow-session { margin-top: 12px; padding: 16px; min-width: 0; }
+.tp.gm .gm-wow-session h3 { color: var(--navy); font: 700 19px/1.35 "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-session h4 { color: var(--navy); font: 700 15px/1.4 "DM Sans",system-ui,sans-serif; margin: 0 0 7px; }
+.tp.gm .gm-wow-session p { overflow-wrap: anywhere; }
+.tp.gm .gm-wow-session-stats { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.tp.gm .gm-wow-session-stats>span { font: 600 12px "DM Sans",system-ui,sans-serif; background:var(--sand); border:1px solid var(--line); border-radius:99px; padding:6px 10px; }
+.tp.gm .gm-wow-session-focus { margin-top:12px; border:1px solid var(--line); border-radius:12px; padding:12px; min-width:0; background:var(--sand); }
+.tp.gm .gm-wow-session-focus p { margin:5px 0 9px; line-height:1.5; }
+.tp.gm .gm-wow-session-entry { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end; }
+.tp.gm .gm-wow-session-entry label { min-width:0; font-size:13px; font-weight:600; }
+.tp.gm .gm-wow-session-entry button { min-height:44px; }
+.tp.gm .gm-wow-session-ingredients { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
+.tp.gm .gm-wow-session-ingredients button { min-height:44px; white-space:normal; text-align:left; padding:8px 12px; }
+.tp.gm .gm-wow-session-waypoint { display:flex; gap:9px; align-items:center; justify-content:space-between; flex-wrap:wrap; border:1px solid var(--line); border-radius:9px; padding:9px; margin:10px 0; background:var(--card); }
+.tp.gm .gm-wow-session-waypoint code { max-width:100%; overflow-wrap:anywhere; font-size:12px; }
+.tp.gm .gm-wow-session-actions { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin-top:9px; }
+.tp.gm .gm-wow-session-actions .gm-pill,
+.tp.gm .gm-wow-session-waypoint .gm-pill { min-height:44px; white-space:normal; }
+.tp.gm .gm-wow-dungeon-goal { display:grid; gap:7px; margin:8px 0 12px; font:600 13px "DM Sans",system-ui,sans-serif; color:var(--navy); }
+.tp.gm .gm-wow-dungeon-goal select { min-height:44px; min-width:0; width:100%; max-width:100%; background:var(--sand); border:1px solid var(--line); border-radius:9px; color:var(--navy); font:500 15px "DM Sans",system-ui,sans-serif; padding:9px 12px; }
+.tp.gm .gm-wow-dungeon-focus { min-width:0; }
+.tp.gm .gm-wow-session button:focus-visible, .tp.gm .gm-wow-session input:focus-visible,
+.tp.gm .gm-wow-dungeon-goal select:focus-visible { outline:2px solid var(--sage); outline-offset:2px; }
+@media (max-width:520px) {
+ .tp.gm .gm-wow-session { padding:12px; }
+ .tp.gm .gm-wow-session-focus { padding:10px; }
+ .tp.gm .gm-wow-session-entry { grid-template-columns:minmax(0,1fr); }
+ .tp.gm .gm-wow-session-actions { flex-direction:column; align-items:stretch; }
+ .tp.gm .gm-wow-session-actions .gm-pill,
+ .tp.gm .gm-wow-session-waypoint .gm-pill,
+ .tp.gm .gm-wow-session-entry button { width:100%; }
+ .tp.gm .gm-wow-session-waypoint { align-items:stretch; }
+}
