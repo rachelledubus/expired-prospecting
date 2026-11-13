@@ -22,6 +22,8 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
  const suggestions=useMemo(()=>ALL_RECIPE_MATERIALS.filter(name=>name.toLowerCase().includes(query.trim().toLowerCase())),[query]);
  const exact=ALL_RECIPE_MATERIALS.find(name=>name.toLowerCase()===query.trim().toLowerCase());
  const chosen=exact||(suggestions.length===1?suggestions[0]:null);
+ // External lookup is available for ANY search phrase, including unknown items.
+ const wowheadTerm=chosen??query.trim();
  const recipes=chosen?materialRecipes(chosen):[];
  const options=chosen?materialRoutes(chosen):[];
  const ordered=options.slice().sort((a,b)=>{
@@ -42,8 +44,15 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
      onChange={e=>{setQuery(e.target.value);setMessage("");}} placeholder="Moss Agate, Wool Cloth, Medium Leather…"
      aria-label="Search WoW crafting materials"/>
   </label>
+  {wowheadTerm && <div style={{margin:"10px 0 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+    <a className="gm-pill" href={externalMaterialLookup(wowheadTerm)} target="_blank" rel="noopener noreferrer"
+      aria-label={"Search Classic Wowhead for "+wowheadTerm}>
+      Search Wowhead for {wowheadTerm} ↗
+    </a>
+    <span style={small}>External Classic results; check WoW Forever differences in-game.</span>
+  </div>}
   {!chosen && <div style={{marginTop:10}}>
-   <p style={small}>{suggestions.length? suggestions.length+" matching materials (select one)":"No matching reagent in the current catalog."}</p>
+   <p style={small}>{suggestions.length? suggestions.length+" matching materials (select one)":"Not in your recipe catalog. Use Search Wowhead above to look up any item, creature, or material."}</p>
    <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
     {suggestions.slice(0,18).map(name=><button type="button" key={name} className="gm-pill" onClick={()=>setQuery(name)}>{name}</button>)}
    </div>
@@ -107,8 +116,7 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
     })}
    </div>
    <p style={{...small,marginTop:12}}>
-    <a href={externalMaterialLookup(chosen)} target="_blank" rel="noopener noreferrer">Search more {chosen} drop sources ↗</a>
-    {" · "}If a material is difficult to obtain without your professions, compare its Auction House price with the time required to farm it.
+    If a material is difficult to obtain without your professions, compare its Auction House price with the time required to farm it. For additional drop sources, use Search Wowhead above.
    </p>
   </>}
   {message&&<p role="status" style={small}>{message}</p>}
