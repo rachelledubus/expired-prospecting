@@ -8,8 +8,9 @@
 import { WOW_RECIPES, type WowRecipe } from "./wow-forever-professions";
 import { WOW_DUNGEON_PROFESSION_DROPS } from "./wow-forever-dungeon-professions";
 import { WOW_HUNTER_DUNGEONS } from "./wow-forever-dungeon-gear";
+import { WOWHEAD_FOREVER_HORDE_VENDOR_ITEMS, wowheadForeverItemUrl } from "./wowhead-forever-items";
 
-export type MaterialMethod = "mob" | "dungeon" | "skinning" | "mining" | "herbalism" | "vendor";
+export type MaterialMethod = "mob" | "dungeon" | "skinning" | "mining" | "herbalism" | "vendor" | "crafting";
 export type MaterialRoute = {
   id:string;
   item:string;
@@ -22,10 +23,10 @@ export type MaterialRoute = {
   maxMob?:number;
   requiredSkill?:number;
   sourceUrl:string;
-  evidence:"classic-reference"|"forever-reported";
+  evidence:"classic-reference"|"forever-reported"|"wowhead-item-page"|"client-recipe";
 };
-const sourceMoss = "https://forever-codex.com/items/?id=1206";
-const sourceMossMobs = "https://metabot.gg/en/wow-forever/items/moss-agate";
+const sourceMoss = "https://www.wowhead.com/forever/item=1206/moss-agate";
+const sourceMossMobs = "https://www.wowhead.com/forever/item=1206/moss-agate";
 const sourceMining = "https://www.wowhead.com/classic/guide/classic-mining-best-farming-basics-early-ores";
 const sourceCloth = "https://www.warcrafttavern.com/wow-classic/guides/cloth-farming";
 const sourceLeather = "https://www.wowhead.com/classic/guide/classic-leather-farming-early-leather";
@@ -108,8 +109,100 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
     sourceGems,{method:"mining",requiredSkill:1}),
   m("Tigerseye","tiger-copper","Durotar / The Barrens","Copper Veins",
     "Occasional Mining bonus from Copper Veins. Requires Mining skill, not Skinning.",
-    sourceGems,{method:"mining",requiredSkill:1})
+    sourceGems,{method:"mining",requiredSkill:1}),
+  // Forever-specific materials: the item page records observed loot and community
+  // comments, but sample rates/older Classic comments are NOT live-server guarantees.
+  m("Pristine Leather","pristine-zhevra","The Barrens","Zhevra Charger (levels 17–18)",
+    "Wowhead Forever lists this as an extremely rare drop from these beasts. Loot then skin. The item is scarce; many kills may produce none. Don't substitute a made-up per-hour rate.",
+    "https://www.wowhead.com/forever/item=249427/pristine-leather",
+    {method:"skinning",minMob:17,maxMob:18,evidence:"forever-reported"}),
+  m("Pristine Leather","pristine-moonrage","Silverpine Forest","Moonrage Darkrunner (levels 11–12)",
+    "Listed among Pristine Leather drop sources on Wowhead Forever. Very low observed frequency; some player comments instead describe obtaining it by skinning worgen.",
+    "https://www.wowhead.com/forever/item=249427/pristine-leather",
+    {method:"skinning",minMob:11,maxMob:12,evidence:"forever-reported"}),
+  m("Pristine Leather","pristine-wc","The Barrens → Wailing Caverns","Deviate beasts near/inside the cave",
+    "Players report rare Pristine Leather from skinning Wailing Caverns beasts. This is a Forever-specific item and must not be treated like routine Light Leather.",
+    "https://www.wowhead.com/forever/item=249427/pristine-leather",
+    {method:"skinning",minMob:17,maxMob:24,waypoint:"/way The Barrens 46.0 36.3",evidence:"forever-reported"}),
+  m("Pristine Hide","pristine-kraul","The Barrens → Razorfen Kraul","Kraul Bat / Greater Kraul Bat (levels 30–32 elites)",
+    "The Wowhead Forever item page lists observed rare drops from both Kraul Bat types. The sample rates are very low, and this is NOT a gray-level farm at level 34.",
+    "https://www.wowhead.com/forever/item=249428/pristine-hide",
+    {method:"dungeon",minMob:30,maxMob:32,evidence:"forever-reported"}),
+  m("Pristine Hide","pristine-bfd","Ashenvale → Blackfathom Deeps","Aku'mai Snapjaw (levels 26–27 elites)",
+    "Rare reported item source in the Forever item table. Low sample frequency, not guaranteed; check mob color before pulling.",
+    "https://www.wowhead.com/forever/item=249428/pristine-hide",
+    {method:"dungeon",minMob:26,maxMob:27,evidence:"forever-reported"}),
+  m("Light Hide","light-hide-silverpine","Silverpine Forest","Moonrage worgen / Grizzly Bears",
+    "A historical community report on Wowhead Forever lists skinning these creatures for Light Hide. Fully loot before skinning; not confirmed on the current Forever patch.",
+    "https://www.wowhead.com/forever/item=783/light-hide",
+    {method:"skinning"}),
+  m("Medium Hide","medium-hide-stonetalon","Stonetalon Mountains","Blackened Basilisk",
+    "A historical player report on the Forever item page cites skinning Blackened Basilisks. Rare hide outcome; the exact current spawn and drop chance aren't verified.",
+    "https://www.wowhead.com/forever/item=4232/medium-hide",
+    {method:"skinning"}),
+  m("Spider's Silk","silk-deepmoss","Stonetalon Mountains","Deepmoss Spiders",
+    "A historical Leatherworking farmer recommends Deepmoss spiders as a Spider's Silk hotspot. Uncommon drop; the Forever page includes older Classic comments, not live confirmation.",
+    "https://www.wowhead.com/forever/item=3182/spiders-silk"),
+  m("Small Lustrous Pearl","pearl-hillsbrad","Hillsbrad Foothills","Naga on the southeast coast by Southshore",
+    "Loot clams dropped by naga, then OPEN the clams for a chance at Small Lustrous Pearl. Historical source noted on Wowhead Forever; Horde travel is easier from Tarren Mill, but avoid guards.",
+    "https://www.wowhead.com/forever/item=5498/small-lustrous-pearl"),
+  m("Iridescent Pearl","pearl-wetlands","Wetlands","Coastal murlocs dropping clams",
+    "Kill coastal murlocs, loot their clams and open them. Iridescent Pearls are a low-chance clam content. This area involves Alliance travel; the page records older player experiences.",
+    "https://www.wowhead.com/forever/item=5500/iridescent-pearl"),
+  m("Elemental Earth","earth-arathi","Arathi Highlands","Earth elementals near Circle of Inner Binding",
+    "Historical Wowhead reports cite the elementals around this region. Expect XP at level 34, as these aren't a verified gray-mob route. No guaranteed yield.",
+    "https://www.wowhead.com/forever/item=7067/elemental-earth",
+    {waypoint:"/way Arathi Highlands 35 58"}),
+  m("Deeprock Salt","deeprock-badlands","Badlands","Rock / Lesser Rock Elementals (approx. levels 39–40)",
+    "Historical reports on the Forever item page mention Badlands rock elementals. Not XP-safe for your level 34 Hunter.",
+    "https://www.wowhead.com/forever/item=8150/deeprock-salt",
+    {waypoint:"/way Badlands 41 80",minMob:39,maxMob:40}),
+  m("Elemental Water","water-stv","Stranglethorn Vale","Lesser Water Elementals (approx. levels 36–37)",
+    "Historical Wowhead reports cite the water elementals off the northern Stranglethorn coast. These may award XP at level 34.",
+    "https://www.wowhead.com/forever/item=7070/elemental-water",
+    {minMob:36,maxMob:37}),
+  m("Raptor Egg","egg-mottled","Wetlands","Mottled Screechers",
+    "A historical Wowhead comment specifically recommends Mottled Screechers over Mottled Raptors for Raptor Eggs. Loot the corpses; rates on Forever may differ.",
+    "https://www.wowhead.com/forever/item=3685/raptor-egg",
+    {minMob:22,maxMob:27}),
+  m("Thick Leather","thick-feralas","Feralas","Longtooth Runners (approx. levels 40–41)",
+    "Historical skinning reports cite the Longtooth Runners. You will likely gain XP at level 34. Skinning yield is not guaranteed.",
+    "https://www.wowhead.com/forever/item=4304/thick-leather",
+    {method:"skinning",minMob:40,maxMob:41}),
+  m("Rugged Leather","rugged-epl","Eastern Plaguelands","Frenzied Plaguehounds / Monstrous Plaguebats",
+    "Historical skinning suggestions on the Forever item page. Much higher level than you currently are; do not attempt this as a level-34 farming route.",
+    "https://www.wowhead.com/forever/item=8170/rugged-leather",
+    {method:"skinning",minMob:55,maxMob:60}),
+  m("Heavy Leather","heavy-stv","Stranglethorn Vale","Skinnable raptors and cats",
+    "Classic-style skinning source; quality depends on mob level. The zone includes XP-awarding creatures at level 34, so check each enemy.",
+    "https://www.wowhead.com/forever/item=4234/heavy-leather",
+    {method:"skinning",minMob:30,maxMob:38}),
+  m("Raptor Flesh","raptor-arathi-forever","Arathi Highlands","Raptors (approximately level 30+)",
+    "Wowhead Forever's Raptor Flesh page includes older reports of farming raptors in Arathi. Skinning also yields leather; XP likely at level 34.",
+    "https://www.wowhead.com/forever/item=12184/raptor-flesh",
+    {method:"mob",minMob:30,maxMob:37})
+
 ];
+
+/** Server-independent vendor zones from individual Wowhead Forever item pages. */
+const FOREVER_VENDOR_MATERIALS = new Set<string>(WOWHEAD_FOREVER_HORDE_VENDOR_ITEMS);
+const hordeVendorRoute=(name:string):MaterialRoute|null=>{
+  const url=wowheadForeverItemUrl(name);
+  if(!url||!FOREVER_VENDOR_MATERIALS.has(name))return null;
+  return m(name,"forever-vendor-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
+    "Orgrimmar / Undercity / Thunder Bluff","Trade, leatherworking, tailoring or cooking supply merchant",
+    "Wowhead Forever lists this supply at merchants in these Horde cities. Check a nearby trade or profession supplier; exact NPC, current stock, and travel distance aren't verified.",
+    url,{method:"vendor",evidence:"wowhead-item-page"});
+};
+/** A production route is derived only from an actual recipe in this site's client snapshot. */
+const craftRoutes=(name:string):MaterialRoute[]=>WOW_RECIPES.filter(r=>r.name.toLowerCase()===name.toLowerCase())
+  .map(r=>m(name,"craft-"+r.id,"Your "+r.profession+" profession",
+    "Craft "+r.name,
+    "Client-derived recipe uses "+r.reagents.map(x=>x.quantity+"× "+x.name).join(", ")+
+    ". "+(r.learnAt===null?"Learn skill or availability is not confirmed; check your trainer/recipe.":
+      "Learn skill "+r.learnAt+"; confirm the recipe is unlocked and produces the expected item in Forever.")+
+    " Requires your profession, not a mob drop.",
+    r.sourceUrl,{method:"crafting",evidence:"client-recipe"}));
 
 /** All reagents in the existing client-snapshot recipes are searchable, even if no route is verified. */
 export const ALL_RECIPE_MATERIALS = [...new Set(WOW_RECIPES.flatMap(r=>r.reagents.map(m=>m.name)))].sort((a,b)=>a.localeCompare(b));
@@ -126,7 +219,9 @@ export const materialRoutes = (name:string):MaterialRoute[] => {
         drop.source+". "+(drop.note||"Not a guaranteed material drop; see the dungeon guide."),
         drop.sourceUrl,{method:drop.method==="skin"?"skinning":"dungeon",evidence:drop.reliability==="forever-reported"?"forever-reported":"classic-reference"});
     });
-  return [...exact,...dungeon.filter(d=>!exact.some(r=>r.zone===d.zone&&r.target===d.target))];
+  const vendor=hordeVendorRoute(name);
+  return [...exact,...(vendor?[vendor]:[]),...craftRoutes(name),
+    ...dungeon.filter(d=>!exact.some(r=>r.zone===d.zone&&r.target===d.target))];
 };
 /** The search link is a fallback, not a claim that a precise in-game farm is known. */
 export const externalMaterialLookup = (name:string) =>
