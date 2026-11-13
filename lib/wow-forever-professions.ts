@@ -19,6 +19,7 @@ export type RecipeAcquisition = "trainer" | "pattern" | "unknown";
 export type SourceLocation = {
   continent: "kalimdor" | "eastern-kingdoms";
   zone: string;
+  area: string; // exact settlement, camp or landmark; Classic reference until verified
   npc: string;
   faction: "horde" | "alliance" | "neutral";
   x: number;
