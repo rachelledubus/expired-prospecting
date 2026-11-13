@@ -38,46 +38,6 @@ const uiInput: React.CSSProperties = { background: "var(--panel,#fff)",color:"va
 const chip: React.CSSProperties = { borderRadius:99, padding:"9px 13px",minHeight:40,fontSize:13 };
 const note: React.CSSProperties = { fontSize:14, lineHeight:1.55 };
 const card: React.CSSProperties = { padding:16, marginTop:12 };
-const BASE_MACROS = [
-  {title:"Scroll up · Pet Attack",code:"#showtooltip\n/petattack\n/cast Dash\n/cast Dive\n/cast Charge",help:"Send your pet to the selected target; try an available pet movement ability."},
-  {title:"Scroll down · Pet Recall",code:"#showtooltip\n/petpassive\n/petfollow",help:"Stop attacking, switch your pet to Passive, and call it back."},
-  {title:"Mouse 4 / key 1 · Target + Auto Shot",code:"#showtooltip Auto Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast !Auto Shot",help:"If the current target is dead, friendly or missing, select a nearby enemy and start shooting. Repeated presses do not toggle Auto Shot off."},
-  {title:"Mouse 5 / key 2 · Arcane Shot + Auto Shot",code:"#showtooltip Arcane Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Arcane Shot\n/cast !Auto Shot",help:"Cast Arcane Shot, then keep Auto Shot active. Also acquires a new enemy when you have no valid hostile target."},
-  {title:"Key 3 · Aimed Shot + Auto Shot",code:"#showtooltip Aimed Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Aimed Shot\n/cast !Auto Shot",help:"Single-target ranged attack at level 20; keeps Auto Shot active. Do not expect it to fire while moving."},
-  {title:"Key E · Serpent Sting + Auto Shot",code:"#showtooltip Serpent Sting\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Serpent Sting\n/cast !Auto Shot",help:"Apply the damage-over-time effect on longer-lived targets, and start or maintain Auto Shot."}
-];
-const KEY_PRIMARY = [
-  ["1","Target + Auto Shot"],["2","Arcane + Auto"],["3","Aimed + Auto"],["4","Multi-Shot"],["5","Volley"],
-  ["Q","Summon Hawk"],["E","Serpent Sting"],["R","Mend Pet"],["T","Hunter's Mark"],
-  ["F","Intimidation"],["G","Wing Clip"],["Z","Aspect of the Hawk"],["X","Aspect of the Cheetah"],
-  ["C","Feign Death"],["V","Concussive Shot"],["Wheel ↑","Pet Attack"],["Wheel ↓","Pet Recall"],["Mouse 4","Target + Auto Shot"],["Mouse 5","Arcane + Auto"]
-];
-const KEY_SHIFT = [
-  ["Shift+1","Bestial Wrath"],["Shift+2","Rapid Fire"],["Shift+3","Health potion"],
-  ["Shift+4","Raptor Strike"],["Shift+Q","Freezing Trap"],["Shift+E","Frost Trap"],
-  ["Shift+R","Revive Pet"],["Shift+F","Explosive Trap"],["Shift+G","Immolation Trap"],
-  ["Shift+Z","Aspect of the Monkey"],["Shift+C","Disengage"],["Shift+V","Pet Move To"],
-  ["Shift+Space","Walk on Air"],["Shift+T","Read Ley Line / Skysight"]
-];
-const SPELLS = [
-  {name:"Auto Shot",level:1,usage:"Your repeating ranged attack; stand still briefly so it fires."},
-  {name:"Arcane Shot",level:6,usage:"Instant ranged damage. Shares a cooldown with Summon Hawk."},
-  {name:"Concussive Shot",level:8,usage:"Slow an approaching enemy to create room."},
-  {name:"Tame Beast",level:10,usage:"Hunter class quest; unlock permanent pet management."},
-  {name:"Mend Pet",level:10,usage:"Heal your pet before it becomes dangerously low."},
-  {name:"Serpent Sting",level:0,usage:"Damage over time. Best when the target lives long enough."},
-  {name:"Aimed Shot",level:20,usage:"Strong single-target shot; shares a cooldown with Multi-Shot."},
-  {name:"Aspect of the Cheetah",level:20,usage:"Travel faster; swap to Hawk before damage can daze you."},
-  {name:"Summon Hawk",level:25,usage:"BM talent; sustained hawk damage. Two active at once; shares Arcane Shot cooldown."},
-  {name:"Intimidation",level:30,usage:"BM pet-delivered stun; helpful when pressured or interrupting."},
-  {name:"Feign Death",level:30,usage:"Drop threat / stop a bad pull when it succeeds."},
-  {name:"Bestial Wrath",level:40,usage:"BM pet burst cooldown for hard encounters."},
-  {name:"Multi-Shot",level:0,usage:"Damage several enemies; shares Aimed Shot cooldown."},
-  {name:"Frost Trap",level:0,usage:"Slow an area; traps share a cooldown in Forever."},
-  {name:"Freezing Trap",level:0,usage:"Control one enemy; traps share a cooldown in Forever."},
-  {name:"Hunter's Mark",level:0,usage:"Mark a longer-lived target before pulling."},
-  {name:"Disengage",level:0,usage:"Classic-style threat reduction in melee; not a backward leap."}
-];
 const ZONE_ROUTES = [
   {min:1,max:12,alliance:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",horde:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",dungeons:"None required",tip:"Finish the Skyborne introduction and the level-10 Hunter pet quest."},
   {min:13,max:19,alliance:"Westfall; alternatives: Loch Modan or Darkshore",horde:"The Barrens; alternative: Silverpine Forest",dungeons:"Hall of Thanes / Ragefire Chasm (13–18); Wailing Caverns (15–25); The Deadmines (18–23)",tip:"Get flight paths early and choose the same quest area as your Paladin partner."},
