@@ -186,12 +186,12 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
 
 /** Server-independent vendor zones from individual Wowhead Forever item pages. */
 const FOREVER_VENDOR_MATERIALS = new Set<string>(WOWHEAD_FOREVER_HORDE_VENDOR_ITEMS);
-const hordeVendorRoute=(name:string):MaterialRoute|null=>{
+const vendorRoute=(name:string,faction:"horde"|"alliance"):MaterialRoute|null=>{
   const url=wowheadForeverItemUrl(name);
   if(!url||!FOREVER_VENDOR_MATERIALS.has(name))return null;
   return m(name,"forever-vendor-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
-    "Orgrimmar / Undercity / Thunder Bluff","Trade, leatherworking, tailoring or cooking supply merchant",
-    "Wowhead Forever lists this supply at merchants in these Horde cities. Check a nearby trade or profession supplier; exact NPC, current stock, and travel distance aren't verified.",
+    faction==="horde"?"Orgrimmar / Undercity / Thunder Bluff":"Stormwind / Ironforge / Darnassus","Trade, leatherworking, tailoring or cooking supply merchant",
+    "Wowhead Forever lists the supply in these "+(faction==="horde"?"Horde":"Alliance")+" cities. Check a local trade or profession supplier; exact NPC, current stock and travel distance are unverified.",
     url,{method:"vendor",evidence:"wowhead-item-page"});
 };
 /** A production route is derived only from an actual recipe in this site's client snapshot. */
@@ -210,7 +210,7 @@ export const materialRecipes = (name:string):{recipe:WowRecipe;quantity:number}[
   WOW_RECIPES.flatMap(recipe=>recipe.reagents.filter(x=>x.name.toLowerCase()===name.toLowerCase())
     .map(reagent=>({recipe,quantity:reagent.quantity})));
 
-export const materialRoutes = (name:string):MaterialRoute[] => {
+export const materialRoutes = (name:string,faction:"horde"|"alliance"="horde"):MaterialRoute[] => {
   const exact=CURATED_MATERIAL_ROUTES.filter(r=>r.item.toLowerCase()===name.toLowerCase());
   const dungeon=WOW_DUNGEON_PROFESSION_DROPS.filter(d=>d.kind==="material"&&d.itemName.toLowerCase()===name.toLowerCase())
     .map(drop=>{
@@ -219,7 +219,7 @@ export const materialRoutes = (name:string):MaterialRoute[] => {
         drop.source+". "+(drop.note||"Not a guaranteed material drop; see the dungeon guide."),
         drop.sourceUrl,{method:drop.method==="skin"?"skinning":"dungeon",evidence:drop.reliability==="forever-reported"?"forever-reported":"classic-reference"});
     });
-  const vendor=hordeVendorRoute(name);
+  const vendor=vendorRoute(name,faction);
   return [...exact,...(vendor?[vendor]:[]),...craftRoutes(name),
     ...dungeon.filter(d=>!exact.some(r=>r.zone===d.zone&&r.target===d.target))];
 };
