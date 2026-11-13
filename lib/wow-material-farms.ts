@@ -25,8 +25,8 @@ export type MaterialRoute = {
   sourceUrl:string;
   evidence:"classic-reference"|"forever-reported"|"wowhead-item-page"|"client-recipe";
 };
-const sourceMoss = "https://www.wowhead.com/forever/item=1206/moss-agate";
-const sourceMossMobs = "https://www.wowhead.com/forever/item=1206/moss-agate";
+const sourceMoss = "https://forever-codex.com/items/?id=1206";
+const sourceMossMobs = "https://metabot.gg/en/wow-forever/items/moss-agate";
 const sourceMining = "https://www.wowhead.com/classic/guide/classic-mining-best-farming-basics-early-ores";
 const sourceCloth = "https://www.warcrafttavern.com/wow-classic/guides/cloth-farming";
 const sourceLeather = "https://www.wowhead.com/classic/guide/classic-leather-farming-early-leather";
@@ -59,7 +59,7 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
 
   m("Wool Cloth","wool-durnholde","Hillsbrad Foothills","Syndicate mobs at Durnholde Keep",
     "Repeat a loop of gray Syndicate humanoids near Durnholde; Classic wool/linen drops vary by mob.",
-    sourceCloth,{waypoint:"/way Hillsbrad Foothills 76 47",minMob:20,maxMob:25}),
+    "https://www.wowhead.com/forever/item=2592/wool-cloth",{waypoint:"/way Hillsbrad Foothills 76 47",minMob:20,maxMob:25}),
   m("Wool Cloth","wool-hillsbrad","Hillsbrad Foothills","Farmers, Peasants and Footmen",
     "The fields west of Tarren Mill are a Classic wool farm. Some guards and nearby mobs may be higher level; verify gray names first.",
     sourceCloth,{waypoint:"/way Hillsbrad Foothills 33 49",minMob:24,maxMob:27}),
@@ -74,7 +74,7 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
     "https://www.wowhead.com/classic/guide/classic-cloth-farming-linen-wool",{minMob:10,maxMob:14}),
   m("Light Leather","light-wc","The Barrens → Wailing Caverns","Skinnable Deviate beasts",
     "Kill, fully loot, then skin beasts in the outer cave and dungeon. Access to the actual dungeon portal requires going deeper into the cave.",
-    sourceLeather,{method:"skinning",minMob:17,maxMob:24,waypoint:"/way The Barrens 46.0 36.3"}),
+    "https://www.wowhead.com/forever/item=2318/light-leather",{method:"skinning",minMob:17,maxMob:24,waypoint:"/way The Barrens 46.0 36.3"}),
   m("Medium Leather","medium-wc","The Barrens → Wailing Caverns","Skinnable Deviate beasts",
     "Some skinnable dungeon beasts yield Medium Leather, although others still yield Light. Fully loot before skinning.",
     sourceLeather,{method:"skinning",minMob:17,maxMob:24,waypoint:"/way The Barrens 46.0 36.3"}),
@@ -88,22 +88,22 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
     {method:"skinning",minMob:17,maxMob:24,waypoint:"/way The Barrens 46.0 36.3"}),
   m("Raptor Egg","egg-wetlands","Wetlands","Raptors (levels 22–28)",
     "Kill and loot raptors across the Wetlands. Some at level 27–28 could still award XP to a level 34 character; check enemy color.",
-    sourceCooking,{minMob:22,maxMob:28}),
+    "https://www.wowhead.com/forever/item=3685/raptor-egg",{minMob:22,maxMob:28}),
   m("Raptor Flesh","raptor-arathi","Arathi Highlands","Raptors near Hammerfall / Refuge Pointe",
     "Loot raptors for flesh and eggs, then skin their corpses for Heavy Leather. These raptors tend to be 30+, so this is NOT a no-XP farm at level 34.",
-    sourceCooking,{method:"skinning",minMob:30,maxMob:37}),
+    "https://www.wowhead.com/forever/item=12184/raptor-flesh",{method:"skinning",minMob:30,maxMob:37}),
   m("Raptor Flesh","raptor-stv","Stranglethorn Vale","Jungle Stalkers near Gurubashi Arena",
     "Loot raptors near the arena, keeping away from the PvP arena itself. The mobs are above your XP-safe range.",
     "https://www.wow-farming.info/classic/farming-raptor-flesh/",{minMob:30,maxMob:35,waypoint:"/way Stranglethorn Vale 29 45"}),
   m("Shadowgem","shadow-tin","The Barrens / Hillsbrad Foothills","Tin and Silver Veins",
     "Uncommon Mining bonus. Without Mining, try mob/loot chest drops or buy from the Auction House rather than traveling to ore nodes.",
-    sourceGems,{method:"mining",requiredSkill:65}),
+    "https://www.wowhead.com/forever/item=1210/shadowgem",{method:"mining",requiredSkill:65}),
   m("Lesser Moonstone","moon-tin","The Barrens / Hillsbrad Foothills","Tin and Silver Veins",
     "Uncommon Mining bonus. Requires Mining, not Skinning; direct mob sources have not been mapped here.",
-    sourceGems,{method:"mining",requiredSkill:65}),
+    "https://www.wowhead.com/forever/item=1705/lesser-moonstone",{method:"mining",requiredSkill:65}),
   m("Jade","jade-tin","The Barrens / Hillsbrad Foothills","Tin Veins",
     "Rare Mining bonus. Do not plan around finding one on every node.",
-    sourceGems,{method:"mining",requiredSkill:65}),
+    "https://www.wowhead.com/forever/item=1529/jade",{method:"mining",requiredSkill:65}),
   m("Malachite","malachite-copper","Durotar / The Barrens","Copper Veins",
     "Occasional Mining bonus from Copper Veins. Requires Mining skill, not Skinning.",
     sourceGems,{method:"mining",requiredSkill:1}),
