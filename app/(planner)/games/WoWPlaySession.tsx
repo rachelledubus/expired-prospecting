@@ -157,10 +157,10 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
         {nextGold.waypoint&&<div className="gm-wow-session-waypoint">
           <code>{nextGold.waypoint}</code>
           <button className="gm-pill" type="button" onClick={()=>copy(nextGold.waypoint!)}>Copy waypoint</button>
-        </details>}
+        </div>}
       </>:<p style={helper}>No currently documented farm in this guide is entirely within the estimated gray range. Check mob colors in game before farming.</p>}
       <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gold")}>Compare all gold farms</button>
-    </div>}
+    </details>}
     <p style={helper}>Your guide cannot read your live bags, equipment, NPC colors, prices or server drops. Saved values are manual. Do not rely on Classic reference locations without checking Forever.</p>
     {copyStatus&&<p role="status" style={helper}>{copyStatus}</p>}
   </section>;
