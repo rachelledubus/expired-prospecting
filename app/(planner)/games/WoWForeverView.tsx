@@ -10,6 +10,7 @@ import WoWCombatControls from "./WoWCombatControls";
 import WoWPetTracker from "./WoWPetTracker";
 import WoWEquipmentTracker from "./WoWEquipmentTracker";
 import WoWUnifiedSearch from "./WoWUnifiedSearch";
+import WoWMaterialFarming from "./WoWMaterialFarming";
 import { wowExtraField } from "@/lib/wow-portal-extras";
 
 type Props = {
@@ -18,10 +19,11 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
 };
-type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "gold" | "lookup";
+type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "materials" | "gold" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
   {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipe acquisition and market comparisons"},
+  {id:"materials",label:"🪨 Farm materials",help:"Search exact crafting ingredients, mob drop locations, mining nodes and source links"},
   {id:"gold",label:"💰 Gold farms",help:"Gray-mob farming routes and personal measured gold per hour"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
   {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
@@ -100,9 +102,11 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [view,setView]=useState<View>("next");
   const [filter,setFilter]=useState("");
   const [searchTarget,setSearchTarget]=useState("");
+  const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
   const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
+  const openMaterial=(name:string)=>{setMaterialTarget(name);setView("materials");};
   const faction=prog.fields[F(game.id,"faction")]||"horde";
   const done=(stage:WowStage,step:WowStep)=>!!prog.checks[K(game.id,stage.id,step.id)];
   const count=game.stages.reduce((n,s)=>n+s.steps.filter(t=>done(s,t)).length,0);
@@ -166,7 +170,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p className="gm-note" style={note}>This choice saves for your next visit. The guide no longer assumes leveling is your default goal.</p>
       </div>
       {playMode==="gold"&&<WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField} compact/>}
-      {playMode==="professions"&&<WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+      {playMode==="professions"&&<WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} onFindMaterial={openMaterial}/>}
       {playMode==="gear"&&<WoWHunterDungeons gameId={game.id} level={currentLevel}
         faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} mode="summary"/>}
       {playMode==="leveling"&&<>
@@ -309,7 +313,9 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </>}
 
-    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget}/>}
+    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget} onFindMaterial={openMaterial}/>}
+    {view==="materials" && <WoWMaterialFarming key={materialTarget} gameId={game.id} level={currentLevel}
+      prog={prog} setField={setField} initialQuery={materialTarget}/>} 
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
@@ -341,7 +347,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </>}
 
     {view==="lookup" && <>
-      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{setSearchTarget(term);setView(destination)}}/>
+      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{if(destination==="materials")setMaterialTarget(term);setSearchTarget(term);setView(destination)}}/>
       <SmallInfo title="Reference library · quest specifics & updates">
         <p>This personal guide summarizes major milestones. For all individual Skyborne side quests, detailed maps, complete pet ability databases and current beta tuning, use these original references:</p>
         <div style={{display:"grid",gap:9}}>
