@@ -295,11 +295,12 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
                       <label style={small}>Exact town, camp or location
                         <input value={sourceDrafts[r.id]??manualArea(r.id)} maxLength={120} placeholder="e.g. Hammerfall"
                           onChange={e=>setSourceDrafts(old=>({...old,[r.id]:e.target.value}))}
-                          onBlur={()=>{
-                            if(sourceDrafts[r.id]!==undefined&&sourceDrafts[r.id]!==manualArea(r.id))
-                              setField(extra("source-area-"+r.id),sourceDrafts[r.id]);
-                          }}
                           style={{width:"100%",padding:8,borderRadius:7}}/>
+                        <button className="gm-pill" type="button"
+                          disabled={sourceDrafts[r.id]===undefined||sourceDrafts[r.id]===manualArea(r.id)}
+                          onClick={()=>setField(extra("source-area-"+r.id),sourceDrafts[r.id]??"")}>
+                          Save location
+                        </button>
                       </label>
                     </div>
                     <label style={{...small,display:"block",marginTop:7}}>NPC, boss or source requirements
