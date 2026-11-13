@@ -45,14 +45,14 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
      aria-label="Search WoW crafting materials"/>
   </label>
   {wowheadTerm && <div style={{margin:"10px 0 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-    <a className="gm-pill" href={externalMaterialLookup(wowheadTerm)} target="_blank" rel="noopener noreferrer"
-      aria-label={"Search Classic Wowhead for "+wowheadTerm}>
-      Search Wowhead for {wowheadTerm} ↗
+    <a className="gm-pill gm-wowhead-search" href={externalMaterialLookup(wowheadTerm)} target="_blank" rel="noopener noreferrer"
+      aria-label={"Search Wowhead Forever for "+wowheadTerm}>
+      Search Wowhead Forever for {wowheadTerm} ↗
     </a>
-    <span style={small}>External Classic results; check WoW Forever differences in-game.</span>
+    <span style={small}>Opens the WoW Forever item database in a new tab.</span>
   </div>}
   {!chosen && <div style={{marginTop:10}}>
-   <p style={small}>{suggestions.length? suggestions.length+" matching materials (select one)":"Not in your recipe catalog. Use Search Wowhead above to look up any item, creature, or material."}</p>
+   <p style={small}>{suggestions.length? suggestions.length+" matching materials (select one)":"Not in your recipe catalog. Use Search Wowhead Forever above to look up any item, creature, or material."}</p>
    <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
     {suggestions.slice(0,18).map(name=><button type="button" key={name} className="gm-pill" onClick={()=>setQuery(name)}>{name}</button>)}
    </div>
@@ -116,7 +116,7 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
     })}
    </div>
    <p style={{...small,marginTop:12}}>
-    If a material is difficult to obtain without your professions, compare its Auction House price with the time required to farm it. For additional drop sources, use Search Wowhead above.
+    If a material is difficult to obtain without your professions, compare its Auction House price with the time required to farm it. For additional drop sources, use Search Wowhead Forever above.
    </p>
   </>}
   {message&&<p role="status" style={small}>{message}</p>}
