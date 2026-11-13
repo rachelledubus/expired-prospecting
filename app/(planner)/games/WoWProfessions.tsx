@@ -104,7 +104,6 @@ const clampSkill = (text: string) => {
 export default function WoWProfessions({ gameId, prog, setCheck, setField }: Props) {
   const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
   const [showGray, setShowGray] = useState(false);
-  const [learnedOnly, setLearnedOnly] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState("");
   const [confirmed, setConfirmed] = useState("");
@@ -123,7 +122,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const faction = prog.fields[gameId + "|faction"] || "horde";
   const isLearned = (id: string) => !!prog.checks[recipeLearnedKey(gameId, id)];
   const isHidden = (id: string) => !!prog.checks[recipeHiddenKey(gameId, id)];
-  const hiddenCount = WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id)).length;
+  const hiddenCount = WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id) && !isLearned(r.id)).length;
   const setHidden = (id: string, hidden: boolean) => {
     setCheck(recipeHiddenKey(gameId, id), hidden);
     setConfirmed(hidden ? "Recipe hidden. Recommendations updated." : "Recipe restored.");
@@ -133,7 +132,6 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
     setShown(12);
     setQuery("");
     setAreaFilter("all");
-    setLearnedOnly(false);
   };
   const baseRecipes = useMemo(() => WOW_RECIPES
     .filter(r => r.profession === selected && !isHidden(r.id) && (showGray || recipeStatus(r, skill) !== "gray"))
@@ -144,11 +142,12 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const recipes = useMemo(() => (showHidden
     ? WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id))
     : baseRecipes)
-    .filter(r => showHidden || !learnedOnly || isLearned(r.id))
+    // Keep learned recipes exclusively in the Recommended Next area.
+    .filter(r => !isLearned(r.id))
     .filter(r => !query.trim() || (r.name + " " + r.category + " " + r.reagents.map(m => m.name).join(" ") + " " +
       r.sourceLocations.map(loc => loc.area + " " + loc.zone + " " + loc.npc).join(" ")).toLowerCase().includes(query.trim().toLowerCase()))
     .sort(compareLearnLevel),
-      [baseRecipes, query, faction, learnedOnly, showHidden, selected, prog.checks]);
+      [baseRecipes, query, faction, showHidden, selected, prog.checks]);
   const areaOptions = useMemo(() => {
     const found = new Map<string, string>();
     WOW_RECIPES.filter(r => r.profession === selected).forEach(r =>
@@ -160,6 +159,9 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
     groupRecipesByLocation(recipes, faction).filter(g => areaFilter === "all" || g.id === areaFilter),
     [recipes, faction, areaFilter]);
   const visibleRecipeCount = new Set(groupedRecipes.flatMap(g => g.recipes.map(r => r.id))).size;
+  const learnedRecipes = useMemo(() =>
+    WOW_RECIPES.filter(r => r.profession === selected && isLearned(r.id)).sort(compareLearnLevel),
+    [selected, prog.checks]);
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
     || baseRecipes.find(r => recipeStatus(r, skill) === "orange" && !opposingVendorsOnly(r, faction));
   // Unlearned recipes with only opposing-faction vendor records stay searchable
@@ -180,6 +182,19 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       setCopied("Copy did not work. Select the waypoint text manually: " + text);
     }
   };
+
+  const renderLearnedManager = () => learnedRecipes.length ? <details className="gm-wow-settings" style={{ marginTop: 14 }}>
+    <summary>Review learned recipes ({learnedRecipes.length})</summary>
+    <p className="gm-note" style={small}>These stay out of Recipe Finder. Uncheck a recipe below if it was marked Learned by mistake.</p>
+    <div style={{ display: "grid", gap: 8, maxHeight: 240, overflowY: "auto", paddingTop: 6 }}>
+      {learnedRecipes.map(r => <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 14 }}>
+        <input type="checkbox" checked={isLearned(r.id)}
+          onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
+        <span>{r.name}{isHidden(r.id) ? " · Hidden separately" : ""}</span>
+      </label>)}
+    </div>
+    <p className="gm-note" style={small}>Unlearned recipes return to Recipe Finder when its gray, hidden, and search filters permit.</p>
+  </details> : null;
 
   const renderRecipe = (r: WowRecipe) => {
             const state = recipeStatus(r, skill);
@@ -323,6 +338,11 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                 : "You have not learned this recipe. Its Horde/neutral acquisition source is not yet confirmed; check before traveling."}
         </p>
         <div className="gm-wow-next-actions">
+          <label className="gm-wow-learned">
+            <input type="checkbox" checked={isLearned(next.id)}
+              onChange={e => setCheck(recipeLearnedKey(gameId, next.id), e.target.checked)}/>
+            Learned
+          </label>
           <button className="gm-pill" type="button" disabled={!isLearned(next.id) || recipeStatus(next, skill) !== "orange"}
             onClick={() => confirmCraft(next)}>I crafted it and gained +1 skill</button>
           <button className="gm-pill" type="button"
@@ -330,10 +350,12 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             onClick={() => setHidden(next.id, true)}>Hide this recipe</button>
         </div>
         {confirmed && <p role="status" className="gm-note" style={small}>{confirmed}</p>}
+        {renderLearnedManager()}
       </div>}
       {!next && <div className="gm-card" style={panel}>
         <h3 style={{ margin: "0 0 6px" }}>No eligible orange recipe recommended</h3>
         <p className="gm-note" style={small}>There may be orange recipes in the catalog, but no suitable unhidden recipe with a non-opposing acquisition route is available at this skill. Review recipes, learned status, and current trainers before traveling.</p>
+        {renderLearnedManager()}
       </div>}
 
       <div className="gm-card gm-wow-finder-card" style={panel}>
@@ -347,16 +369,13 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <p className="gm-note" style={small}>
           {showHidden
             ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
-            : "Browse recipes grouped by their specific town, camp or landmark. You can hide patterns without marking them learned."}
+            : "Only recipes you haven't learned appear here, grouped by town, camp or landmark. Mark Learned to remove one; manage learned recipes in Recommended Next."}
         </p>
         <p className="gm-wow-sort-note">
           Grouped by specific learning location, then sorted by the skill needed to learn within each group.
           Trainer recipes with an unknown unlock skill appear last. “Next Craft” uses a separate recommendation order.
         </p>
         {!showHidden && <div className="gm-wow-filter-toggles">
-          <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <input type="checkbox" checked={learnedOnly} onChange={e => setLearnedOnly(e.target.checked)}/> Learned recipes only
-          </label>
           <label style={{ ...small, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <input type="checkbox" checked={showGray} onChange={e => setShowGray(e.target.checked)}/> Include gray recipes
           </label>
@@ -381,7 +400,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
               " total catalog entries. Vendor locations are Classic references; current Forever stock is unverified."}
         </p>
         {groupedRecipes.length === 0 && <p className="gm-note">
-          {showHidden ? "No hidden recipes found for this profession or search." : "No matching recipes. Try clearing your search, filters, or including gray recipes."}
+          {showHidden ? "No hidden unlearned recipes match." : "No unlearned recipes match. Try clearing search or filters, or include gray recipes."}
         </p>}
         <div className="gm-wow-recipe-list">
           {groupedRecipes.map(group => {
