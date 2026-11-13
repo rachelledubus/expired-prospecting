@@ -251,13 +251,14 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                 <div className="gm-wow-recipe-detail-body">
                   <p><b>For one craft:</b> {r.reagents.map(m => m.quantity + "× " + m.name).join(" · ")}</p>
                   <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
+                   <p className="gm-note" style={small}><b>Source details:</b> {r.source}</p>
                   {usableVendorLocations(r, faction).length > 0 ? <div className="gm-wow-locations">
                     <b>{faction === "horde" ? "Horde" : "Alliance"} / neutral vendor references</b>
                     {usableVendorLocations(r, faction).map((loc, idx) => {
                       const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
                       return <div key={idx} className="gm-wow-location">
                         <span><b>{loc.npc}</b> · {loc.area} · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
-                        <span className="gm-wow-reference">Classic location reference; current Forever stock and route safety unverified</span>
+                        <span className="gm-wow-reference">{loc.verification} · Current stock and route safety not guaranteed</span>
                         <button type="button" className="gm-pill"
                           onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>
                       </div>;
@@ -432,7 +433,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <p className="gm-note" style={small}>
           {showHidden
             ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
-            : "Unlearned recipes are grouped by exact source (when mapped). Mark Learned to remove one. Record missing locations in recipe details; review learned recipes in Recommended Next."}
+            : "Unlearned recipes are grouped by exact source (when mapped). Mark Learned to remove one. Check source details and record missing locations; review learned recipes in Recommended Next."}
         </p>
         <p className="gm-wow-sort-note">
           Grouped by specific learning location, then sorted by the skill needed to learn within each group.
