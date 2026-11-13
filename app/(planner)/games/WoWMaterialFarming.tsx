@@ -6,7 +6,7 @@ import { grayMobThreshold, wowExtraField, wowMaterialKey } from "@/lib/wow-porta
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRecipes, materialRoutes, type MaterialRoute } from "@/lib/wow-material-farms";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 
-type Props={gameId:string;level:number;prog:GameProgress;setField:(key:string,value:string)=>void;initialQuery?:string};
+type Props={gameId:string;level:number;faction?:"horde"|"alliance";prog:GameProgress;setField:(key:string,value:string)=>void;initialQuery?:string};
 const small:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.86};
 const input:React.CSSProperties={width:"100%",minWidth:0,padding:"9px 11px",border:"1px solid var(--border,#ccc)",borderRadius:8,background:"var(--panel,#fff)",color:"var(--text,#222)",font:"inherit"};
 const mine=(r:MaterialRoute)=>r.method==="mining"||r.method==="herbalism";
@@ -14,7 +14,7 @@ const typeLabel=(r:MaterialRoute)=>({
   mob:"Kill and loot",dungeon:"Dungeon drop",skinning:"Kill, loot and skin",mining:"Mining node",herbalism:"Herbalism node",vendor:"Buy from supplier",crafting:"Craft with your profession"
 })[r.method];
 
-export default function WoWMaterialFarming({gameId,level,prog,setField,initialQuery=""}:Props){
+export default function WoWMaterialFarming({gameId,level,faction="horde",prog,setField,initialQuery=""}:Props){
  const [query,setQuery]=useState(initialQuery||"Moss Agate");
  const [showOtherProfessions,setShowOtherProfessions]=useState(false);
  const [grayOnly,setGrayOnly]=useState(false);
@@ -27,7 +27,7 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
  const wowheadTerm=chosen??query.trim();
  const foreverItem=chosen?wowheadForeverItemUrl(chosen):null;
  const recipes=chosen?materialRecipes(chosen):[];
- const options=chosen?materialRoutes(chosen):[];
+ const options=chosen?materialRoutes(chosen,faction):[];
  const ordered=options.slice().sort((a,b)=>{
    const aRisk=typeof a.maxMob==="number"&&a.maxMob<=cutoff?0:typeof a.maxMob==="number"?2:1;
    const bRisk=typeof b.maxMob==="number"&&b.maxMob<=cutoff?0:typeof b.maxMob==="number"?2:1;
@@ -40,7 +40,7 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
  const invValue=chosen?prog.fields[inventoryKey]??"":"";
  const copy=(value:string)=>{void navigator.clipboard.writeText(value).then(()=>setMessage("Copied waypoint: "+value)).catch(()=>setMessage("Copy blocked. Select the waypoint manually."));};
  return <section className="gm-card" style={{padding:16,marginTop:12}} aria-label="Material farming locations">
-  <div className="gm-panel-label">Crafting material finder · Horde-friendly first</div>
+  <div className="gm-panel-label">Crafting material finder · {faction==="horde"?"Horde":"Alliance"} sources first</div>
   <h3 style={{margin:"6px 0"}}>Where can I farm this material?</h3>
   <p style={small}>Search all 286 reagents in your 669-recipe catalog. The results distinguish Forever-reported drops, old reference routes, supplies you can buy, and ingredients you can craft. Unmapped sources are not guessed.</p>
   <label style={{...small,display:"block",marginTop:12}}>Search material by name
