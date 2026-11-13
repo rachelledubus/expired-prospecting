@@ -92,18 +92,6 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":"Leveling"}</span>
       {mode==="gold"&&<span>Gray estimate: level {cutoff} or lower</span>}
     </div>
-    {mode==="gold"&&<div className="gm-wow-session-focus">
-      <h4>Suggested starting farm</h4>
-      {nextGold ? <>
-        <p><b>{nextGold.name}</b> · {nextGold.zone}</p>
-        <p style={helper}>Approx. mobs {nextGold.minMob}–{nextGold.maxMob}. {nextGold.note}</p>
-        {nextGold.waypoint&&<div className="gm-wow-session-waypoint">
-          <code>{nextGold.waypoint}</code>
-          <button className="gm-pill" type="button" onClick={()=>copy(nextGold.waypoint!)}>Copy waypoint</button>
-        </div>}
-      </>:<p style={helper}>No currently documented farm in this guide is entirely within the estimated gray range. Check mob colors in game before farming.</p>}
-      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gold")}>Compare all gold farms</button>
-    </div>}
     {mode==="professions"&&<div className="gm-wow-session-focus">
       <h4>Craft next for skill</h4>
       {nextCraft ? <>
@@ -111,7 +99,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
         <p style={helper}>Marked Learned and currently orange in your stored recipe snapshot. Confirm the recipe is orange in Forever before gathering materials.</p>
         <div className="gm-wow-session-ingredients">
           {supply.map(r=><button key={r.name} className="gm-pill ghost" type="button" onClick={()=>onFindMaterial(r.name)}>
-            {r.quantity}× {r.name} · {r.have===null?"inventory unknown":r.missing!>0?"need "+r.missing:"ready"}
+            {r.quantity}× {r.name} · {r.have===null?"inventory unknown":(r.missing ?? 0)>0?"need "+r.missing:"ready"}
           </button>)}
         </div>
         {need&&<p style={helper}><b>Next preparation:</b> {need.have===null?"Record your "+need.name+" inventory or find a farm.":"Farm or buy "+need.missing+" more "+need.name+"."}</p>}
@@ -129,7 +117,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
     </div>}
     {mode==="leveling"&&<p style={helper}>Use the leveling objective below. You can still maintain a material target here for later.</p>}
     <div className="gm-wow-session-focus">
-      <h4>Material to find</h4>
+      <h4>{mode==="gold"?"Find a valuable material":mode==="professions"?"Other material to find":"Optional material to find"}</h4>
       <div className="gm-wow-session-entry">
         <label>Search or enter any item
           <input style={input} list="wow-session-material-list" value={draft}
@@ -149,17 +137,30 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
           Mob level {bestSource.minMob}–{bestSource.maxMob} · {bestSource.maxMob<=cutoff?"Gray expected":"Potential XP; check the enemy"}
         </p>}
         <p style={helper}>{bestSource.evidence==="forever-reported"?"Forever-reported source":"Classic-based lead, not independently verified for Forever"} · Drop not guaranteed</p>
+        <p style={helper}><a href={bestSource.sourceUrl} target="_blank" rel="noopener noreferrer">Check this specific source ↗</a></p>
         {bestSource.waypoint&&<div className="gm-wow-session-waypoint">
           <code>{bestSource.waypoint}</code>
           <button className="gm-pill" type="button" onClick={()=>copy(bestSource.waypoint!)}>Copy TomTom</button>
         </div>}
       </>:<p style={helper}>No non-Mining farming route is mapped for this item yet. Search Wowhead Forever, or choose a different focus.</p>}
       <div className="gm-wow-session-actions">
-        <button className="gm-pill ghost" type="button" onClick={()=>onFindMaterial(currentMaterial)}>See all farming routes</button>
+        <button className="gm-pill ghost" type="button" disabled={!currentMaterial} onClick={()=>onFindMaterial(currentMaterial)}>See all farming routes</button>
         <a className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer"
           href={externalMaterialLookup(currentMaterial||draft.trim()||"Moss Agate")}>Search Wowhead Forever ↗</a>
       </div>
     </div>
+    {mode==="gold"&&<details className="gm-wow-session-focus">
+      <summary style={{cursor:"pointer",fontWeight:700}}>Alternative: farm raw gold or leather</summary>
+      {nextGold ? <>
+        <p><b>{nextGold.name}</b> · {nextGold.zone}</p>
+        <p style={helper}>Approx. mobs {nextGold.minMob}–{nextGold.maxMob}. {nextGold.note}</p>
+        {nextGold.waypoint&&<div className="gm-wow-session-waypoint">
+          <code>{nextGold.waypoint}</code>
+          <button className="gm-pill" type="button" onClick={()=>copy(nextGold.waypoint!)}>Copy waypoint</button>
+        </details>}
+      </>:<p style={helper}>No currently documented farm in this guide is entirely within the estimated gray range. Check mob colors in game before farming.</p>}
+      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gold")}>Compare all gold farms</button>
+    </div>}
     <p style={helper}>Your guide cannot read your live bags, equipment, NPC colors, prices or server drops. Saved values are manual. Do not rely on Classic reference locations without checking Forever.</p>
     {copyStatus&&<p role="status" style={helper}>{copyStatus}</p>}
   </section>;
