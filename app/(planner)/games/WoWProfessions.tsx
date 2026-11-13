@@ -225,7 +225,28 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                         <button type="button" className="gm-pill"
                           onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>
                       </div>;
-            };
+                    })}
+                  </div> : <p className={opposingVendorsOnly(r, faction) ? "gm-wow-source-warning" : undefined}>
+                    {opposingVendorsOnly(r, faction)
+                      ? "No known " + (faction === "horde" ? "Horde" : "Alliance") + "/neutral vendor. The listed opposing-faction vendor cannot sell to your character."
+                      : "A usable vendor or drop location has not been verified for your faction."}
+                    {r.acquisition === "pattern" && !r.recipeItemBoP ? " A tradeable copy may be available through the Auction House, but check in-game." : ""}
+                  </p>}
+                  {otherFactionLocations(r, faction).length > 0 && <details className="gm-wow-other-faction">
+                    <summary>Other-faction vendor references ({otherFactionLocations(r, faction).length}) — not usable</summary>
+                    <div className="gm-wow-locations">
+                      {otherFactionLocations(r, faction).map((loc, idx) => <div key={idx} className="gm-wow-location">
+                        <span><b>{loc.npc}</b> · {loc.area} · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"}</span>
+                        <span className="gm-wow-reference">{loc.faction} vendor — cannot purchase as {faction}. No waypoint offered.</span>
+                      </div>)}
+                    </div>
+                  </details>}
+                  {state === "orange" && <p>{Math.max(0, r.yellowAt - skill)} possible +1 crafts before this recipe becomes yellow, based on the catalog's thresholds.</p>}
+                  <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">View recipe data ↗</a>
+                </div>
+              </details>
+            </article>;
+  };
   const renderGroupRecipes = (group: RecipeLocationGroup) => <>
     {group.recipes.slice(0, shown).map(renderRecipe)}
     {group.recipes.length > shown && <button type="button" className="gm-pill"
