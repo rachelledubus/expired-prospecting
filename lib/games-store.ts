@@ -117,6 +117,8 @@ export function parsePatch(game: Game, body: unknown): GameProgressPatch | strin
       const maxLength =
         k.includes("|completion|") && k.endsWith("|custom-items")
           ? MAX_CUSTOM_COMPLETION_FIELD_LENGTH
+          : k.includes("|wow-extra|macro-") ? 5000
+          : k.includes("|wow-extra|source-note-") ? 500
           : MAX_FIELD_LENGTH;
       patch.fields[k] = v.slice(0, maxLength);
     }

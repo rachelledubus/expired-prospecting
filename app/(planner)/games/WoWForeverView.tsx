@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
 import WoWProfessions from "./WoWProfessions";
 import WoWHunterDungeons from "./WoWHunterDungeons";
+import WoWGoldFarming from "./WoWGoldFarming";
+import WoWCombatControls from "./WoWCombatControls";
+import WoWPetTracker from "./WoWPetTracker";
+import WoWEquipmentTracker from "./WoWEquipmentTracker";
+import WoWUnifiedSearch from "./WoWUnifiedSearch";
+import { wowExtraField } from "@/lib/wow-portal-extras";
 
 type Props = {
   game: WowGame;
@@ -12,10 +18,11 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
 };
-type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "lookup";
+type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "gold" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
-  {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipes, and crafting recommendations"},
+  {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipe acquisition and market comparisons"},
+  {id:"gold",label:"💰 Gold farms",help:"Gray-mob farming routes and personal measured gold per hour"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
   {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
   {id:"talents",label:"🌿 Talents",help:"Exact leveling point at every level"},
@@ -31,46 +38,6 @@ const uiInput: React.CSSProperties = { background: "var(--panel,#fff)",color:"va
 const chip: React.CSSProperties = { borderRadius:99, padding:"9px 13px",minHeight:40,fontSize:13 };
 const note: React.CSSProperties = { fontSize:14, lineHeight:1.55 };
 const card: React.CSSProperties = { padding:16, marginTop:12 };
-const BASE_MACROS = [
-  {title:"Scroll up · Pet Attack",code:"#showtooltip\n/petattack\n/cast Dash\n/cast Dive\n/cast Charge",help:"Send your pet to the selected target; try an available pet movement ability."},
-  {title:"Scroll down · Pet Recall",code:"#showtooltip\n/petpassive\n/petfollow",help:"Stop attacking, switch your pet to Passive, and call it back."},
-  {title:"Mouse 4 / key 1 · Target + Auto Shot",code:"#showtooltip Auto Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast !Auto Shot",help:"If the current target is dead, friendly or missing, select a nearby enemy and start shooting. Repeated presses do not toggle Auto Shot off."},
-  {title:"Mouse 5 / key 2 · Arcane Shot + Auto Shot",code:"#showtooltip Arcane Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Arcane Shot\n/cast !Auto Shot",help:"Cast Arcane Shot, then keep Auto Shot active. Also acquires a new enemy when you have no valid hostile target."},
-  {title:"Key 3 · Aimed Shot + Auto Shot",code:"#showtooltip Aimed Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Aimed Shot\n/cast !Auto Shot",help:"Single-target ranged attack at level 20; keeps Auto Shot active. Do not expect it to fire while moving."},
-  {title:"Key E · Serpent Sting + Auto Shot",code:"#showtooltip Serpent Sting\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast Serpent Sting\n/cast !Auto Shot",help:"Apply the damage-over-time effect on longer-lived targets, and start or maintain Auto Shot."}
-];
-const KEY_PRIMARY = [
-  ["1","Target + Auto Shot"],["2","Arcane + Auto"],["3","Aimed + Auto"],["4","Multi-Shot"],["5","Volley"],
-  ["Q","Summon Hawk"],["E","Serpent Sting"],["R","Mend Pet"],["T","Hunter's Mark"],
-  ["F","Intimidation"],["G","Wing Clip"],["Z","Aspect of the Hawk"],["X","Aspect of the Cheetah"],
-  ["C","Feign Death"],["V","Concussive Shot"],["Wheel ↑","Pet Attack"],["Wheel ↓","Pet Recall"],["Mouse 4","Target + Auto Shot"],["Mouse 5","Arcane + Auto"]
-];
-const KEY_SHIFT = [
-  ["Shift+1","Bestial Wrath"],["Shift+2","Rapid Fire"],["Shift+3","Health potion"],
-  ["Shift+4","Raptor Strike"],["Shift+Q","Freezing Trap"],["Shift+E","Frost Trap"],
-  ["Shift+R","Revive Pet"],["Shift+F","Explosive Trap"],["Shift+G","Immolation Trap"],
-  ["Shift+Z","Aspect of the Monkey"],["Shift+C","Disengage"],["Shift+V","Pet Move To"],
-  ["Shift+Space","Walk on Air"],["Shift+T","Read Ley Line / Skysight"]
-];
-const SPELLS = [
-  {name:"Auto Shot",level:1,usage:"Your repeating ranged attack; stand still briefly so it fires."},
-  {name:"Arcane Shot",level:6,usage:"Instant ranged damage. Shares a cooldown with Summon Hawk."},
-  {name:"Concussive Shot",level:8,usage:"Slow an approaching enemy to create room."},
-  {name:"Tame Beast",level:10,usage:"Hunter class quest; unlock permanent pet management."},
-  {name:"Mend Pet",level:10,usage:"Heal your pet before it becomes dangerously low."},
-  {name:"Serpent Sting",level:0,usage:"Damage over time. Best when the target lives long enough."},
-  {name:"Aimed Shot",level:20,usage:"Strong single-target shot; shares a cooldown with Multi-Shot."},
-  {name:"Aspect of the Cheetah",level:20,usage:"Travel faster; swap to Hawk before damage can daze you."},
-  {name:"Summon Hawk",level:25,usage:"BM talent; sustained hawk damage. Two active at once; shares Arcane Shot cooldown."},
-  {name:"Intimidation",level:30,usage:"BM pet-delivered stun; helpful when pressured or interrupting."},
-  {name:"Feign Death",level:30,usage:"Drop threat / stop a bad pull when it succeeds."},
-  {name:"Bestial Wrath",level:40,usage:"BM pet burst cooldown for hard encounters."},
-  {name:"Multi-Shot",level:0,usage:"Damage several enemies; shares Aimed Shot cooldown."},
-  {name:"Frost Trap",level:0,usage:"Slow an area; traps share a cooldown in Forever."},
-  {name:"Freezing Trap",level:0,usage:"Control one enemy; traps share a cooldown in Forever."},
-  {name:"Hunter's Mark",level:0,usage:"Mark a longer-lived target before pulling."},
-  {name:"Disengage",level:0,usage:"Classic-style threat reduction in melee; not a backward leap."}
-];
 const ZONE_ROUTES = [
   {min:1,max:12,alliance:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",horde:"Zephras Isle: Thendal Grove → Shen'dar → Valanaar",dungeons:"None required",tip:"Finish the Skyborne introduction and the level-10 Hunter pet quest."},
   {min:13,max:19,alliance:"Westfall; alternatives: Loch Modan or Darkshore",horde:"The Barrens; alternative: Silverpine Forest",dungeons:"Hall of Thanes / Ragefire Chasm (13–18); Wailing Caverns (15–25); The Deadmines (18–23)",tip:"Get flight paths early and choose the same quest area as your Paladin partner."},
@@ -132,9 +99,10 @@ function SmallInfo({title,children}:{title:string;children:React.ReactNode}) {
 export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [view,setView]=useState<View>("next");
   const [filter,setFilter]=useState("");
+  const [searchTarget,setSearchTarget]=useState("");
   const [showAllTalent,setShowAllTalent]=useState(false);
-  const [copied,setCopied]=useState("");
-  const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"1")||1));
+  const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
+  const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const faction=prog.fields[F(game.id,"faction")]||"horde";
   const done=(stage:WowStage,step:WowStep)=>!!prog.checks[K(game.id,stage.id,step.id)];
   const count=game.stages.reduce((n,s)=>n+s.steps.filter(t=>done(s,t)).length,0);
@@ -147,12 +115,6 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const nextUnfinished=stageNow.steps.find(s=>!done(stageNow,s));
   const talentsAvailable=WOW_TALENT_PATH.filter(t=>t.level<=currentLevel);
   const nextTalent=WOW_TALENT_PATH.find(t=>t.level>currentLevel);
-  const taskMatches=useMemo(()=>{
-    const q=filter.toLowerCase().trim();
-    return q?game.stages.flatMap(s=>s.steps.filter(t=>(t.title+" "+t.how+" "+s.title+" "+s.place).toLowerCase().includes(q)).map(t=>({stage:s,step:t}))).slice(0,50):[];
-  },[filter,game.stages]);
-  const spellMatches=filter.trim()?SPELLS.filter(x=>(x.name+" "+x.usage).toLowerCase().includes(filter.toLowerCase().trim())):[];
-  const copy=async(code:string,title:string)=>{try{await navigator.clipboard.writeText(code);setCopied(title);}catch{setCopied("Unable to copy. Select the macro text instead.");}};
   return <div className="gm-wow-guide" style={{marginTop:14}}>
     <div className="gm-card gm-wow-intro" style={{...card,marginTop:0}}>
       <div className="gm-panel-label">🌬️ Your playthrough · Skyborne Beast Mastery</div>
@@ -160,7 +122,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
         <label className="gm-wow-level">My level
           <input type="number" inputMode="numeric" min={1} max={60}
-            value={prog.fields[F(game.id,"level")]??"1"}
+            value={prog.fields[F(game.id,"level")]??"34"}
             onChange={e=>setField(F(game.id,"level"),String(Math.max(1,Math.min(60,Number(e.target.value)||1))))}
             style={{...uiInput,width:80}} aria-label="Hunter level"/>
         </label>
@@ -185,36 +147,49 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </div>
     <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
-        onClick={()=>setView(v.id)} style={chip}>{v.label}</button>)}
+        onClick={()=>{setSearchTarget("");setView(v.id)}} style={chip}>{v.label}</button>)}
     </nav>
     <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
 
     {view==="next" && <>
       <div className="gm-card" style={card}>
-        <div className="gm-panel-label">Your next move · level {currentLevel}</div>
-        <h3 style={{margin:"7px 0"}}>{nextUnfinished?nextUnfinished.title:"Chapter finished!"}</h3>
-        <p className="gm-note" style={note}>{nextUnfinished?nextUnfinished.how:"Open the roadmap to check earlier goals or move on to your next level."}</p>
-        <p className="gm-note">Recommended chapter: <strong>{stageNow.title}</strong></p>
-        {currentLevel>=10 && <p className="gm-note">For combat: Scroll up = pet attack; scroll down = recall; Mouse 4 / key 1 = target + Auto Shot; Mouse 5 / key 2 = Arcane Shot. R = Mend Pet.</p>}
-        {currentLevel<10 && <p className="gm-note">Big power spike ahead: your first permanent pet at level 10.</p>}
+        <div className="gm-panel-label">What do you want to work on today?</div>
+        <label style={{display:"grid",gap:8,fontWeight:700}}>My play goal
+          <select value={playMode} onChange={e=>setField(wowExtraField(game.id,"play-mode"),e.target.value)}
+            style={{...uiInput,width:"100%"}}>
+            <option value="gold">Earn gold without XP</option>
+            <option value="professions">Improve professions / crafting</option>
+            <option value="gear">Farm Hunter gear</option>
+            <option value="leveling">Level my Hunter</option>
+          </select>
+        </label>
+        <p className="gm-note" style={note}>This choice saves for your next visit. The guide no longer assumes leveling is your default goal.</p>
       </div>
-      <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
-      <SmallInfo title={"Where to quest next · level "+currentLevel}>
-        <p><b>Suggested areas:</b> {faction==="horde"?zoneAtLevel.horde:zoneAtLevel.alliance}</p>
-        <p>For dungeon runs, use the Hunter gear priorities below rather than picking solely by level.</p>
-        <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
-      </SmallInfo>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} mode="summary"/>
-      <SmallInfo title="Simple fight routine">
-        <ol style={{paddingLeft:20,margin:"6px 0"}}>
-          <li>Choose one target. Mark it for a longer fight.</li>
-          <li>Scroll up to send your pet (after level 10).</li>
-          <li>Click Mouse 4 (or key 1) to select a new nearby enemy and start Auto Shot. Mouse 5 (or key 2) adds Arcane Shot; use Aimed Shot once learned.</li>
-          <li>Serpent Sting for targets living long enough; save Hawk for sustained fights after level 25.</li>
-          <li>Use R to heal your pet; scroll down to recall it before moving.</li>
-        </ol>
-        <p style={{marginBottom:0}}>With your Paladin partner: let the person tanking establish threat before sending your pet to a different enemy.</p>
-      </SmallInfo>
+      {playMode==="gold"&&<WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField} compact/>}
+      {playMode==="professions"&&<WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+      {playMode==="gear"&&<WoWHunterDungeons gameId={game.id} level={currentLevel}
+        faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} mode="summary"/>}
+      {playMode==="leveling"&&<>
+        <div className="gm-card" style={card}>
+          <div className="gm-panel-label">Your next move · level {currentLevel}</div>
+          <h3 style={{margin:"7px 0"}}>{nextUnfinished?nextUnfinished.title:"Chapter finished!"}</h3>
+          <p className="gm-note" style={note}>{nextUnfinished?nextUnfinished.how:"Review your roadmap to check missed goals."}</p>
+          <p className="gm-note">Recommended chapter: <strong>{stageNow.title}</strong></p>
+          {currentLevel>=10&&<p className="gm-note">Your current keys: Mouse 4 = Auto Shot · wheel up = pet attacks the tank's target (when configured) · wheel down = recall · R = Feign Death. Your editable combat setup is in Combat &amp; Keys.</p>}
+        </div>
+        <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
+        <SmallInfo title={"Where to quest next · level "+currentLevel}>
+          <p><b>Suggested areas:</b> {faction==="horde"?zoneAtLevel.horde:zoneAtLevel.alliance}</p>
+          <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
+        </SmallInfo>
+        <SmallInfo title="Simple fight routine">
+          <ol style={{paddingLeft:20,margin:"6px 0"}}>
+            <li>Allow your tank or pet to establish threat, then attack the same target.</li>
+            <li>Start Auto Shot with your current Mouse 4 binding; use your numbered shots as needed.</li>
+            <li>Recall your pet with wheel down before shortcuts. R is your Feign Death key.</li>
+          </ol>
+        </SmallInfo>
+      </>}
     </>}
 
     {view==="roadmap" && <>
@@ -279,45 +254,23 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </>}
 
     {view==="combat" && <>
-      <SmallInfo title="Combat priority · not a rigid rotation">
-        <p><b>Short fights:</b> Send pet → Auto Shot → Arcane Shot → Aimed Shot when available. Add Serpent Sting if the target will live long enough.</p>
-        <p><b>Long fights / elites (25+):</b> Mark first → send pet → keep Auto Shot and pet attacks active → Aimed Shot → use Summon Hawk for sustained damage (up to two Hawks). Hawk shares Arcane Shot cooldown.</p>
-        <p><b>Several enemies:</b> Use Multi-Shot instead of Aimed Shot. AoE traps/Volley are situational and mana hungry. Aimed and Multi share a cooldown; all traps now share one cooldown.</p>
-        <p><b>In trouble:</b> Mend Pet (R), Intimidation (F at 30), Concussive Shot (V), Feign Death (C at 30), or scroll down to recall.</p>
-      </SmallInfo>
-      <SmallInfo title="WASD + scroll wheel pet control + two attack side buttons">
-        <p>Use A/D to strafe and hold the right mouse button to turn. Scroll UP sends your pet; scroll DOWN recalls it. Mouse 4 starts a new target and Auto Shot; Mouse 5 uses Arcane Shot and keeps Auto Shot active. Keep 1 and 2 as keyboard backups. Unbind ordinary camera zoom from wheel up/down, or move zoom to modified wheel bindings.</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,200px),1fr))",gap:7}}>
-          {KEY_PRIMARY.map(([key,spell])=><div key={key} style={{display:"flex",gap:12,alignItems:"center",padding:"7px 9px",borderRadius:8,background:"rgba(128,128,128,.08)"}}>
-            <kbd style={{fontWeight:700,minWidth:58}}>{key}</kbd><span>{spell}</span></div>)}
-        </div>
-        <details style={{marginTop:14}}><summary style={{cursor:"pointer",fontWeight:700}}>Show my Shift binds ({KEY_SHIFT.length})</summary>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,200px),1fr))",gap:7,marginTop:10}}>
-            {KEY_SHIFT.map(([key,spell])=><div key={key} style={{display:"flex",gap:12,padding:7,borderRadius:7,background:"rgba(128,128,128,.08)"}}>
-              <kbd style={{fontWeight:700,minWidth:88}}>{key}</kbd><span>{spell}</span></div>)}
-          </div>
-        </details>
-        <p className="gm-note" style={{marginTop:12}}>These are suggested bindings, not Forever defaults. Some replace familiar shortcuts (C, R, V). Leave an ability's slot empty until you learn it.</p>
-      </SmallInfo>
-      <SmallInfo title="Scroll-wheel pet + auto-target shooting macros · tap to copy">
-        {BASE_MACROS.map(m=><div key={m.title} style={{marginTop:14}}>
-          <b>{m.title}</b><p className="gm-note">{m.help}</p>
-          <pre style={{whiteSpace:"pre-wrap",background:"rgba(128,128,128,.1)",padding:12,borderRadius:8,fontSize:12}}>{m.code}</pre>
-          <button type="button" className="gm-pill" onClick={()=>void copy(m.code,m.title)}>Copy macro</button>
-        </div>)}
-        {copied && <p role="status" className="gm-note">{copied==="Unable to copy. Select the macro text instead."?copied:("Copied: "+copied)}</p>}
-        <p className="gm-note" style={{marginTop:12}}>Type /macro → New → paste → drag each macro to an action bar slot. In Options → Keybindings → Action Bars, bind Pet Attack to Mouse Wheel Up, Pet Recall to Mouse Wheel Down, Target + Auto Shot to Mouse 4 or 1, and Arcane + Auto to Mouse 5 or 2. Clear the default camera zoom wheel bindings first. In dungeons, be careful: automatic enemy selection can pick a nearby enemy you did not intend to pull. The !Auto Shot prefix works in documented Classic macros but has not been verified here in your current Forever client. Test on a safe training target.</p>
+      <WoWCombatControls gameId={game.id} prog={prog} setField={setField}/>
+      <SmallInfo title="Hunter combat reminders">
+        <p><b>With a Paladin tank:</b> Assist his target; disable pet Growl and recall before shortcuts.</p>
+        <p><b>Solo:</b> Let your pet establish threat, keep Auto Shot running and Mend Pet early.</p>
+        <p><b>When threatened:</b> Intimidation, traps, Wing Clip, and Feign Death are situational controls. Test Forever-specific macro commands in a safe place.</p>
       </SmallInfo>
     </>}
 
     {view==="pets" && <>
+      <WoWPetTracker gameId={game.id} prog={prog} setField={setField}/>
       <SmallInfo title="First pet: get one at level 10">
         <ol style={{paddingLeft:20,margin:0}}>
           <li>Speak to a Hunter trainer and finish the Tame Beast class quest.</li>
           <li>Tame a nearby useful pet first; don't delay leveling to camp a rare spawn.</li>
           <li>Keep it fed, monitor happiness, and learn Mend Pet / Revive Pet.</li>
           <li>Train Growl and appropriate Claw or Bite ranks; recheck skill ranks as you level.</li>
-          <li>Bind Pet Attack to scroll up, Pet Passive/Follow to scroll down, and Target + Auto Shot / Arcane + Auto to your two mouse side buttons.</li>
+          <li>Configure wheel up as your tested tank-target pet attack, wheel down to recall, Mouse 4 to Auto Shot, and your numbered shots in Combat & Keys.</li>
         </ol>
       </SmallInfo>
       <SmallInfo title="Which pet should I use?">
@@ -331,7 +284,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p><b>Can't hold threat while solo:</b> Growl autocast ON; train its rank and improve your pet's damage.</p>
         <p><b>Pet pulls off the dungeon tank:</b> Turn Growl OFF and attack the tank's chosen enemy.</p>
         <p><b>Pet lacks damage:</b> Check happiness, level, ability ranks, Focus usage and whether it's actually attacking.</p>
-        <p><b>With your Paladin:</b> If your partner is tanking, consider Growl OFF; use your pet as an additional damage dealer.</p>
+        <p><b>With your Paladin:</b> If your partner is tanking, set Growl OFF and have your pet assist his target. Use a tested tank-focus macro rather than allowing your pet to pick unrelated enemies.</p>
       </SmallInfo>
     </>}
 
@@ -356,9 +309,11 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </>}
 
-    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget}/>}
+    {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
+      <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>
       <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck}/>
       <SmallInfo title="Simple leveling gear priorities">
         <ol style={{paddingLeft:20,margin:0}}>
@@ -386,26 +341,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </>}
 
     {view==="lookup" && <>
-      <SmallInfo title="Search Hunter skills or progression steps">
-        <label style={{display:"grid",gap:8}}>What are you looking for?
-          <input type="search" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="e.g. Tame Beast, Intimidation, pylon, pet, ammo"
-            style={{...uiInput,width:"100%"}}/>
-        </label>
-        {!filter.trim()?<p className="gm-note">Search by quest, location, objective or ability. No need to switch between guides.</p>:
-          <>
-            <p className="gm-note">{taskMatches.length} related guide actions · {spellMatches.length} abilities</p>
-            {taskMatches.map(({stage,step})=><div key={stage.id+step.id} style={{padding:"9px 0",borderBottom:"1px solid var(--border,#ddd)"}}>
-              <b>{step.title}</b> <span className="gm-note">· level {stage.from}–{stage.to}</span>
-              <p className="gm-note" style={{margin:"4px 0 0"}}>{step.how}</p>
-              <Action gameId={game.id} stage={stage} step={step} done={done(stage,step)} setCheck={setCheck}/>
-            </div>)}
-            {spellMatches.map(spell=><div key={spell.name} style={{padding:"9px 0",borderBottom:"1px solid var(--border,#ddd)"}}>
-              <b>{spell.name}</b> <span className="gm-note">{spell.level?"· level "+spell.level:"· level varies / trainer"}</span>
-              <p className="gm-note" style={{margin:"5px 0 0"}}>{spell.usage}</p>
-            </div>)}
-            {!taskMatches.length&&!spellMatches.length&&<p className="gm-note">No matches. Try a shorter name or use one of the source directories below.</p>}
-          </>}
-      </SmallInfo>
+      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{setSearchTarget(term);setView(destination)}}/>
       <SmallInfo title="Reference library · quest specifics & updates">
         <p>This personal guide summarizes major milestones. For all individual Skyborne side quests, detailed maps, complete pet ability databases and current beta tuning, use these original references:</p>
         <div style={{display:"grid",gap:9}}>
@@ -413,7 +349,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           <a href="https://www.wowhead.com/forever/guide/dungeons-overview-locations-details" target="_blank" rel="noopener noreferrer">Wowhead: Forever dungeon levels ↗</a>
           <a href="https://topbuilds.gg/wow-forever/leveling-zones/" target="_blank" rel="noopener noreferrer">WoW Forever leveling zone overview ↗</a>
         </div>
-        <p className="gm-note" style={{marginTop:12}}>Updated guide research: November 6, 2026. Check game tooltips for differences from published guides.</p>
+        <p className="gm-note" style={{marginTop:12}}>Guide references are updated as sources are verified; source availability can change. Check game tooltips for differences from published guides.</p>
       </SmallInfo>
     </>}
   </div>;

@@ -1,6 +1,7 @@
 "use client";
 
 import type { GameProgress } from "@/lib/games-data";
+import { WOW_DUNGEON_ENTRANCES } from "@/lib/wow-portal-extras";
 import {
   rankHunterDungeons,
   dungeonLootOwnedKey,
@@ -50,6 +51,7 @@ function DungeonCard({
   prog:GameProgress;setCheck:Props["setCheck"];featured?:boolean;
 }) {
   const d=result.dungeon;
+  const entrance=WOW_DUNGEON_ENTRANCES[d.id];
   const loot=d.loot.filter(item=>!item.faction || item.faction===faction);
   const unownedFuture=loot.filter(item=>item.requiredLevel>level && !prog.checks[dungeonLootOwnedKey(gameId,d.id,item.id)]);
   const remaining=loot.filter(item=>!prog.checks[dungeonLootOwnedKey(gameId,d.id,item.id)]);
@@ -93,6 +95,20 @@ function DungeonCard({
           </p>}
           <p className="gm-wow-dungeon-caption">Covered: {result.acquiredCount} of {loot.length} listed targets (owned or skipped).</p>
         </>}
+        {entrance && <details style={{marginTop:12}}>
+          <summary style={{cursor:"pointer",fontWeight:700}}>Find the actual dungeon entrance</summary>
+          <p className="gm-wow-dungeon-caption"><b>{entrance.zone}:</b> {entrance.detail}</p>
+          {entrance.waypoint && <p className="gm-wow-dungeon-caption">
+            <code>{entrance.waypoint}</code>{" "}
+            <button type="button" className="gm-pill" onClick={()=>{
+              void navigator.clipboard.writeText(entrance.waypoint!).catch(()=>{});
+            }}>Copy TomTom</button>
+          </p>}
+          <p className="gm-wow-dungeon-caption">Coordinates are Classic-style entrance references; some dungeons have a non-instanced approach before the actual portal.{" "}
+            <a href={entrance.sourceUrl} target="_blank" rel="noopener noreferrer">Read the route ↗</a>
+          </p>
+        </details>}
+        {!entrance && <p className="gm-wow-dungeon-caption">Detailed entrance route is not yet verified for this dungeon. Use the linked dungeon reference before traveling.</p>}
         {d.travelNote && <p className="gm-wow-dungeon-caution"><b>Travel:</b> {d.travelNote}</p>}
         {d.sourceNote && <p className="gm-wow-dungeon-caution">{d.sourceNote}</p>}
         <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer">Review dungeon loot source ↗</a>

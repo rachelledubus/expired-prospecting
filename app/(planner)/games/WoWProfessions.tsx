@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
+import WoWCraftingEconomy from "./WoWCraftingEconomy";
+import { wowExtraField } from "@/lib/wow-portal-extras";
 import {
   WOW_PROFESSIONS, WOW_RECIPES, WOW_RECIPE_CATALOG, professionField, recipeLearnedKey, recipeHiddenKey, recipeStatus,
   type WowProfessionId, type WowRecipe, type SourceLocation,
@@ -12,6 +14,7 @@ type Props = {
   prog: GameProgress;
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
+  initialQuery?: string;
 };
 
 const panel: React.CSSProperties = { padding: 16, marginTop: 12 };
@@ -70,7 +73,7 @@ const compareLearnLevel = (a: WowRecipe, b: WowRecipe) => {
 type RecipeLocationGroup = { id: string; title: string; subtitle: string;
   kind: "known" | "trainer" | "unverified" | "opposing"; recipes: WowRecipe[] };
 const locationGroupId = (loc: SourceLocation) => "loc:" + loc.continent + ":" + loc.zone + ":" + loc.area;
-const groupRecipesByLocation = (recipes: WowRecipe[], faction: string): RecipeLocationGroup[] => {
+const groupRecipesByLocation = (recipes: WowRecipe[], faction: string, manualArea:(id:string)=>string): RecipeLocationGroup[] => {
   const groups = new Map<string, RecipeLocationGroup>();
   const add = (id: string, title: string, subtitle: string, kind: RecipeLocationGroup["kind"], recipe: WowRecipe) => {
     if (!groups.has(id)) groups.set(id, { id, title, subtitle, kind, recipes: [] });
@@ -82,6 +85,9 @@ const groupRecipesByLocation = (recipes: WowRecipe[], faction: string): RecipeLo
     if (sources.length) {
       for (const loc of sources) add(locationGroupId(loc), loc.area, loc.zone + " · " +
         (loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"), "known", r);
+    } else if (manualArea(r.id).trim()) {
+      const place=manualArea(r.id).trim();
+      add("personal:"+place.toLowerCase(),place,"My personally recorded acquisition source (not independently verified).","known",r);
     } else if (r.acquisition === "trainer" && !opposingVendorsOnly(r, faction)) {
       add("trainer", "Profession trainers", "Any qualified trainer for this profession; exact NPC and rank may vary.", "trainer", r);
     } else if (opposingVendorsOnly(r, faction)) {
@@ -101,14 +107,15 @@ const clampSkill = (text: string) => {
   return String(Math.max(0, Math.min(300, Number.isFinite(n) ? Math.floor(n) : 0)));
 };
 
-export default function WoWProfessions({ gameId, prog, setCheck, setField }: Props) {
+export default function WoWProfessions({ gameId, prog, setCheck, setField, initialQuery = "" }: Props) {
   const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
-  const [showGray, setShowGray] = useState(false);
+  const [showGray, setShowGray] = useState(Boolean(initialQuery));
   const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState("");
   const [confirmed, setConfirmed] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [areaFilter, setAreaFilter] = useState("all");
+  const [sourceDrafts, setSourceDrafts] = useState<Record<string,string>>({});
   const [shown, setShown] = useState(12);
 
   const skillFor = (id: WowProfessionId) => {
@@ -122,6 +129,15 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const faction = prog.fields[gameId + "|faction"] || "horde";
   const isLearned = (id: string) => !!prog.checks[recipeLearnedKey(gameId, id)];
   const isHidden = (id: string) => !!prog.checks[recipeHiddenKey(gameId, id)];
+  const extra = (value: string) => wowExtraField(gameId,value);
+  const manualArea = (id: string) => prog.fields[extra("source-area-"+id)] ?? "";
+  const manualKind = (id: string) => prog.fields[extra("source-kind-"+id)] ?? "";
+  const manualNote = (id: string) => prog.fields[extra("source-note-"+id)] ?? "";
+  const professionSourceIndex = selected === "leatherworking"
+    ? "https://www.zockify.com/forever/professions/leatherworking/recipes/"
+    : selected === "cooking"
+      ? "https://www.zockify.com/forever/professions/cooking/recipes/"
+      : "https://www.zockify.com/forever/professions/first-aid/recipes/";
   const hiddenCount = WOW_RECIPES.filter(r => r.profession === selected && isHidden(r.id) && !isLearned(r.id)).length;
   const setHidden = (id: string, hidden: boolean) => {
     setCheck(recipeHiddenKey(gameId, id), hidden);
@@ -145,25 +161,31 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
     // Keep learned recipes exclusively in the Recommended Next area.
     .filter(r => !isLearned(r.id))
     .filter(r => !query.trim() || (r.name + " " + r.category + " " + r.reagents.map(m => m.name).join(" ") + " " +
-      r.sourceLocations.map(loc => loc.area + " " + loc.zone + " " + loc.npc).join(" ")).toLowerCase().includes(query.trim().toLowerCase()))
+      r.sourceLocations.map(loc => loc.area + " " + loc.zone + " " + loc.npc).join(" ") + " " + manualArea(r.id) + " " + manualNote(r.id)).toLowerCase().includes(query.trim().toLowerCase()))
     .sort(compareLearnLevel),
-      [baseRecipes, query, faction, showHidden, selected, prog.checks]);
+      [baseRecipes, query, faction, showHidden, selected, prog.checks, prog.fields]);
   const areaOptions = useMemo(() => {
     const found = new Map<string, string>();
-    WOW_RECIPES.filter(r => r.profession === selected).forEach(r =>
-      usableVendorLocations(r, faction).forEach(loc =>
-        found.set(locationGroupId(loc), loc.area + " · " + loc.zone)));
+    WOW_RECIPES.filter(r => r.profession === selected).forEach(r => {
+      usableVendorLocations(r, faction).forEach(loc => found.set(locationGroupId(loc), loc.area + " · " + loc.zone));
+      if(!usableVendorLocations(r,faction).length && manualArea(r.id).trim()){
+        const place=manualArea(r.id).trim();
+        found.set("personal:"+place.toLowerCase(),place+" · My recorded location");
+      }
+    });
     return [...found].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [selected, faction]);
+  }, [selected, faction, prog.fields]);
   const groupedRecipes = useMemo(() =>
-    groupRecipesByLocation(recipes, faction).filter(g => areaFilter === "all" || g.id === areaFilter),
-    [recipes, faction, areaFilter]);
+    groupRecipesByLocation(recipes, faction, manualArea).filter(g => areaFilter === "all" || g.id === areaFilter),
+    [recipes, faction, areaFilter, prog.fields]);
   const visibleRecipeCount = new Set(groupedRecipes.flatMap(g => g.recipes.map(r => r.id))).size;
   const learnedRecipes = useMemo(() =>
     WOW_RECIPES.filter(r => r.profession === selected && isLearned(r.id)).sort(compareLearnLevel),
     [selected, prog.checks]);
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
     || baseRecipes.find(r => recipeStatus(r, skill) === "orange" && !opposingVendorsOnly(r, faction));
+  const nextToLearn = baseRecipes.find(r => !isLearned(r.id) && r.learnAt !== null && r.learnAt <= skill &&
+    (r.acquisition === "trainer" || usableVendorLocations(r,faction).length > 0 || !!manualArea(r.id)));
   // Unlearned recipes with only opposing-faction vendor records stay searchable
   // but will not be presented as your next vendor acquisition.
 
@@ -230,13 +252,14 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                 <div className="gm-wow-recipe-detail-body">
                   <p><b>For one craft:</b> {r.reagents.map(m => m.quantity + "× " + m.name).join(" · ")}</p>
                   <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
+                   <p className="gm-note" style={small}><b>Source details:</b> {r.source}</p>
                   {usableVendorLocations(r, faction).length > 0 ? <div className="gm-wow-locations">
                     <b>{faction === "horde" ? "Horde" : "Alliance"} / neutral vendor references</b>
                     {usableVendorLocations(r, faction).map((loc, idx) => {
                       const waypoint = "/way " + loc.zone + " " + loc.x + " " + loc.y;
                       return <div key={idx} className="gm-wow-location">
                         <span><b>{loc.npc}</b> · {loc.area} · {loc.zone} · {loc.continent === "eastern-kingdoms" ? "Eastern Kingdoms" : "Kalimdor"} · {loc.faction}</span>
-                        <span className="gm-wow-reference">Classic location reference; current Forever stock and route safety unverified</span>
+                        <span className="gm-wow-reference">{loc.verification} · Current stock and route safety not guaranteed</span>
                         <button type="button" className="gm-pill"
                           onClick={() => copyWaypoint(waypoint)}>Copy TomTom</button>
                       </div>;
@@ -256,8 +279,39 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                       </div>)}
                     </div>
                   </details>}
+                  <div style={{borderTop:"1px solid var(--border,#ddd)",marginTop:12,paddingTop:10}}>
+                    <b>Acquisition source — personal notes</b>
+                    <p className="gm-note" style={small}>Published sources may be incomplete. Save where you actually find this pattern; your location appears as its own group when no usable vendor was mapped.</p>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,160px),1fr))",gap:8}}>
+                      <label style={small}>How obtained
+                        <select value={manualKind(r.id)} onChange={e=>setField(extra("source-kind-"+r.id),e.target.value)}
+                          style={{width:"100%",padding:8,borderRadius:7}}>
+                          <option value="">Not confirmed</option><option value="trainer">Trainer</option>
+                          <option value="vendor">Vendor</option><option value="drop">Drop</option>
+                          <option value="quest">Quest</option><option value="favor">Merchant's Favor</option>
+                          <option value="reputation">Reputation</option><option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label style={small}>Exact town, camp or location
+                        <input value={sourceDrafts[r.id]??manualArea(r.id)} maxLength={120} placeholder="e.g. Hammerfall"
+                          onChange={e=>setSourceDrafts(old=>({...old,[r.id]:e.target.value}))}
+                          style={{width:"100%",padding:8,borderRadius:7}}/>
+                        <button className="gm-pill" type="button"
+                          disabled={sourceDrafts[r.id]===undefined||sourceDrafts[r.id]===manualArea(r.id)}
+                          onClick={()=>setField(extra("source-area-"+r.id),sourceDrafts[r.id]??"")}>
+                          Save location
+                        </button>
+                      </label>
+                    </div>
+                    <label style={{...small,display:"block",marginTop:7}}>NPC, boss or source requirements
+                      <input value={manualNote(r.id)} maxLength={240} placeholder="Vendor name, reputation, quest, drop…"
+                        onChange={e=>setField(extra("source-note-"+r.id),e.target.value)}
+                        style={{width:"100%",padding:8,borderRadius:7}}/>
+                    </label>
+                  </div>
                   {state === "orange" && <p>{Math.max(0, r.yellowAt - skill)} possible +1 crafts before this recipe becomes yellow, based on the catalog's thresholds.</p>}
-                  <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">View recipe data ↗</a>
+                  <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">View client recipe ↗</a>
+                  {" · "}<a href={professionSourceIndex} target="_blank" rel="noopener noreferrer">Check community acquisition index ↗</a>
                 </div>
               </details>
             </article>;
@@ -325,7 +379,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
       <p className="gm-note" style={small}>Skinning has no crafted recipes. Train the next rank when eligible and skin appropriately leveled creatures. This tracker is separate from your crafting recipe list.</p>
     </div> : <>
       {next && <div className="gm-card gm-wow-next-card" style={panel}>
-        <div className="gm-panel-label">Recommended next · {selected}</div>
+        <div className="gm-panel-label">{isLearned(next.id) ? "Craft next for skill" : "Recommended next · learn before crafting"} · {selected}</div>
         <h3 style={{ margin: "8px 0 4px" }}>{next.name}</h3>
         <p className="gm-note" style={small}>
           Orange until {next.yellowAt - 1}: {Math.max(0, next.yellowAt - skill)} guaranteed skill-ups remaining.
@@ -357,7 +411,19 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <p className="gm-note" style={small}>There may be orange recipes in the catalog, but no suitable unhidden recipe with a non-opposing acquisition route is available at this skill. Review recipes, learned status, and current trainers before traveling.</p>
         {renderLearnedManager()}
       </div>}
-
+      {nextToLearn && <div className="gm-card" style={panel}>
+        <div className="gm-panel-label">Learn next · accessible or recorded source</div>
+        <h3 style={{margin:"6px 0"}}>{nextToLearn.name}</h3>
+        <p className="gm-note" style={small}>
+          {nextToLearn.acquisition === "trainer" ? "Check a profession trainer for its actual current unlock skill." :
+            usableVendorLocations(nextToLearn,faction).length ? "Vendor: " + usableVendorLocations(nextToLearn,faction).map(l=>l.npc+" · "+l.area).join("; ") :
+            "My recorded source: "+manualArea(nextToLearn.id)}
+          {" "}No source here guarantees live Forever stock.
+        </p>
+        <label className="gm-wow-learned"><input type="checkbox" checked={isLearned(nextToLearn.id)}
+          onChange={e=>setCheck(recipeLearnedKey(gameId,nextToLearn.id),e.target.checked)}/> Learned this recipe</label>
+      </div>}
+      <WoWCraftingEconomy gameId={gameId} profession={selected} prog={prog} setField={setField}/>
       <div className="gm-card gm-wow-finder-card" style={panel}>
         <div className="gm-wow-finder-head">
           <h3 style={{ margin: 0 }}>{showHidden ? "Hidden recipes" : "Recipe finder"}</h3>
@@ -369,7 +435,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
         <p className="gm-note" style={small}>
           {showHidden
             ? "These are excluded from recommendations and normal searches. Restore any recipe to bring it back."
-            : "Only recipes you haven't learned appear here, grouped by town, camp or landmark. Mark Learned to remove one; manage learned recipes in Recommended Next."}
+            : "Unlearned recipes are grouped by exact source (when mapped). Mark Learned to remove one. Check source details and record missing locations; review learned recipes in Recommended Next."}
         </p>
         <p className="gm-wow-sort-note">
           Grouped by specific learning location, then sorted by the skill needed to learn within each group.
