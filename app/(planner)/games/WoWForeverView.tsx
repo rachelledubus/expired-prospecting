@@ -11,6 +11,7 @@ import WoWPetTracker from "./WoWPetTracker";
 import WoWEquipmentTracker from "./WoWEquipmentTracker";
 import WoWUnifiedSearch from "./WoWUnifiedSearch";
 import WoWMaterialFarming from "./WoWMaterialFarming";
+import WoWPlaySession from "./WoWPlaySession";
 import { wowExtraField } from "@/lib/wow-portal-extras";
 
 type Props = {
@@ -99,14 +100,18 @@ function SmallInfo({title,children}:{title:string;children:React.ReactNode}) {
   return <div className="gm-card" style={card}><h3 style={{margin:"0 0 7px",fontSize:17}}>{title}</h3><div style={note}>{children}</div></div>;
 }
 export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
-  const [view,setView]=useState<View>("next");
+  const [view,setView]=useState<View>(() => {
+    const saved=prog.fields[wowExtraField(game.id,"last-view")];
+    return VIEWS.some(v=>v.id===saved) ? saved as View : "next";
+  });
   const [filter,setFilter]=useState("");
   const [searchTarget,setSearchTarget]=useState("");
   const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
   const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
-  const openMaterial=(name:string)=>{setMaterialTarget(name);setView("materials");};
+  const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
+  const openMaterial=(name:string)=>{setMaterialTarget(name);openView("materials");};
   const faction=prog.fields[F(game.id,"faction")]||"horde";
   const done=(stage:WowStage,step:WowStep)=>!!prog.checks[K(game.id,stage.id,step.id)];
   const count=game.stages.reduce((n,s)=>n+s.steps.filter(t=>done(s,t)).length,0);
@@ -151,7 +156,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </div>
     <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
-        onClick={()=>{setSearchTarget("");setView(v.id)}} style={chip}>{v.label}</button>)}
+        onClick={()=>{setSearchTarget("");openView(v.id)}} style={chip}>{v.label}</button>)}
     </nav>
     <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
 
@@ -169,10 +174,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         </label>
         <p className="gm-note" style={note}>This choice saves for your next visit. The guide no longer assumes leveling is your default goal.</p>
       </div>
-      {playMode==="gold"&&<WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField} compact/>}
-      {playMode==="professions"&&<WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} onFindMaterial={openMaterial}/>}
-      {playMode==="gear"&&<WoWHunterDungeons gameId={game.id} level={currentLevel}
-        faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} mode="summary"/>}
+      <WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
+        faction={faction==="alliance"?"alliance":"horde"}
+        mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"?playMode:"gold"}
+        onOpen={openView} onFindMaterial={openMaterial}/>
       {playMode==="leveling"&&<>
         <div className="gm-card" style={card}>
           <div className="gm-panel-label">Your next move · level {currentLevel}</div>
@@ -347,7 +352,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </>}
 
     {view==="lookup" && <>
-      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{if(destination==="materials")setMaterialTarget(term);setSearchTarget(term);setView(destination)}}/>
+      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{if(destination==="materials")setMaterialTarget(term);setSearchTarget(term);openView(destination)}}/>
       <SmallInfo title="Reference library · quest specifics & updates">
         <p>This personal guide summarizes major milestones. For all individual Skyborne side quests, detailed maps, complete pet ability databases and current beta tuning, use these original references:</p>
         <div style={{display:"grid",gap:9}}>
