@@ -378,7 +378,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
             ? visibleRecipeCount + " hidden " + selected + " recipes match."
             : visibleRecipeCount + " recipes in " + groupedRecipes.length + " learning-location groups · " + hiddenCount + " hidden · " +
               WOW_RECIPES.filter(r => r.profession === selected).length +
-              " total catalog entries. Vendor locations are Classic references; current Forever stock is unverified."
+              " total catalog entries. Vendor locations are Classic references; current Forever stock is unverified."}
         </p>
         {groupedRecipes.length === 0 && <p className="gm-note">
           {showHidden ? "No hidden recipes found for this profession or search." : "No matching recipes. Try clearing your search, filters, or including gray recipes."}
