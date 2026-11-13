@@ -2,6 +2,8 @@ import { getStardewQuestSubtasks } from "./stardew-quest-subtasks";
 import { TERRARIA_GAME, type TerrariaGame } from "./terraria-spirit-data";
 import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
 import { WOW_GAME, type WowGame } from "./wow-forever-data";
+import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, recipeHiddenKey, professionField } from "./wow-forever-professions";
+import { WOW_HUNTER_DUNGEONS, dungeonLootOwnedKey } from "./wow-forever-dungeon-gear";
 import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey, dreamlightCharacterVisibilityKey } from "./dreamlight-character-quests";
 
 // Game progression checklists for the /games planner page.
@@ -434,6 +436,13 @@ export function knownCheckKeys(game: Game): Set<string> {
     for (const stage of game.stages) {
       for (const step of stage.steps) keys.add(questKey(game.id, "wow-" + stage.id, step.id));
     }
+    for (const recipe of WOW_RECIPES) {
+      keys.add(recipeLearnedKey(game.id, recipe.id));
+      keys.add(recipeHiddenKey(game.id, recipe.id));
+    }
+    for (const dungeon of WOW_HUNTER_DUNGEONS) {
+      for (const target of dungeon.loot) keys.add(dungeonLootOwnedKey(game.id, dungeon.id, target.id));
+    }
     return keys;
   }
   if (isDreamlightGame(game)) {
@@ -488,7 +497,11 @@ export function knownCheckKeys(game: Game): Set<string> {
 
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
-  if (isWoWGame(game)) return new Set<string>([game.id + "|level", game.id + "|faction", game.id + "|pet-name"]);
+  if (isWoWGame(game)) return new Set<string>([
+    game.id + "|level", game.id + "|faction", game.id + "|pet-name",
+    ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
+    professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
+  ]);
   if (isDreamlightGame(game)) return new Set<string>(
     DREAMLIGHT_CHARACTERS.map(character => dreamlightCharacterVisibilityKey(game.id, character.id)),
   );

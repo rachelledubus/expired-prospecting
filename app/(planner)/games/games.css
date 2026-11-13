@@ -571,3 +571,176 @@
   .tp.gm .gm-ter-help { margin-left: 24px; }
   .tp.gm .gm-ter-priority-focus { padding: 12px; }
 }
+
+
+/* WoW Forever profession guide: mobile-first navigation and readable, compact recipe cards. */
+.tp.gm .gm-wow-guide, .tp.gm .gm-wow-professions { min-width: 0; width: 100%; }
+.tp.gm .gm-wow-guide .gm-card, .tp.gm .gm-wow-professions .gm-card { min-width: 0; }
+.tp.gm .gm-wow-nav { flex-wrap: wrap; }
+.tp.gm .gm-wow-nav .gm-chip { min-height: 44px; }
+.tp.gm .gm-wow-professions .gm-wow-section-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px 10px; }
+.tp.gm .gm-wow-professions .gm-wow-section-head h3 { color: var(--navy); font: 700 17px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-professions .gm-wow-subtitle { font-size: 13px; color: var(--muted); }
+.tp.gm .gm-wow-professions .gm-wow-skill-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+.tp.gm .gm-wow-professions .gm-wow-skill-field { display: grid; gap: 6px; min-width: 0; margin: 0; font: 600 13px "DM Sans",system-ui,sans-serif; color: var(--muted); }
+.tp.gm .gm-wow-professions .gm-wow-skill-field > span { overflow-wrap: anywhere; }
+.tp.gm .gm-wow-professions .gm-wow-skill-input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); color: var(--navy); background: var(--sand); font-size: 18px; font-weight: 700; }
+.tp.gm .gm-wow-professions .gm-wow-settings { border-top: 1px solid var(--line); margin-top: 14px; }
+.tp.gm .gm-wow-professions .gm-wow-settings > summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--navy); font: 700 14px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-professions .gm-wow-setting-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 8px 0 10px; }
+.tp.gm .gm-wow-professions .gm-wow-setting-grid label { display: grid; gap: 6px; min-width: 0; margin: 0; font-size: 14px; }
+.tp.gm .gm-wow-professions .gm-wow-setting-grid input,
+.tp.gm .gm-wow-professions .gm-wow-setting-grid select { display: block; width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--sand); color: var(--navy); font-size: 16px; }
+.tp.gm .gm-wow-professions .gm-wow-profession-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+.tp.gm .gm-wow-professions .gm-wow-profession-tabs .gm-chip { min-width: 0; min-height: 44px; font-size: 13px; padding: 9px 6px; white-space: normal; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-next-actions { display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.tp.gm .gm-wow-next-actions .gm-pill { min-height: 44px; }
+.tp.gm .gm-wow-finder-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.tp.gm .gm-wow-finder-head h3 { margin: 0; }
+.tp.gm .gm-wow-finder-head .gm-pill { min-height: 44px; }
+.tp.gm .gm-wow-filter-toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.tp.gm .gm-wow-filter-toggles > label { display: inline-flex; align-items: center; gap: 8px; margin: 0; min-height: 44px; font-size: 14px; }
+.tp.gm .gm-wow-filter-toggles input[type="checkbox"],
+.tp.gm .gm-wow-learned input[type="checkbox"] { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--navy); }
+.tp.gm .gm-wow-filter-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(175px,.7fr); gap: 10px; margin: 12px 0; }
+.tp.gm .gm-wow-filter-row > input, .tp.gm .gm-wow-filter-row > select { width: 100%; min-width: 0; max-width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--sand); color: var(--navy); padding: 8px 11px; font-size: 16px; }
+.tp.gm .gm-wow-recipe-list { display: grid; gap: 10px; margin: 12px 0; }
+.tp.gm .gm-wow-recipe { min-width: 0; padding: 13px 14px; background: var(--sand); border: 1px solid var(--line); border-radius: 12px; }
+.tp.gm .gm-wow-recipe-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.tp.gm .gm-wow-recipe-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; flex: 1 1 190px; }
+.tp.gm .gm-wow-recipe-heading b { color: var(--navy); font: 700 16px/1.35 "DM Sans",system-ui,sans-serif; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-recipe-status { font: 700 12px/1.35 "DM Sans",system-ui,sans-serif; border-radius: 6px; padding: 3px 8px; background: #EDE7DB; color: var(--navy); }
+.tp.gm .gm-wow-status-orange { color: #8B4008; background: #FBE7D4; }
+.tp.gm .gm-wow-status-yellow { color: #796000; background: #FBF2D0; }
+.tp.gm .gm-wow-status-green { color: #24633B; background: #E2F1E5; }
+.tp.gm .gm-wow-status-gray, .tp.gm .gm-wow-status-locked { color: var(--muted); background: #EDE7DB; }
+.tp.gm .gm-wow-recipe-skill { color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-recipe-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.tp.gm .gm-wow-learned { display: inline-flex; align-items: center; gap: 8px; margin: 0; min-height: 44px; white-space: nowrap; font: 600 14px "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-wow-hide-btn { min-height: 44px; min-width: 78px; }
+.tp.gm .gm-wow-recipe-details { border-top: 1px solid var(--line); margin-top: 10px; }
+.tp.gm .gm-wow-recipe-details > summary { display: flex; align-items: center; min-height: 44px; padding: 8px 0; color: var(--navy); cursor: pointer; font: 600 14px "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-recipe-detail-body { min-width: 0; padding: 6px 0 4px; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-recipe-detail-body p { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
+.tp.gm .gm-wow-locations { display: grid; gap: 10px; margin: 10px 0 14px; }
+.tp.gm .gm-wow-location { display: grid; gap: 5px; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 10px; font-size: 13px; line-height: 1.45; }
+.tp.gm .gm-wow-location .gm-pill { justify-self: start; min-height: 44px; }
+.tp.gm .gm-wow-reference { color: var(--muted); font-size: 12px; }
+.tp.gm .gm-wow-professions button:focus-visible, .tp.gm .gm-wow-professions summary:focus-visible,
+.tp.gm .gm-wow-professions input:focus-visible, .tp.gm .gm-wow-professions select:focus-visible,
+.tp.gm .gm-wow-nav .gm-chip:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+
+@media (max-width: 680px) {
+  .tp.gm .gm-wow-nav { flex-wrap: nowrap !important; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding: 4px 2px 10px; scrollbar-width: thin; }
+  .tp.gm .gm-wow-nav .gm-chip { flex: 0 0 auto; min-height: 44px; white-space: nowrap; scroll-snap-align: start; }
+  .tp.gm .gm-wow-professions .gm-wow-skill-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .tp.gm .gm-wow-professions .gm-wow-profession-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .tp.gm .gm-wow-professions .gm-wow-setting-grid { grid-template-columns: minmax(0,1fr); }
+  .tp.gm .gm-wow-filter-row { grid-template-columns: minmax(0,1fr); }
+  .tp.gm .gm-wow-next-actions { flex-direction: column; }
+  .tp.gm .gm-wow-next-actions .gm-pill { width: 100%; white-space: normal; padding: 10px 14px; }
+  .tp.gm .gm-wow-recipe-head { display: grid; grid-template-columns: minmax(0,1fr); gap: 7px; }
+  .tp.gm .gm-wow-recipe-actions { display: grid; grid-template-columns: minmax(0,1fr) minmax(88px,auto); gap: 10px; align-items: center; }
+  .tp.gm .gm-wow-recipe-actions .gm-pill { min-height: 44px; }
+  .tp.gm .gm-wow-recipe { padding: 12px; }
+  .tp.gm .gm-wow-recipe-detail-body { font-size: 14px; }
+}
+@media (max-width: 370px) {
+  .tp.gm .gm-wow-professions .gm-wow-profile-card, .tp.gm .gm-wow-professions .gm-wow-finder-card { padding: 12px !important; }
+  .tp.gm .gm-wow-professions .gm-wow-skill-field { font-size: 12px; }
+}
+
+
+/* Compact Hunter header: keep the frequently edited level visible, other fields expandable. */
+.tp.gm .gm-wow-intro-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tp.gm .gm-wow-intro-row h2 { min-width: 0; color: var(--navy); }
+.tp.gm .gm-wow-level { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; font: 600 13px "DM Sans",system-ui,sans-serif; margin: 0; }
+.tp.gm .gm-wow-level input { width: 80px; min-width: 70px; min-height: 44px; font-size: 16px; }
+.tp.gm .gm-wow-character-settings { border-top: 1px solid var(--line); margin: 8px 0 0; }
+.tp.gm .gm-wow-character-settings > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font: 700 13px "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-wow-character-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 6px 0 14px; }
+.tp.gm .gm-wow-character-fields > label { min-width: 0; display: grid; gap: 5px; font-size: 13px; }
+.tp.gm .gm-wow-character-fields input, .tp.gm .gm-wow-character-fields select { min-width: 0; width: 100%; min-height: 44px; padding: 9px 11px; background: var(--sand); color: var(--navy); border: 1px solid var(--line); border-radius: 9px; font-size: 16px; }
+.tp.gm .gm-wow-nav-hint { display: none; font-size: 12px; color: var(--muted); text-align: right; margin: -11px 0 10px; }
+@media (max-width: 680px) {
+  .tp.gm .gm-wow-character-fields { grid-template-columns: minmax(0,1fr); }
+  .tp.gm .gm-wow-nav-hint { display: block; }
+  .tp.gm .gm-wow-intro-row { gap: 6px 12px; }
+  .tp.gm .gm-wow-intro-row h2 { font-size: 20px; }
+}
+
+
+/* Visible disclosure chevrons: native summary markers may disappear with flex display. */
+.tp.gm .gm-wow-character-settings > summary,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary { gap: 10px; list-style: none; }
+.tp.gm .gm-wow-character-settings > summary::-webkit-details-marker,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary::-webkit-details-marker,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-wow-character-settings > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-settings > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details > summary::before {
+  content: ""; width: 8px; height: 8px; flex: none;
+  border-right: 2px solid var(--sage); border-bottom: 2px solid var(--sage);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+.tp.gm .gm-wow-character-settings[open] > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-settings[open] > summary::before,
+.tp.gm .gm-wow-professions .gm-wow-recipe-details[open] > summary::before { transform: rotate(45deg); }
+
+
+/* Horde and Alliance vendors are reference data, not interchangeable purchase routes. */
+.tp.gm .gm-wow-source-warning { color: #8a3e24; background: #fff0e8; border: 1px solid #e5bcae; border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-recipe-heading > .gm-wow-source-warning { display: block; max-width: 100%; }
+.tp.gm .gm-wow-other-faction { border-top: 1px solid var(--line); margin: 10px 0 12px; }
+.tp.gm .gm-wow-other-faction > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.45; }
+.tp.gm .gm-wow-other-faction > .gm-wow-locations { margin-top: 6px; }
+
+/* Recipe finder uses skill-required ascending order rather than recommendation ranking. */
+.tp.gm .gm-wow-sort-note {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* WoW Forever: gear-aware dungeon choices. Scoped to Games, no effect on other pages. */
+.tp.gm .gm-wow-dungeon-planner { margin-top: 12px; padding: 16px; min-width: 0; }
+.tp.gm .gm-wow-dungeon-planner h3 { color: var(--navy); font: 700 18px/1.35 "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-dungeon-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin-top: 12px; }
+.tp.gm .gm-wow-dungeon-card { min-width: 0; background: var(--sand); border: 1px solid var(--line); border-radius: 13px; overflow: hidden; }
+.tp.gm .gm-wow-dungeon-card.featured { border: 2px solid var(--sage); }
+.tp.gm .gm-wow-dungeon-summary { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 14px; min-height: 74px; cursor: pointer; list-style: none; }
+.tp.gm .gm-wow-dungeon-summary::-webkit-details-marker { display: none; }
+.tp.gm .gm-wow-dungeon-summary:focus-visible, .tp.gm .gm-wow-dungeon-target:focus-within, .tp.gm .gm-wow-dungeon-more>summary:focus-visible { outline: 2px solid var(--sage); outline-offset: -2px; }
+.tp.gm .gm-wow-dungeon-heading { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-heading b { color: var(--navy); font: 700 16px/1.35 "DM Sans",system-ui,sans-serif; }
+.tp.gm .gm-wow-dungeon-heading>span { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.tp.gm .gm-wow-dungeon-heading .gm-wow-dungeon-preview { font-size: 13px; line-height: 1.4; color: var(--ink); }
+.tp.gm .gm-wow-dungeon-priority { flex: 0 0 auto; font: 700 11px "DM Sans",system-ui,sans-serif; color: var(--navy); background: #E6F0E3; border-radius: 999px; padding: 5px 9px; white-space: nowrap; }
+.tp.gm .gm-wow-dungeon-body { padding: 0 14px 14px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-body>p { font-size: 13px; line-height: 1.5; margin: 10px 0; color: var(--ink); }
+.tp.gm .gm-wow-dungeon-body .gm-wow-dungeon-caption, .tp.gm .gm-wow-dungeon-footnote { color: var(--muted); }
+.tp.gm .gm-wow-dungeon-targets { display: grid; gap: 0; margin-top: 10px; border-block: 1px solid var(--line); }
+.tp.gm .gm-wow-dungeon-target { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; margin: 0; min-height: 55px; cursor: pointer; }
+.tp.gm .gm-wow-dungeon-target+.gm-wow-dungeon-target { border-top: 1px solid var(--line); }
+.tp.gm .gm-wow-dungeon-target>input { flex: 0 0 auto; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--sage); }
+.tp.gm .gm-wow-dungeon-target-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.tp.gm .gm-wow-dungeon-target-copy b { font: 700 14px/1.35 "DM Sans",system-ui,sans-serif; color: var(--navy); }
+.tp.gm .gm-wow-dungeon-target-copy span { font-size: 12px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.tp.gm .gm-wow-dungeon-target.owned .gm-wow-dungeon-target-copy b { color: var(--muted); text-decoration: line-through; }
+.tp.gm .gm-wow-dungeon-owned-state { flex: 0 0 auto; padding-top: 4px; font-size: 11px; color: var(--muted); text-align: right; }
+.tp.gm .gm-wow-dungeon-target.owned .gm-wow-dungeon-owned-state { color: var(--sage); font-weight: 700; }
+.tp.gm .gm-wow-dungeon-body .gm-wow-dungeon-caution { border-left: 3px solid var(--warn,#b8860b); background: #FCF3DD; color: #6b5231; padding: 8px 10px; border-radius: 7px; }
+.tp.gm .gm-wow-dungeon-more { border-top: 1px solid var(--line); margin-top: 12px; }
+.tp.gm .gm-wow-dungeon-more > summary { color: var(--navy); font: 700 13px "DM Sans",system-ui,sans-serif; cursor: pointer; min-height: 44px; padding: 12px 0; }
+.tp.gm .gm-wow-dungeon-planner .gm-wow-dungeon-footnote { font-size: 12px; line-height: 1.5; margin: 15px 0 0; }
+@media (max-width: 520px) {
+  .tp.gm .gm-wow-dungeon-planner { padding: 12px; }
+  .tp.gm .gm-wow-dungeon-summary { padding: 12px; flex-wrap: wrap; }
+  .tp.gm .gm-wow-dungeon-priority { margin-left: 0; }
+  .tp.gm .gm-wow-dungeon-body { padding: 0 12px 12px; }
+  .tp.gm .gm-wow-dungeon-owned-state { display: none; }
+  .tp.gm .gm-wow-dungeon-heading { flex-basis: 65%; }
+}

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
+import WoWProfessions from "./WoWProfessions";
+import WoWHunterDungeons from "./WoWHunterDungeons";
 
 type Props = {
   game: WowGame;
@@ -10,9 +12,10 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
 };
-type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "lookup";
+type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "lookup";
 const VIEWS: { id: View; label: string; help: string }[] = [
   {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
+  {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipes, and crafting recommendations"},
   {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
   {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
   {id:"talents",label:"🌿 Talents",help:"Exact leveling point at every level"},
@@ -150,34 +153,41 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   },[filter,game.stages]);
   const spellMatches=filter.trim()?SPELLS.filter(x=>(x.name+" "+x.usage).toLowerCase().includes(filter.toLowerCase().trim())):[];
   const copy=async(code:string,title:string)=>{try{await navigator.clipboard.writeText(code);setCopied(title);}catch{setCopied("Unable to copy. Select the macro text instead.");}};
-  return <div style={{marginTop:14}}>
-    <div className="gm-card" style={{...card,marginTop:0}}>
+  return <div className="gm-wow-guide" style={{marginTop:14}}>
+    <div className="gm-card gm-wow-intro" style={{...card,marginTop:0}}>
       <div className="gm-panel-label">🌬️ Your playthrough · Skyborne Beast Mastery</div>
-      <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
-      <p className="gm-note" style={note}>A low-pressure route from Zephras Isle to level 60. Your next objective is based on your level; each checkbox saves with the other Games trackers.</p>
-      <div style={{display:"flex",flexWrap:"wrap",alignItems:"end",gap:12,marginTop:14}}>
-        <label style={{display:"grid",gap:5,fontSize:13}}>My level
-          <input type="number" inputMode="numeric" min={1} max={60} value={prog.fields[F(game.id,"level")]??"1"}
+      <div className="gm-wow-intro-row">
+        <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
+        <label className="gm-wow-level">My level
+          <input type="number" inputMode="numeric" min={1} max={60}
+            value={prog.fields[F(game.id,"level")]??"1"}
             onChange={e=>setField(F(game.id,"level"),String(Math.max(1,Math.min(60,Number(e.target.value)||1))))}
-            style={{...uiInput,width:90}} aria-label="Hunter level"/>
-        </label>
-        <label style={{display:"grid",gap:5,fontSize:13}}>Skyborne faction
-          <select value={faction} onChange={e=>setField(F(game.id,"faction"),e.target.value)} style={{...uiInput,minWidth:170}} aria-label="Skyborne faction">
-            <option value="horde">Horde · Windshaper</option><option value="alliance">Alliance · High Order</option>
-          </select>
-        </label>
-        <label style={{display:"grid",gap:5,fontSize:13}}>My pet's name (optional)
-          <input type="text" maxLength={70} value={prog.fields[F(game.id,"pet-name")]||""} placeholder="My companion"
-            onChange={e=>setField(F(game.id,"pet-name"),e.target.value)} style={{...uiInput,width:160}}/>
+            style={{...uiInput,width:80}} aria-label="Hunter level"/>
         </label>
       </div>
+      <details className="gm-wow-character-settings">
+        <summary>Character settings &amp; guide notes</summary>
+        <div className="gm-wow-character-fields">
+          <label>Skyborne faction
+            <select value={faction} onChange={e=>setField(F(game.id,"faction"),e.target.value)} aria-label="Skyborne faction">
+              <option value="horde">Horde · Windshaper</option><option value="alliance">Alliance · High Order</option>
+            </select>
+          </label>
+          <label>My pet's name (optional)
+            <input type="text" maxLength={70} value={prog.fields[F(game.id,"pet-name")]||""}
+              placeholder="My companion" onChange={e=>setField(F(game.id,"pet-name"),e.target.value)}/>
+          </label>
+        </div>
+        <p className="gm-note" style={note}>Your next objective is based on character level. Checkboxes save with the other Games trackers.</p>
+        <p className="gm-note" style={{fontSize:12}}>WoW Forever systems may change after patches; the leveling talent path is a dated guide, not a permanent best-in-slot claim.</p>
+      </details>
       <Counter done={count} total={total}/>
-      <p className="gm-note" style={{fontSize:12}}>Patch note: WoW Forever systems and talent tuning are still changing. The talent path is a Nov 4 published 1–60 leveling build, not a promise of permanent best-in-slot.</p>
     </div>
-    <nav aria-label="WoW Forever guide sections" className="gm-chips" style={{display:"flex",flexWrap:"wrap",gap:8,margin:"16px 0"}}>
+    <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
         onClick={()=>setView(v.id)} style={chip}>{v.label}</button>)}
     </nav>
+    <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
 
     {view==="next" && <>
       <div className="gm-card" style={card}>
@@ -191,9 +201,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
       <SmallInfo title={"Where to quest next · level "+currentLevel}>
         <p><b>Suggested areas:</b> {faction==="horde"?zoneAtLevel.horde:zoneAtLevel.alliance}</p>
-        <p><b>Dungeon options:</b> {zoneAtLevel.dungeons}</p>
+        <p>For dungeon runs, use the Hunter gear priorities below rather than picking solely by level.</p>
         <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
       </SmallInfo>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} mode="summary"/>
       <SmallInfo title="Simple fight routine">
         <ol style={{paddingLeft:20,margin:"6px 0"}}>
           <li>Choose one target. Mark it for a longer fight.</li>
@@ -226,11 +237,12 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <SmallInfo title="Suggested zone route · choose by your actual level">
         These are flexible areas, not a strict quest-by-quest rail. Choose a nearby zone with quests around your level; if your Paladin partner is there, play together. Dungeon level bands are approximate and may be adjusted in patches.
       </SmallInfo>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck}/>
       {ZONE_ROUTES.map(z=><div key={z.min} className="gm-card" style={{...card,border:z===zoneAtLevel?"2px solid var(--accent,#659e8b)":undefined}}>
         <div className="gm-panel-label">Levels {z.min}–{z.max}{z===zoneAtLevel?" · YOUR CURRENT BRACKET":""}</div>
         <h3 style={{margin:"7px 0"}}>{faction==="horde"?"Horde":"Alliance"} questing route</h3>
         <p style={note}><b>Go to:</b> {faction==="horde"?z.horde:z.alliance}</p>
-        <p style={note}><b>Dungeons:</b> {z.dungeons}</p>
+        <p style={note}><b>Other bracket dungeon options (not gear-ranked):</b> {z.dungeons}</p>
         <p className="gm-note">{z.tip}</p>
       </div>)}
       <SmallInfo title="Simple travel rules">
@@ -344,7 +356,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </>}
 
+    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+
     {view==="gear" && <>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck}/>
       <SmallInfo title="Simple leveling gear priorities">
         <ol style={{paddingLeft:20,margin:0}}>
           <li><b>Ranged weapon damage:</b> Check upgrades often; a better bow/gun/crossbow greatly affects Auto Shot.</li>
