@@ -4,6 +4,7 @@ import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
 import { WOW_GAME, type WowGame } from "./wow-forever-data";
 import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, recipeHiddenKey, professionField } from "./wow-forever-professions";
 import { WOW_HUNTER_DUNGEONS, dungeonLootOwnedKey } from "./wow-forever-dungeon-gear";
+import { WOW_FARMS, WOW_GEAR_SLOTS, WOW_COMBAT_BINDS, WOW_MACRO_PRESETS, wowExtraField, wowMaterialKey } from "./wow-portal-extras";
 import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey, dreamlightCharacterVisibilityKey } from "./dreamlight-character-quests";
 
 // Game progression checklists for the /games planner page.
@@ -497,11 +498,26 @@ export function knownCheckKeys(game: Game): Set<string> {
 
 /** Every text-field key a game can have. */
 export function knownFieldKeys(game: Game): Set<string> {
-  if (isWoWGame(game)) return new Set<string>([
-    game.id + "|level", game.id + "|faction", game.id + "|pet-name",
-    ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
-    professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
-  ]);
+  if (isWoWGame(game)) {
+    const extra = (name:string) => wowExtraField(game.id,name);
+    const materialNames = new Set(WOW_RECIPES.flatMap(r=>r.reagents.map(m=>wowMaterialKey(m.name))));
+    return new Set<string>([
+      game.id + "|level", game.id + "|faction", game.id + "|pet-name",
+      ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
+      professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
+      extra("play-mode"), extra("compare-target"),
+      ...WOW_FARMS.flatMap(f=>[extra("farm-"+f.id+"-gold"),extra("farm-"+f.id+"-minutes")]),
+      ...WOW_COMBAT_BINDS.map(b=>extra("bind-"+b[0])),
+      ...WOW_MACRO_PRESETS.map(m=>extra("macro-"+m.id)),
+      ...[0,1,2].flatMap(i=>["name","family","level","role","growl","special","notes"].map(k=>extra("pet-"+i+"-"+k))),
+      ...WOW_GEAR_SLOTS.flatMap(([slot])=>["name","dps","agi","ap"].map(k=>extra("gear-"+slot+"-"+k))),
+      ...WOW_HUNTER_DUNGEONS.flatMap(d=>d.loot.flatMap(t=>["dps","agi","ap"].map(k=>extra("target-"+d.id+"-"+t.id+"-"+k)))),
+      ...WOW_RECIPES.flatMap(r=>[
+        extra("sale-"+r.id),extra("source-kind-"+r.id),extra("source-area-"+r.id),extra("source-note-"+r.id)
+      ]),
+      ...[...materialNames].flatMap(m=>[extra("price-"+m),extra("stock-"+m)])
+    ]);
+  }
   if (isDreamlightGame(game)) return new Set<string>(
     DREAMLIGHT_CHARACTERS.map(character => dreamlightCharacterVisibilityKey(game.id, character.id)),
   );
