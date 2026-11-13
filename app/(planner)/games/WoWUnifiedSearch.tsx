@@ -67,9 +67,9 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     style={{display:"block",marginTop:7,width:"100%",minWidth:0,background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",borderRadius:8,padding:12,font:"inherit"}}/>
   </label>
   {q && <div style={{display:"flex",gap:9,alignItems:"center",flexWrap:"wrap",marginTop:10}}>
-    <a className="gm-pill" href={externalMaterialLookup(query.trim())} target="_blank" rel="noopener noreferrer"
-      aria-label={"Search Classic Wowhead for "+query.trim()}>
-      Search Wowhead for {query.trim()} ↗
+    <a className="gm-pill gm-wowhead-search" href={externalMaterialLookup(query.trim())} target="_blank" rel="noopener noreferrer"
+      aria-label={"Search Wowhead Forever for "+query.trim()}>
+      Search Wowhead Forever for {query.trim()} ↗
     </a>
     <span style={small}>Works even when your portal has no matching item or verified source.</span>
   </div>}
@@ -85,7 +85,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
         <p style={{...small,margin:"3px 0"}}>{x.detail}</p>
       </div>)}
     </section>:null)}
-    {total===0&&<p style={small}>Nothing matched in your portal's catalog. Search Wowhead above to find the item externally; check whether the result applies to WoW Forever.</p>}
+    {total===0&&<p style={small}>Nothing matched in your portal's catalog. Search Wowhead Forever above to find it in the game-specific database.</p>}
    </>}
  </section>;
 }
