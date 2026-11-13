@@ -130,4 +130,4 @@ export const materialRoutes = (name:string):MaterialRoute[] => {
 };
 /** The search link is a fallback, not a claim that a precise in-game farm is known. */
 export const externalMaterialLookup = (name:string) =>
-  "https://www.wowhead.com/classic/search?q="+encodeURIComponent(name);
+  "https://www.wowhead.com/forever/search?q="+encodeURIComponent(name);
