@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
 import WoWProfessions from "./WoWProfessions";
@@ -309,7 +309,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           <li>Tame a nearby useful pet first; don't delay leveling to camp a rare spawn.</li>
           <li>Keep it fed, monitor happiness, and learn Mend Pet / Revive Pet.</li>
           <li>Train Growl and appropriate Claw or Bite ranks; recheck skill ranks as you level.</li>
-          <li>Bind Pet Attack to scroll up, Pet Passive/Follow to scroll down, and Target + Auto Shot / Arcane + Auto to your two mouse side buttons.</li>
+          <li>Configure wheel up as your tested tank-target pet attack, wheel down to recall, Mouse 4 to Auto Shot, and your numbered shots in Combat & Keys.</li>
         </ol>
       </SmallInfo>
       <SmallInfo title="Which pet should I use?">
@@ -323,7 +323,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p><b>Can't hold threat while solo:</b> Growl autocast ON; train its rank and improve your pet's damage.</p>
         <p><b>Pet pulls off the dungeon tank:</b> Turn Growl OFF and attack the tank's chosen enemy.</p>
         <p><b>Pet lacks damage:</b> Check happiness, level, ability ranks, Focus usage and whether it's actually attacking.</p>
-        <p><b>With your Paladin:</b> If your partner is tanking, consider Growl OFF; use your pet as an additional damage dealer.</p>
+        <p><b>With your Paladin:</b> If your partner is tanking, set Growl OFF and have your pet assist his target. Use a tested tank-focus macro rather than allowing your pet to pick unrelated enemies.</p>
       </SmallInfo>
     </>}
 
