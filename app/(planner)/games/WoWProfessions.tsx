@@ -14,6 +14,7 @@ type Props = {
   prog: GameProgress;
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
+  initialQuery?: string;
 };
 
 const panel: React.CSSProperties = { padding: 16, marginTop: 12 };
@@ -106,13 +107,13 @@ const clampSkill = (text: string) => {
   return String(Math.max(0, Math.min(300, Number.isFinite(n) ? Math.floor(n) : 0)));
 };
 
-export default function WoWProfessions({ gameId, prog, setCheck, setField }: Props) {
+export default function WoWProfessions({ gameId, prog, setCheck, setField, initialQuery = "" }: Props) {
   const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
-  const [showGray, setShowGray] = useState(false);
+  const [showGray, setShowGray] = useState(Boolean(initialQuery));
   const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState("");
   const [confirmed, setConfirmed] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [areaFilter, setAreaFilter] = useState("all");
   const [sourceDrafts, setSourceDrafts] = useState<Record<string,string>>({});
   const [shown, setShown] = useState(12);
