@@ -744,3 +744,40 @@
   .tp.gm .gm-wow-dungeon-owned-state { display: none; }
   .tp.gm .gm-wow-dungeon-heading { flex-basis: 65%; }
 }
+
+/* External Wowhead Forever search links are anchors, not native buttons.
+   Display them like the portal's pill controls instead of bare underlined links. */
+.tp.gm .gm-wow-guide a.gm-wowhead-search,
+.tp.gm .gm-wow-guide a.gm-wowhead-search:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--navy);
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  font: 600 14px/1.35 "DM Sans", system-ui, sans-serif;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: filter .15s ease;
+}
+.tp.gm .gm-wow-guide a.gm-wowhead-search:hover,
+.tp.gm .gm-wow-guide a.gm-wowhead-search:visited:hover {
+  filter: brightness(1.12);
+  color: #fff;
+  text-decoration: none;
+}
+.tp.gm .gm-wow-guide a.gm-wowhead-search:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 3px;
+}
+@media (max-width: 520px) {
+  .tp.gm .gm-wow-guide a.gm-wowhead-search { width: 100%; }
+}
