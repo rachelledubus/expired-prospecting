@@ -505,7 +505,7 @@ export function knownFieldKeys(game: Game): Set<string> {
       game.id + "|level", game.id + "|faction", game.id + "|pet-name",
       ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
       professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
-      extra("play-mode"), extra("compare-target"), extra("session-material"), extra("last-view"), extra("dungeon-goal"),
+      extra("play-mode"), extra("compare-target"), extra("session-material"), extra("session-profession"), extra("last-view"), extra("dungeon-goal"),
       ...WOW_FARMS.flatMap(f=>[extra("farm-"+f.id+"-gold"),extra("farm-"+f.id+"-minutes")]),
       ...WOW_COMBAT_BINDS.map(b=>extra("bind-"+b[0])),
       ...WOW_MACRO_PRESETS.map(m=>extra("macro-"+m.id)),
