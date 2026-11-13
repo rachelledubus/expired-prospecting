@@ -11,7 +11,7 @@ export const WOW_GAME: WowGame = {
       summary: "Follow the Skyborne introduction, practice ranged distance and unlock your racial. Hunter is slower before a pet, so don't rush difficult pulls.",
       steps: [
         {id:"coming-age",title:"Finish Coming of Age and Harmony in Balance",how:"Talk to Rorian the Dayseeker in Thendal Grove, then defeat the Vuldren Juveniles required by Harmony in Balance."},
-        {id:"intro-combat",title:"Learn to open at range and keep Auto Shot firing",how:"Use your Target + Auto Shot macro on key 1 or Mouse 4 to select an enemy if none/dead and start shooting. Stop briefly to let Auto Shot fire. Move away if an enemy closes, and use Arcane Shot when trained."},
+        {id:"intro-combat",title:"Learn to open at range and keep Auto Shot firing",how:"Use your Mouse 4 Auto Shot binding (or your configured replacement) to start shooting. Stop briefly to let Auto Shot fire. Move away if an enemy closes, and use Arcane Shot when trained."},
         {id:"flies",title:"Complete Infestation Investigation and The Cirrusfly Queen",how:"Defeat cirrusflies in Thendal Grove and then the Cirrusfly Queen; pick up nearby objectives before setting out."},
         {id:"walk-air",title:"Complete Falling With Style",how:"Go to the watchtower in Thendal Grove and use Walk on Air while falling. Keep this racial bound somewhere accessible."},
         {id:"pylons",title:"Do The Anchors of Zephras and Elemental Unrest",how:"Talk with Halaan Hawk-Eye and Yala Windwatcher for the island's failing-pylon storyline."},
@@ -34,7 +34,7 @@ export const WOW_GAME: WowGame = {
       steps: [
         {id:"taming",title:"Complete the level-10 Tame Beast class quest",how:"Speak with a Hunter trainer/class quest giver, complete the taming tasks and learn Tame Beast, Feed Pet and Revive Pet. This is higher priority than optional side quests."},
         {id:"first-pet",title:"Tame a pet and check Growl, food and happiness",how:"Pick an available pet you like, keep it fed, teach available pet skills and set Growl to autocast for solo questing. No need to wait for a rare cat."},
-        {id:"mouse-macros",title:"Bind scroll up to Pet Attack and scroll down to Pet Recall",how:"Create the macros in /macro, drag them onto action bars, and bind the slots in Options > Keybindings > Action Bars. Set Mouse 4 or key 1 to your Target + Auto Shot macro; set Mouse 5 or key 2 to Arcane Shot + Auto Shot. Rebind camera zoom if necessary."},
+        {id:"mouse-macros",title:"Bind scroll up to your tested tank-target pet macro and scroll down to recall",how:"Create the macros in /macro, drag them onto action bars, and bind the slots in Options > Keybindings > Action Bars. Use Mouse 4 for Auto Shot, key 1 for Scorpid Sting and key 2 for Arcane Shot (or customize the saved combat panel). Rebind camera zoom if necessary."},
         {id:"valanaar",title:"Clear Valanaar's main investigations and nearby quests",how:"Look for The High Elder's Request, Tower Defense, Unnerving Silence, The Cult's True Plans and the pylon/Al'Aketh story. Do quests together by area."},
         {id:"shrine",title:"Finish the Shrine of Akir story",how:"Follow Prepare for Battle, Making Our Move and any remaining faction-specific steps for The Fate of Zephras."},
         {id:"skyboat",title:"Complete What Comes Next and leave Zephras Isle",how:"Horde: The Earthen Ring, take the west dock skyboat toward Mulgore/Thunder Bluff. Alliance: The Magical City of Dalaran, take the east dock ship to Dalaran."}
@@ -67,8 +67,8 @@ export const WOW_GAME: WowGame = {
     { id:"thirties", title:"Safer pulls and better pet damage", from: 30, to: 39, place:"Azeroth · quests, elites and dungeons",
       summary:"Feign Death and Intimidation are your escape/control milestones. Later BM talent points strengthen your pet.",
       steps:[
-        {id:"intimidation",title:"Take Intimidation at level 30",how:"Place it on F. Your pet stuns your target on its next attack. Practice using it to interrupt a dangerous enemy."},
-        {id:"feign",title:"Train Feign Death and bind it to C",how:"Use Feign Death to shed threat or escape bad pulls. It becomes available at level 30."},
+        {id:"intimidation",title:"Take Intimidation at level 30",how:"Your current 7 binding triggers this pet stun; practice safe interrupts. Practice using it to interrupt a dangerous enemy."},
+        {id:"feign",title:"Train Feign Death and bind it to R",how:"Use Feign Death to shed threat or escape bad pulls. It becomes available at level 30."},
         {id:"discipline",title:"Invest in Bestial Discipline",how:"Use points at levels 31–32 in the recommended leveling build; it helps pet Focus and mana sustain."},
         {id:"pet-protection",title:"Practice preventing pet deaths",how:"Recall before your pet chases into multiple packs; use Mend Pet early, not only when its health is nearly empty."},
         {id:"ferocity",title:"Finish Ferocity and start Frenzy",how:"Follow the level-by-level talent list for the level 33–39 stretch."}
