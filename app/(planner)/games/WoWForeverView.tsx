@@ -139,6 +139,7 @@ function SmallInfo({title,children}:{title:string;children:React.ReactNode}) {
 export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [view,setView]=useState<View>("next");
   const [filter,setFilter]=useState("");
+  const [searchTarget,setSearchTarget]=useState("");
   const [showAllTalent,setShowAllTalent]=useState(false);
   const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
@@ -186,7 +187,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </div>
     <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
-        onClick={()=>setView(v.id)} style={chip}>{v.label}</button>)}
+        onClick={()=>{setSearchTarget("");setView(v.id)}} style={chip}>{v.label}</button>)}
     </nav>
     <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
 
@@ -348,7 +349,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </>}
 
-    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+    {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget}/>}
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
@@ -380,7 +381,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </>}
 
     {view==="lookup" && <>
-      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={setView}/>
+      <WoWUnifiedSearch game={game} prog={prog} query={filter} onQuery={setFilter} onOpen={(destination,term)=>{setSearchTarget(term);setView(destination)}}/>
       <SmallInfo title="Reference library · quest specifics & updates">
         <p>This personal guide summarizes major milestones. For all individual Skyborne side quests, detailed maps, complete pet ability databases and current beta tuning, use these original references:</p>
         <div style={{display:"grid",gap:9}}>
