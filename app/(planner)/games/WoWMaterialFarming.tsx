@@ -4,16 +4,17 @@ import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { grayMobThreshold, wowExtraField, wowMaterialKey } from "@/lib/wow-portal-extras";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRecipes, materialRoutes, type MaterialRoute } from "@/lib/wow-material-farms";
+import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 
-type Props={gameId:string;level:number;prog:GameProgress;setField:(key:string,value:string)=>void;initialQuery?:string};
+type Props={gameId:string;level:number;faction?:"horde"|"alliance";prog:GameProgress;setField:(key:string,value:string)=>void;initialQuery?:string};
 const small:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.86};
 const input:React.CSSProperties={width:"100%",minWidth:0,padding:"9px 11px",border:"1px solid var(--border,#ccc)",borderRadius:8,background:"var(--panel,#fff)",color:"var(--text,#222)",font:"inherit"};
 const mine=(r:MaterialRoute)=>r.method==="mining"||r.method==="herbalism";
 const typeLabel=(r:MaterialRoute)=>({
-  mob:"Kill and loot",dungeon:"Dungeon drop",skinning:"Kill, loot and skin",mining:"Mining node",herbalism:"Herbalism node",vendor:"Vendor"
+  mob:"Kill and loot",dungeon:"Dungeon drop",skinning:"Kill, loot and skin",mining:"Mining node",herbalism:"Herbalism node",vendor:"Buy from supplier",crafting:"Craft with your profession"
 })[r.method];
 
-export default function WoWMaterialFarming({gameId,level,prog,setField,initialQuery=""}:Props){
+export default function WoWMaterialFarming({gameId,level,faction="horde",prog,setField,initialQuery=""}:Props){
  const [query,setQuery]=useState(initialQuery||"Moss Agate");
  const [showOtherProfessions,setShowOtherProfessions]=useState(false);
  const [grayOnly,setGrayOnly]=useState(false);
@@ -24,11 +25,14 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
  const chosen=exact||(suggestions.length===1?suggestions[0]:null);
  // External lookup is available for ANY search phrase, including unknown items.
  const wowheadTerm=chosen??query.trim();
+ const foreverItem=chosen?wowheadForeverItemUrl(chosen):null;
  const recipes=chosen?materialRecipes(chosen):[];
- const options=chosen?materialRoutes(chosen):[];
+ const options=chosen?materialRoutes(chosen,faction):[];
  const ordered=options.slice().sort((a,b)=>{
    const aRisk=typeof a.maxMob==="number"&&a.maxMob<=cutoff?0:typeof a.maxMob==="number"?2:1;
    const bRisk=typeof b.maxMob==="number"&&b.maxMob<=cutoff?0:typeof b.maxMob==="number"?2:1;
+   if(a.method==="vendor"||a.method==="crafting")return b.method==="vendor"||b.method==="crafting"?a.method.localeCompare(b.method):1;
+   if(b.method==="vendor"||b.method==="crafting")return -1;
    return aRisk-bRisk||Number(mine(a))-Number(mine(b));
  });
  const visible=ordered.filter(r=>(showOtherProfessions||!mine(r))&&(!grayOnly||(r.maxMob!==undefined&&r.maxMob<=cutoff)));
@@ -36,20 +40,21 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
  const invValue=chosen?prog.fields[inventoryKey]??"":"";
  const copy=(value:string)=>{void navigator.clipboard.writeText(value).then(()=>setMessage("Copied waypoint: "+value)).catch(()=>setMessage("Copy blocked. Select the waypoint manually."));};
  return <section className="gm-card" style={{padding:16,marginTop:12}} aria-label="Material farming locations">
-  <div className="gm-panel-label">Crafting material finder · Horde-friendly first</div>
+  <div className="gm-panel-label">Crafting material finder · {faction==="horde"?"Horde":"Alliance"} sources first</div>
   <h3 style={{margin:"6px 0"}}>Where can I farm this material?</h3>
-  <p style={small}>Search every reagent in your 669-recipe catalog. Known routes identify the creature, dungeon or gathering node. Unmapped ingredients are clearly labeled instead of being assigned guessed locations.</p>
+  <p style={small}>Search all 286 reagents in your 669-recipe catalog. The results distinguish Forever-reported drops, old reference routes, supplies you can buy, and ingredients you can craft. Unmapped sources are not guessed.</p>
   <label style={{...small,display:"block",marginTop:12}}>Search material by name
    <input style={{...input,marginTop:6}} type="search" value={query}
      onChange={e=>{setQuery(e.target.value);setMessage("");}} placeholder="Moss Agate, Wool Cloth, Medium Leather…"
      aria-label="Search WoW crafting materials"/>
   </label>
   {wowheadTerm && <div style={{margin:"10px 0 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-    <a className="gm-pill gm-wowhead-search" href={externalMaterialLookup(wowheadTerm)} target="_blank" rel="noopener noreferrer"
-      aria-label={"Search Wowhead Forever for "+wowheadTerm}>
-      Search Wowhead Forever for {wowheadTerm} ↗
+    <a className="gm-pill gm-wowhead-search" href={foreverItem||externalMaterialLookup(wowheadTerm)} target="_blank" rel="noopener noreferrer"
+      aria-label={(foreverItem?"Open item on Wowhead Forever: ":"Search Wowhead Forever for ")+wowheadTerm}>
+      {foreverItem?"Open exact Wowhead Forever item":"Search Wowhead Forever for "+wowheadTerm} ↗
     </a>
-    <span style={small}>Opens the WoW Forever item database in a new tab.</span>
+    <span style={small}>{foreverItem?"Matched a checked Forever item ID. Its source tables may include Classic-era data.":
+      "Searches Wowhead Forever even when the local item has no recorded source."}</span>
   </div>}
   {!chosen && <div style={{marginTop:10}}>
    <p style={small}>{suggestions.length? suggestions.length+" matching materials (select one)":"Not in your recipe catalog. Use Search Wowhead Forever above to look up any item, creature, or material."}</p>
@@ -90,16 +95,23 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
     </label>
    </div>
    <p style={small}>At character level <b>{level}</b>, ordinary Classic-style mobs level <b>{cutoff} or below</b> should be gray. Confirm enemy color and Forever XP rules before killing; dungeon level ranges are not guarantees.</p>
-   {options.length===0&&<p style={small}>A reliable named farm hasn't been mapped for this material yet. Use the linked external item search to investigate its drop sources; this does not mean it is unavailable.</p>}
+   {options.length===0&&<p style={small}>No named farming route is mapped for this material yet. {foreverItem?
+     "Its specific Wowhead Forever item page is linked above; check its source tabs before you travel.":
+     "Search Wowhead Forever above to investigate new item and drop records."} This does not mean the item is unavailable.</p>}
    {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Turn off the gray-only filter or include Mining/Herbalism to inspect other possibilities.</p>}
    <div style={{display:"grid",gap:10,marginTop:10}}>
     {visible.map(r=>{
      const safe=r.maxMob!==undefined&&r.maxMob<=cutoff;
      const dangerous=r.minMob!==undefined&&r.minMob>cutoff;
+     const nonCombat=r.method==="vendor"||r.method==="crafting";
+     const provenance=r.evidence==="wowhead-item-page"?"Wowhead Forever lists seller zones; NPC / stock unconfirmed":
+       r.evidence==="client-recipe"?"Forever client recipe; exact unlock may need verification":
+       r.evidence==="forever-reported"?"Reported on Wowhead Forever; recheck current server":
+       "Classic / historical reference; not verified as a Forever drop";
      return <article key={r.id} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
        <b style={{fontSize:14}}>{r.target}</b>
-       <span style={{...small,fontWeight:650}}>{safe?"Gray expected":dangerous?"XP likely":"Verify XP / node skill"}</span>
+       <span style={{...small,fontWeight:650}}>{nonCombat?"No mob XP":safe?"Gray expected":dangerous?"XP likely":r.method==="mining"||r.method==="herbalism"?"Check gathering skill":"Verify mob XP"}</span>
       </div>
       <p style={{...small,margin:"5px 0"}}><b>{r.zone}</b> · {typeLabel(r)}
        {r.requiredSkill!==undefined?" · Needs "+r.method+" skill "+r.requiredSkill:""}
@@ -110,13 +122,13 @@ export default function WoWMaterialFarming({gameId,level,prog,setField,initialQu
        <button type="button" className="gm-pill" onClick={()=>copy(r.waypoint!)}>Copy TomTom</button></p>}
       <p style={{...small,margin:"7px 0 0"}}>
        <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">Check source ↗</a>
-       {" · "}{r.evidence==="classic-reference"?"Classic-derived; not confirmed on Forever":"Forever-reported; recheck live"}
+       {" · "}{provenance}
       </p>
      </article>;
     })}
    </div>
    <p style={{...small,marginTop:12}}>
-    If a material is difficult to obtain without your professions, compare its Auction House price with the time required to farm it. For additional drop sources, use Search Wowhead Forever above.
+    Item IDs and supplier zone names come from Wowhead Forever. Some drop tables and player comments are older Classic references, not confirmed Forever results. Compare Auction House prices against farm time, and use the linked item record to check for changes.
    </p>
   </>}
   {message&&<p role="status" style={small}>{message}</p>}

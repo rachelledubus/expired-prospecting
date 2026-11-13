@@ -5,6 +5,7 @@ import type { GameProgress } from "@/lib/games-data";
 import { WOW_RECIPES, WOW_PROFESSIONS, professionField, recipeHiddenKey, recipeLearnedKey, recipeStatus } from "@/lib/wow-forever-professions";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes, type MaterialRoute } from "@/lib/wow-material-farms";
+import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 import { grayMobThreshold, wowExtraField, wowMaterialKey, WOW_FARMS } from "@/lib/wow-portal-extras";
 
 type Mode = "gold" | "professions" | "gear" | "leveling";
@@ -45,9 +46,10 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
   const cutoff = grayMobThreshold(level);
-  const routes = useMemo(() => materialRoutes(currentMaterial).filter(r => !isGatheringOnly(r))
-    .sort((a,b) => sortSources(level,a,b)), [currentMaterial,level]);
+  const routes = useMemo(() => materialRoutes(currentMaterial,faction).filter(r => !isGatheringOnly(r))
+    .sort((a,b) => sortSources(level,a,b)), [currentMaterial,level,faction]);
   const bestSource = routes[0];
+  const foreverItemUrl = wowheadForeverItemUrl(currentMaterial);
   const owned = currentMaterial ? formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(currentMaterial))]) : null;
   const savedSkills = (profession: string) => {
     const stored = prog.fields[professionField(gameId, "skill-" + profession)];
@@ -142,7 +144,12 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
         {bestSource.maxMob!==undefined&&<p style={helper}>
           Mob level {bestSource.minMob}–{bestSource.maxMob} · {bestSource.maxMob<=cutoff?"Gray expected":"Potential XP; check the enemy"}
         </p>}
-        <p style={helper}>{bestSource.evidence==="forever-reported"?"Forever-reported source":"Classic-based lead, not independently verified for Forever"} · Drop not guaranteed</p>
+        <p style={helper}>
+          {bestSource.method==="vendor"?"Buy from a profession or trade supplier. Confirm NPC and current stock.":
+            bestSource.method==="crafting"?"Recipe exists in the client catalog; check skill and unlock before crafting.":
+            bestSource.evidence==="forever-reported"?"Forever-reported rare source; drops are not guaranteed.":
+            "Classic / historical farming lead; drop rates are not verified for Forever."}
+        </p>
         <p style={helper}><a href={bestSource.sourceUrl} target="_blank" rel="noopener noreferrer">Check this specific source ↗</a></p>
         {bestSource.waypoint&&<div className="gm-wow-session-waypoint">
           <code>{bestSource.waypoint}</code>
@@ -152,7 +159,9 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <div className="gm-wow-session-actions">
         <button className="gm-pill ghost" type="button" disabled={!currentMaterial} onClick={()=>onFindMaterial(currentMaterial)}>See all farming routes</button>
         <a className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer"
-          href={externalMaterialLookup(currentMaterial||draft.trim()||"Moss Agate")}>Search Wowhead Forever ↗</a>
+          href={foreverItemUrl||externalMaterialLookup(currentMaterial||draft.trim()||"Moss Agate")}>
+          {foreverItemUrl?"Open exact Wowhead Forever item ↗":"Search Wowhead Forever ↗"}
+        </a>
       </div>
     </div>
     {mode==="gold"&&<details className="gm-wow-session-focus">

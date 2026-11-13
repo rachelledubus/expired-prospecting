@@ -320,7 +320,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
 
     {view==="professions" && <WoWProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget} onFindMaterial={openMaterial}/>}
     {view==="materials" && <WoWMaterialFarming key={materialTarget} gameId={game.id} level={currentLevel}
-      prog={prog} setField={setField} initialQuery={materialTarget}/>} 
+      faction={faction==="alliance"?"alliance":"horde"} prog={prog} setField={setField} initialQuery={materialTarget}/>} 
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
