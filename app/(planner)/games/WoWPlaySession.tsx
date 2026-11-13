@@ -40,6 +40,7 @@ const formatAmount = (value: string | undefined) =>
 export default function WoWPlaySession({ gameId, prog, level, faction, mode, setField, onOpen, onFindMaterial }: Props) {
   const activeKey = wowExtraField(gameId, "session-material");
   const savedMaterial = prog.fields[activeKey] ?? "Moss Agate";
+  const sessionProfession = prog.fields[wowExtraField(gameId,"session-profession")] ?? "leatherworking";
   const [draft, setDraft] = useState(savedMaterial);
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
@@ -54,7 +55,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       WOW_PROFESSIONS.find(p=>p.id===profession)?.initial ?? 0;
   };
   const nextCraft = WOW_RECIPES.filter(r =>
-    prog.checks[recipeLearnedKey(gameId,r.id)] &&
+    r.profession === sessionProfession && prog.checks[recipeLearnedKey(gameId,r.id)] &&
     !prog.checks[recipeHiddenKey(gameId,r.id)] &&
     r.learnAt !== null &&
     recipeStatus(r,savedSkills(r.profession)) === "orange"
@@ -94,6 +95,11 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
     </div>
     {mode==="professions"&&<div className="gm-wow-session-focus">
       <h4>Craft next for skill</h4>
+      <label style={{...helper,display:"block",fontWeight:650,marginBottom:8}}>Choose profession
+        <select style={input} value={sessionProfession} onChange={e=>setField(wowExtraField(gameId,"session-profession"),e.target.value)}>
+          {WOW_PROFESSIONS.filter(p=>p.id!=="skinning").map(p=><option key={p.id} value={p.id}>{p.label} · {savedSkills(p.id)}</option>)}
+        </select>
+      </label>
       {nextCraft ? <>
         <p><b>{nextCraft.name}</b> · {nextCraft.profession} skill {savedSkills(nextCraft.profession)}</p>
         <p style={helper}>Marked Learned and currently orange in your stored recipe snapshot. Confirm the recipe is orange in Forever before gathering materials.</p>
@@ -104,7 +110,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
         </div>
         {need&&<p style={helper}><b>Next preparation:</b> {need.have===null?"Record your "+need.name+" inventory or find a farm.":"Farm or buy "+need.missing+" more "+need.name+"."}</p>}
         {!need&&<p style={helper}>Your entered inventory covers one craft. Check the skill color and craft when ready.</p>}
-      </>:<p style={helper}>No orange recipe is marked Learned at your stored profession skills. Open Professions to mark what you know and choose a recipe to learn.</p>}
+      </>:<p style={helper}>No orange recipe is marked Learned in this profession at your stored skill. Open Professions to mark what you know and choose a recipe to learn.</p>}
       <button className="gm-pill ghost" type="button" onClick={()=>onOpen("professions")}>Open profession recommendations</button>
     </div>}
     {mode==="gear"&&<div className="gm-wow-session-focus">
