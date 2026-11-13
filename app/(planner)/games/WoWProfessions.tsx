@@ -114,6 +114,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
   const [confirmed, setConfirmed] = useState("");
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("all");
+  const [sourceDrafts, setSourceDrafts] = useState<Record<string,string>>({});
   const [shown, setShown] = useState(12);
 
   const skillFor = (id: WowProfessionId) => {
@@ -290,8 +291,12 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField }: Pro
                         </select>
                       </label>
                       <label style={small}>Exact town, camp or location
-                        <input value={manualArea(r.id)} maxLength={120} placeholder="e.g. Hammerfall"
-                          onChange={e=>setField(extra("source-area-"+r.id),e.target.value)}
+                        <input value={sourceDrafts[r.id]??manualArea(r.id)} maxLength={120} placeholder="e.g. Hammerfall"
+                          onChange={e=>setSourceDrafts(old=>({...old,[r.id]:e.target.value}))}
+                          onBlur={()=>{
+                            if(sourceDrafts[r.id]!==undefined&&sourceDrafts[r.id]!==manualArea(r.id))
+                              setField(extra("source-area-"+r.id),sourceDrafts[r.id]);
+                          }}
                           style={{width:"100%",padding:8,borderRadius:7}}/>
                       </label>
                     </div>
