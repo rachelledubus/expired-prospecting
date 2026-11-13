@@ -136,7 +136,9 @@ function DungeonCard({
 
 export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,setField,mode="full"}:Props) {
   const ranked=rankHunterDungeons(level,(dId,itemId)=>!!prog.checks[dungeonLootOwnedKey(gameId,dId,itemId)],faction);
-  const goalValue=prog.fields[wowExtraField(gameId,"dungeon-goal")]??"gear";
+  const playGoal=prog.fields[wowExtraField(gameId,"play-mode")];
+  const goalValue=prog.fields[wowExtraField(gameId,"dungeon-goal")]??
+    (playGoal==="professions"?"professions":playGoal==="gold"?"no-xp":"gear");
   const dungeonGoal=goalValue==="professions"||goalValue==="no-xp"||goalValue==="gold" ? goalValue : "gear";
   const grayCutoff=grayMobThreshold(level);
   const activeMaterial=prog.fields[wowExtraField(gameId,"session-material")]??"Moss Agate";
@@ -182,7 +184,7 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,se
     const score=dungeonGoal==="professions"?professionScore:dungeonGoal==="gold"?goldScore:xpScore;
     const assessment:HunterDungeonAssessment={
       dungeon:d,score,gearTargets,upcomingTargets,
-      acquiredCount:eligible.length-gearTargets.length-upcomingTargets.length,
+      acquiredCount:eligible.filter(t=>prog.checks[dungeonLootOwnedKey(gameId,d.id,t.id)]).length,
       band
     };
     return {assessment,patterns:patterns.length,materials:materials.length,needed:neededMaterials.length,grayRangeKnown,hasFarm:!!possibleFarm};
