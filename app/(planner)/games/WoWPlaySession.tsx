@@ -46,8 +46,8 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
   const cutoff = grayMobThreshold(level);
-  const routes = useMemo(() => materialRoutes(currentMaterial).filter(r => !isGatheringOnly(r))
-    .sort((a,b) => sortSources(level,a,b)), [currentMaterial,level]);
+  const routes = useMemo(() => materialRoutes(currentMaterial,faction).filter(r => !isGatheringOnly(r))
+    .sort((a,b) => sortSources(level,a,b)), [currentMaterial,level,faction]);
   const bestSource = routes[0];
   const foreverItemUrl = wowheadForeverItemUrl(currentMaterial);
   const owned = currentMaterial ? formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(currentMaterial))]) : null;
