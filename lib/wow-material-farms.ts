@@ -30,7 +30,6 @@ const sourceMossMobs = "https://metabot.gg/en/wow-forever/items/moss-agate";
 const sourceMining = "https://www.wowhead.com/classic/guide/classic-mining-best-farming-basics-early-ores";
 const sourceCloth = "https://www.warcrafttavern.com/wow-classic/guides/cloth-farming";
 const sourceLeather = "https://www.wowhead.com/classic/guide/classic-leather-farming-early-leather";
-const sourceCooking = "https://www.wowhead.com/classic/guide/best-cooking-meat-farming-locations-classic-wow";
 const sourceGems = "https://warcraft.wiki.gg/wiki/Raw_gem";
 const m = (item:string,id:string,zone:string,target:string,advice:string,sourceUrl:string,
   extras:Partial<Omit<MaterialRoute,"item"|"id"|"zone"|"target"|"advice"|"sourceUrl">>={}):MaterialRoute=>
