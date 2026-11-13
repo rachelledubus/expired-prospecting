@@ -128,3 +128,11 @@ Additive Professions tab inside existing Games → WoW Forever guide. Real-estat
 9. A Hunter can still run a dungeon for quests, XP, friends, or another reason, even if all tracked gear was marked covered.
 10. Mobile widths 320/375/430px have no horizontal overflow; all lists and checkboxes are accessible by touch.
 11. The Next Craft Professions feature, Hidden Recipes, and existing Hunter guide checkboxes still work unchanged.
+
+## Learning recipes by exact location (November 13, 2026)
+- The finder groups known sources by precise camp, town, city, landmark or traveling vendor stop, not merely continent/region.
+- Each group retains ascending skill-to-learn ordering and saved Learned/Hidden state; a multi-vendor recipe appears under each usable location with shared status.
+- Select an individual location; search also matches town and NPC names. Opposing-faction-only references are separated from actionable Horde/neutral options.
+- Trainer recipes without a known specific NPC are grouped under 'Profession trainers'; unmapped drops and patterns remain in 'Learning location not yet mapped' instead of inventing source details. Both groups are collapsed unless searched or selected.
+- Added locality names to all 46 known vendor-source records. Corrected Nioma from an inaccurate Hillsbrad map location to Wildhammer Keep, The Hinterlands at /way 13.3 43.4 (Classic reference, not confirmed Forever availability).
+- Existing data IDs, tracking, saving and Next Craft recommendation logic are unchanged.
