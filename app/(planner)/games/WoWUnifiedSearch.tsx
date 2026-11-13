@@ -4,7 +4,7 @@ import { WOW_RECIPES, recipeLearnedKey, recipeHiddenKey } from "@/lib/wow-foreve
 import { WOW_DUNGEON_PROFESSION_DROPS } from "@/lib/wow-forever-dungeon-professions";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { WOW_FARMS, WOW_PET_FAMILIES } from "@/lib/wow-portal-extras";
-import { ALL_RECIPE_MATERIALS, materialRoutes } from "@/lib/wow-material-farms";
+import { ALL_RECIPE_MATERIALS, materialRoutes, externalMaterialLookup } from "@/lib/wow-material-farms";
 import type { WowGame } from "@/lib/wow-forever-data";
 type Destination="roadmap"|"professions"|"gear"|"gold"|"materials"|"pets"|"combat";
 type Props={game:WowGame;prog:GameProgress;query:string;onQuery:(v:string)=>void;onOpen:(v:Destination,term:string)=>void};
@@ -66,6 +66,13 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     placeholder="e.g. Medium Leather, Razorfen, Screech, Fang"
     style={{display:"block",marginTop:7,width:"100%",minWidth:0,background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",borderRadius:8,padding:12,font:"inherit"}}/>
   </label>
+  {q && <div style={{display:"flex",gap:9,alignItems:"center",flexWrap:"wrap",marginTop:10}}>
+    <a className="gm-pill" href={externalMaterialLookup(query.trim())} target="_blank" rel="noopener noreferrer"
+      aria-label={"Search Classic Wowhead for "+query.trim()}>
+      Search Wowhead for {query.trim()} ↗
+    </a>
+    <span style={small}>Works even when your portal has no matching item or verified source.</span>
+  </div>}
   {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Learned recipes remain in Recommended Next rather than showing in these general search results.</p>:
    <><p style={small}>{total} results displayed · sections are capped for readability.</p>
     {groups.map(g=>g.entries.length?<section key={g.name} style={{marginTop:14}}>
@@ -78,7 +85,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
         <p style={{...small,margin:"3px 0"}}>{x.detail}</p>
       </div>)}
     </section>:null)}
-    {total===0&&<p style={small}>Nothing matched in the indexed catalog. Try a shorter term; the database is not a complete live-game index.</p>}
+    {total===0&&<p style={small}>Nothing matched in your portal's catalog. Search Wowhead above to find the item externally; check whether the result applies to WoW Forever.</p>}
    </>}
  </section>;
 }
