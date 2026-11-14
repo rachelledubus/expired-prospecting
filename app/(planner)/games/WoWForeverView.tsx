@@ -350,8 +350,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
-      <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField}/>
+      <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField} highlight={searchTarget}/>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} highlight={searchTarget}/>
       <SmallInfo title="Simple leveling gear priorities">
         <ol style={{paddingLeft:20,margin:0}}>
           <li><b>Ranged weapon damage:</b> Check upgrades often; a better bow/gun/crossbow greatly affects Auto Shot.</li>
