@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { measureFarm } from "@/lib/wow-gold-session-metrics";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { dungeonProfessionDrops } from "@/lib/wow-forever-dungeon-professions";
@@ -194,13 +195,8 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,se
     const travelPenalty=(faction==="horde" && /Alliance|Ironforge|Westfall|Dun Morogh/i.test(d.travelNote||""))?8:0;
     const professionScore=patterns.length*5+neededMaterials.length*7+materials.length+
       (onLevel?7:level<d.min?-40-(d.min-level):0)-travelPenalty;
-    const farmGold=possibleFarm ? (()=>{
-      const v=Number(prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-gold")]);
-      const m=Number(prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-minutes")]);
-      const valid=prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-gold")]!==undefined &&
-        prog.fields[wowExtraField(gameId,"farm-"+possibleFarm.id+"-minutes")]!==undefined;
-      return valid&&m>0?60*v/m:0;
-    })():0;
+    const farmGold=possibleFarm?
+      (measureFarm(k=>prog.fields[wowExtraField(gameId,k)],possibleFarm.id)?.netPerHour??0):0;
     const goldScore=(grayRangeKnown?30:-40)+(possibleFarm?.requiresSkinning?8:0)+
       Math.min(35,Math.max(0,farmGold))+materials.length-travelPenalty;
     const xpScore=grayRangeKnown?100-(possibleFarm!.maxMob)+materials.length-travelPenalty : -100;
