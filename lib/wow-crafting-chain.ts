@@ -71,7 +71,8 @@ export function planCraftChain({recipe,batch,recipes,isLearned,inventory,yieldPe
     if(!amount)return;
     let row=requirements.get(id);
     if(!row){
-      const stock=inventory(name);
+      const rawStock=inventory(name);
+      const stock=typeof rawStock==="number"&&Number.isFinite(rawStock)&&rawStock>=0?Math.floor(rawStock):null;
       row={name,required:0,stock,stockUsed:0,unknown:stock===null,rawShortage:0,crafted:0};
       requirements.set(id,row);
       if(stock!==null)remainingStock.set(id,Math.max(0,Math.floor(stock)));
