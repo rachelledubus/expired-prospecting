@@ -21,6 +21,8 @@ on:
       - 'lib/wowhead-forever-items.ts'
       - 'scripts/verify-wow-crafting-chain.cjs'
       - 'scripts/verify-wow-material-ranking.cjs'
+      - 'lib/wow-gold-session-metrics.ts'
+      - 'scripts/verify-wow-gold-metrics.cjs'
       - 'scripts/verify-wow-forever-source-coverage.cjs'
 jobs:
   typecheck:
@@ -35,3 +37,4 @@ jobs:
       - run: node scripts/verify-wow-crafting-chain.cjs
       - run: node scripts/verify-wow-forever-source-coverage.cjs
       - run: node scripts/verify-wow-material-ranking.cjs
+      - run: node scripts/verify-wow-gold-metrics.cjs
