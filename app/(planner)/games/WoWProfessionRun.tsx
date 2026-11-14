@@ -58,7 +58,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
   const storedBatch=num(prog.fields[field("session-craft-count")]);
   const count=Math.max(1,Math.min(50,Math.floor(storedBatch??1)));
   const requireNoXp=prog.fields[field("session-no-xp")]!=="false";
-  const isLearned=(r:WowRecipe)=>!!prog.checks[recipeLearnedKey(gameId,r.id)];
+  const isLearned=(r:WowRecipe)=>!!prog.checks[recipeLearnedKey(gameId,r.id)] && !prog.checks[recipeHiddenKey(gameId,r.id)];
   const known=useMemo(()=>WOW_RECIPES.filter(r=>r.profession===profession&&
     !!prog.checks[recipeLearnedKey(gameId,r.id)]&&!prog.checks[recipeHiddenKey(gameId,r.id)]&&
     !["gray","locked"].includes(recipeStatus(r,skill)))
