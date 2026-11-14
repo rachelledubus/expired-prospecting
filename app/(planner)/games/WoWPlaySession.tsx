@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import WoWProfessionRun from "./WoWProfessionRun";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
-import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes, type MaterialRoute } from "@/lib/wow-material-farms";
+import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
+import { rankMaterialRoutes } from "@/lib/wow-material-route-ranking";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 import { grayMobThreshold, wowExtraField, wowMaterialKey, WOW_FARMS } from "@/lib/wow-portal-extras";
 
@@ -25,16 +26,6 @@ const input: React.CSSProperties = {
   padding: "9px 11px", border: "1px solid var(--border,#bbb)",
   borderRadius: 9, font: "inherit", background: "var(--panel,#fff)", color: "var(--text,#222)"
 };
-const isGatheringOnly = (r: MaterialRoute) => r.method === "mining" || r.method === "herbalism";
-const sortSources = (level: number, a: MaterialRoute, b: MaterialRoute) => {
-  const gray = grayMobThreshold(level);
-  const score = (r: MaterialRoute) =>
-    (isGatheringOnly(r) ? -100 : r.method==="vendor"||r.method==="other-profession"?45:0) +
-    (r.maxMob === undefined ? 0 : r.maxMob <= gray ? 10 : -15) +
-    (r.waypoint ? 4 : 0) +
-    (r.evidence === "forever-reported" ? 3 : 0);
-  return score(b) - score(a);
-};
 const formatAmount = (value: string | undefined) =>
   value === undefined ? null : Number.isFinite(Number(value)) ? Math.max(0,Number(value)) : null;
 
@@ -45,9 +36,12 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
   const cutoff = grayMobThreshold(level);
-  const routes = useMemo(() => materialRoutes(currentMaterial,faction).filter(r => !isGatheringOnly(r))
-    .sort((a,b) => sortSources(level,a,b)), [currentMaterial,level,faction]);
-  const bestSource = routes[0];
+  // Use exactly the same no-XP, faction and Skinning ranking as Farm Materials.
+  const routeAdvice = useMemo(() => rankMaterialRoutes(materialRoutes(currentMaterial,faction),{
+    level,faction,noXp:true,includeGathering:false,includeHistorical:true
+  }),[currentMaterial,level,faction]);
+  const bestAdvice=routeAdvice.find(x=>x.usable==="direct");
+  const bestSource=bestAdvice?.route;
   const foreverItemUrl = wowheadForeverItemUrl(currentMaterial);
   const owned = currentMaterial ? formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(currentMaterial))]) : null;
   const rankedGear = rankHunterDungeons(level,(d,i)=>!!prog.checks[dungeonLootOwnedKey(gameId,d,i)],faction);
@@ -107,8 +101,9 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       {bestSource ? <>
         <p style={{margin:"7px 0 4px"}}><b>{bestSource.target}</b> · {bestSource.zone}</p>
         <p style={helper}>{bestSource.advice}</p>
+        {bestAdvice&&<p style={helper}><b>Route cautions:</b> {bestAdvice.notes.join(" · ")||"Verify the source in-game"}</p>}
         {bestSource.maxMob!==undefined&&<p style={helper}>
-          Mob level {bestSource.minMob}–{bestSource.maxMob} · {bestSource.maxMob<=cutoff?"Gray expected":"Potential XP; check the enemy"}
+          Mob level {bestSource.minMob}–{bestSource.maxMob} · {bestAdvice?.xp==="gray-expected"?"Gray expected; verify in game":"XP status needs checking"}
         </p>}
         <p style={helper}>
           {bestSource.method==="other-profession"?"Created by another profession. Ask a crafter or check Auction House.":
@@ -122,7 +117,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
           <code>{bestSource.waypoint}</code>
           <button className="gm-pill" type="button" onClick={()=>copy(bestSource.waypoint!)}>Copy TomTom</button>
         </div>}
-      </>:<p style={helper}>No non-Mining farming route is mapped for this item yet. Search Wowhead Forever, or choose a different focus.</p>}
+      </>:<p style={helper}>No documented direct route meets your no-XP preference. Open all farming routes to see unverified or XP-producing options, or search Wowhead Forever.</p>}
       <div className="gm-wow-session-actions">
         <button className="gm-pill ghost" type="button" disabled={!currentMaterial} onClick={()=>onFindMaterial(currentMaterial)}>See all farming routes</button>
         <a className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer"
