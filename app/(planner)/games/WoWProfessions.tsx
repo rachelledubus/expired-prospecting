@@ -110,7 +110,8 @@ const clampSkill = (text: string) => {
 };
 
 export default function WoWProfessions({ gameId, prog, setCheck, setField, initialQuery = "", onFindMaterial }: Props) {
-  const [selected, setSelected] = useState<WowProfessionId>("leatherworking");
+  const [selected, setSelected] = useState<WowProfessionId>(()=>
+    WOW_RECIPES.find(r=>r.name.toLowerCase()===initialQuery.trim().toLowerCase())?.profession??"leatherworking");
   const [showGray, setShowGray] = useState(Boolean(initialQuery));
   const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState("");
