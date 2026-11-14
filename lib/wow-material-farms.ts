@@ -111,6 +111,10 @@ export const CURATED_MATERIAL_ROUTES:MaterialRoute[] = [
     sourceGems,{method:"mining",requiredSkill:1}),
   // Forever-specific materials: the item page records observed loot and community
   // comments, but sample rates/older Classic comments are NOT live-server guarantees.
+  m("Pristine Leather","pristine-riverglades","Riverglades","Rare-material vendor (exact NPC unverified)",
+    "Wowhead Forever lists Pristine Leather as purchasable in Riverglades. Check the vendor and your gold before traveling; the item can be scarce and player comments about prices may be outdated.",
+    "https://www.wowhead.com/forever/item=249427/pristine-leather",
+    {method:"vendor",evidence:"wowhead-item-page"}),
   m("Pristine Leather","pristine-zhevra","The Barrens","Zhevra Charger (levels 17–18)",
     "Wowhead Forever lists this as an extremely rare drop from these beasts. Loot then skin. The item is scarce; many kills may produce none. Don't substitute a made-up per-hour rate.",
     "https://www.wowhead.com/forever/item=249427/pristine-leather",
