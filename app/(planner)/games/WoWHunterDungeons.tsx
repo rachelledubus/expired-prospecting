@@ -24,6 +24,7 @@ type Props = {
   setCheck: (key: string, value: boolean) => void;
   setField: (key: string, value: string) => void;
   mode?: "summary" | "full";
+  highlight?:string;
 };
 
 const slotLabels: Record<HunterLootTarget["slot"], string> = {
@@ -74,10 +75,10 @@ function TargetRow({
 }
 
 function DungeonCard({
-  result,gameId,level,faction,prog,setCheck,setField,featured=false,focusLabel,
+  result,gameId,level,faction,prog,setCheck,setField,featured=false,focusLabel,highlight,
 }: {
   result: HunterDungeonAssessment;gameId:string;level:number;faction:"horde"|"alliance";
-  prog:GameProgress;setCheck:Props["setCheck"];setField:Props["setField"];featured?:boolean;focusLabel?:string;
+  prog:GameProgress;setCheck:Props["setCheck"];setField:Props["setField"];featured?:boolean;focusLabel?:string;highlight?:string;
 }) {
   const d=result.dungeon;
   const entrance=WOW_DUNGEON_ENTRANCES[d.id];
@@ -94,7 +95,7 @@ function DungeonCard({
       ? "All listed Hunter targets marked acquired"
       : result.band==="soon" ? "Coming up as you level" : "No documented current-level target";
   return <article className={"gm-wow-dungeon-card" + (featured?" featured":"")}>
-    <details>
+    <details defaultOpen={!!highlight&&((d.name+" "+d.region+" "+d.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.toLowerCase()))}>
       <summary className="gm-wow-dungeon-summary">
         <div className="gm-wow-dungeon-heading">
           <b>{d.name}</b>
@@ -163,8 +164,11 @@ function DungeonCard({
   </article>;
 }
 
-export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,setField,mode="full"}:Props) {
+export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,setField,mode="full",highlight=""}:Props) {
   const ranked=rankHunterDungeons(level,(dId,itemId)=>!!prog.checks[dungeonLootOwnedKey(gameId,dId,itemId)],faction);
+  const exactMatch=highlight.trim()?ranked.find(x=>
+    (x.dungeon.name+" "+x.dungeon.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.trim().toLowerCase())
+  ):undefined;
   const playGoal=prog.fields[wowExtraField(gameId,"play-mode")];
   const goalValue=prog.fields[wowExtraField(gameId,"dungeon-goal")]??
     (playGoal==="professions"?"professions":playGoal==="gold"?"no-xp":"gear");
@@ -239,6 +243,12 @@ export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,se
   return <section className="gm-card gm-wow-dungeon-planner" aria-label="Hunter-gear dungeon recommendations">
     <div className="gm-panel-label">Dungeon priorities · Hunter gear + profession drops</div>
     <h3 style={{margin:"6px 0"}}>Where to run for gear and profession items at level {level}</h3>
+    {exactMatch&&<div style={{border:"1px solid var(--accent,#659e8b)",borderRadius:10,padding:12,margin:"10px 0"}}>
+      <div className="gm-panel-label">Search result · {highlight}</div>
+      <DungeonCard key={"exact-"+exactMatch.dungeon.id+"-"+highlight} result={exactMatch} gameId={gameId}
+        level={level} faction={faction} prog={prog} setCheck={setCheck} setField={setField}
+        featured highlight={highlight} focusLabel="Matched result"/>
+    </div>}
     <label className="gm-wow-dungeon-goal">Prioritize dungeons for
       <select value={dungeonGoal} onChange={e=>setField(wowExtraField(gameId,"dungeon-goal"),e.target.value)}>
         <option value="gear">Hunter equipment upgrades</option>
