@@ -18,6 +18,7 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
  const [query,setQuery]=useState(initialQuery||"Moss Agate");
  const [showOtherProfessions,setShowOtherProfessions]=useState(false);
  const [grayOnly,setGrayOnly]=useState(false);
+ const [foreverOnly,setForeverOnly]=useState(false);
  const [message,setMessage]=useState("");
  const cutoff=grayMobThreshold(level);
  const suggestions=useMemo(()=>ALL_RECIPE_MATERIALS.filter(name=>name.toLowerCase().includes(query.trim().toLowerCase())),[query]);
@@ -36,7 +37,8 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
    if(aTrade!==bTrade)return aTrade?-1:1;
    return aRisk-bRisk||Number(mine(a))-Number(mine(b));
  });
- const visible=ordered.filter(r=>(showOtherProfessions||!mine(r))&&(!grayOnly||
+ const visible=ordered.filter(r=>(!foreverOnly||r.evidence!=="classic-reference")&&
+   (showOtherProfessions||!mine(r))&&(!grayOnly||
    ["vendor","crafting","other-profession"].includes(r.method)||
    (r.maxMob!==undefined&&r.maxMob<=cutoff)));
  const inventoryKey=chosen?wowExtraField(gameId,"stock-"+wowMaterialKey(chosen)):"";
@@ -96,12 +98,17 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
      <input type="checkbox" checked={grayOnly} onChange={e=>setGrayOnly(e.target.checked)}/>
      Only sources without expected kill XP
     </label>
+    <label style={{...small,display:"inline-flex",alignItems:"center",gap:6}}>
+     <input type="checkbox" checked={foreverOnly} onChange={e=>setForeverOnly(e.target.checked)}/>
+     Hide historical / Classic-only reports
+    </label>
    </div>
    <p style={small}>At character level <b>{level}</b>, ordinary Classic-style mobs level <b>{cutoff} or below</b> should be gray. Confirm enemy color and Forever XP rules before killing; dungeon level ranges are not guarantees.</p>
    {options.length===0&&<p style={small}>No named farming route is mapped for this material yet. {foreverItem?
      "Its specific Wowhead Forever item page is linked above; check its source tabs before you travel.":
      "Search Wowhead Forever above to investigate new item and drop records."} This does not mean the item is unavailable.</p>}
-   {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Allow XP-risk sources or include Mining/Herbalism to inspect other possibilities.</p>}
+   {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Try turning off the historical-source filter, allowing XP-risk sources, or including Mining/Herbalism. A Forever item page can exist without a validated current drop.</p>}
+   {options.length>0&&<p style={{...small,margin:"7px 0"}}>Showing <b>{visible.length}</b> of <b>{options.length}</b> source leads. A Wowhead Forever item identity or historic comment is not proof of current loot.</p>}
    <div style={{display:"grid",gap:10,marginTop:10}}>
     {visible.map(r=>{
      const safe=r.maxMob!==undefined&&r.maxMob<=cutoff;

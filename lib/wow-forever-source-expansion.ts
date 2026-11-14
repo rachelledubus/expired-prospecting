@@ -13,7 +13,7 @@ import type {MaterialRoute,MaterialMethod} from "./wow-material-farms";
 type Lead = {
   item:string; id:string; zone:string; target:string; advice:string;
   sourceUrl:string; method:MaterialMethod; evidence:MaterialRoute["evidence"];
-  minMob?:number;maxMob?:number;waypoint?:string;
+  minMob?:number;maxMob?:number;waypoint?:string;requiredSkill?:number;
 };
 const reviewedAt="2026-11-14";
 const supplier = (item:string,id:number,target:string="Trade or drink supplier"):Lead =>({
@@ -33,6 +33,65 @@ const classic=(item:string,id:string,zone:string,target:string,advice:string,url
     item,id,zone,target,advice,sourceUrl:url,method:"mob",evidence:"classic-reference",...more
   });
 const leads:Lead[]=[
+  // Additional Wowhead Forever item pages reviewed 2026-11-14.
+  // Drop information below is historical or unverified for current Forever.
+  classic("Medium Leather","medium-bfd-snapjaw","Blackfathom Deeps, Ashenvale",
+    "Aku'mai Snapjaw (level 26–27 elite)",
+    "Wowhead Forever's Medium Leather item listing names Aku'mai Snapjaw among skinnable creatures. Fully loot, then skin; the listed rate is a mixed-reference observation, not a guaranteed current drop.",
+    "https://www.wowhead.com/forever/item=2319/medium-leather",
+    {method:"skinning",minMob:26,maxMob:27}),
+  classic("Medium Leather","medium-sfk-ragetooth","Shadowfang Keep, Silverpine Forest",
+    "Shadowfang Ragetooth (level 23–24 elite)",
+    "The Forever Medium Leather page lists this worg as a skinnable source. Loot and skin; avoid assuming each corpse will yield Medium Leather.",
+    "https://www.wowhead.com/forever/item=2319/medium-leather",
+    {method:"skinning",minMob:23,maxMob:24}),
+  classic("Medium Leather","medium-wc-skum","Wailing Caverns, The Barrens",
+    "Skum (level 21 elite)",
+    "The Forever Medium Leather page includes Skum in its drop/skin table. This is an instance boss, not a repeatable outdoor skinning loop. Confirm skinning eligibility in-game.",
+    "https://www.wowhead.com/forever/item=2319/medium-leather",
+    {method:"skinning",minMob:21,maxMob:21}),
+  classic("Light Leather","light-silverpine-worgen","Silverpine Forest, Deep Elem Mine area",
+    "Moonrage worgen",
+    "Historical comments on the Wowhead Forever Light Leather page describe skinning Moonrage worgen in this area, but the amount of Ruined Leather Scraps may exceed Light Leather. Not a confirmed current drop rate.",
+    "https://www.wowhead.com/forever/item=2318/light-leather",
+    {method:"skinning"}),
+  classic("Linen Cloth","linen-rfc","Ragefire Chasm, Orgrimmar",
+    "Ragefire humanoid enemies",
+    "Historical player reports on Wowhead Forever describe linen from Ragefire Chasm runs. This is a convenient Horde instance, but the reported stacks per run are not current Forever evidence.",
+    "https://www.wowhead.com/forever/item=2589/linen-cloth",
+    {method:"dungeon"}),
+  classic("Wool Cloth","wool-sfk","Shadowfang Keep, Silverpine Forest",
+    "Shadowfang Keep humanoid enemies",
+    "Wowhead Forever's Wool Cloth page contains older recommendations for farming SFK humanoids. Loot drops vary; this is a historical route, not a confirmed live amount.",
+    "https://www.wowhead.com/forever/item=2592/wool-cloth",
+    {method:"dungeon"}),
+  classic("Silk Cloth","silk-desolace-centaur","Desolace, Kolkar camps",
+    "Kolkar centaur",
+    "Historical farming comments on Wowhead Forever mention silk from level-31-ish Desolace centaurs. This is likely to award kill XP at level 34; check enemy colors first.",
+    "https://www.wowhead.com/forever/item=4306/silk-cloth",
+    {minMob:30,maxMob:33}),
+  classic("Moss Agate","moss-wc-random","Wailing Caverns, The Barrens",
+    "Incidental loot during Wailing Caverns runs",
+    "A historical Wowhead Forever comment reports Moss Agate appearing as random dungeon loot. No exact mob or current drop chance is established: do not treat this as a dedicated guaranteed gem farm.",
+    "https://www.wowhead.com/forever/item=1206/moss-agate",
+    {method:"dungeon"}),
+  {
+    item:"Kingsblood",id:"kingsblood-wowhead-herb",zone:"Hillsbrad Foothills / Stonetalon Mountains",
+    target:"Kingsblood herb nodes (Herbalism 125)",
+    advice:"Wowhead Forever's Herbalism leveling guide places Kingsblood among the skill 115–170 herb routes and specifies gathering at skill 125. You currently use Skinning and Leatherworking, so you would need a Herbalist or a trade/Auction House purchase.",
+    method:"herbalism",requiredSkill:125,evidence:"wowhead-item-page",
+    sourceUrl:"https://www.wowhead.com/forever/guide/professions/herbalism/overview-leveling"
+  },
+  fromOtherProfession("Kingsblood","kingsblood-ask-herbalist","Herbalist",
+    "Kingsblood requires Herbalism 125 for gathering. The Forever Herbalism guide names Hillsbrad Foothills, Wetlands and Stonetalon Mountains as example regions. You cannot gather it with Skinning.",
+    "https://www.wowhead.com/forever/guide/professions/herbalism/overview-leveling"),
+  {
+    item:"Medium Leather",id:"medium-leather-mulgore-supplier",zone:"Mulgore",
+    target:"Medium Leather vendor listing (exact NPC unknown)",
+    advice:"The Wowhead Forever Medium Leather item page lists Mulgore as a vendor region. Vendor identity, location and current stock are unverified. Check the specific listing before making a trip.",
+    method:"vendor",evidence:"wowhead-item-page",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather"
+  },
   supplier("Green Dye",2605,"Dye / trade goods merchant"),
   supplier("Bleach",2324,"Dye / trade goods merchant"),
   supplier("Ice Cold Milk",1179,"Food and drink merchant"),
@@ -96,7 +155,8 @@ export const FOREVER_MATERIAL_REVIEW_DATE=reviewedAt;
 export const FOREVER_REVIEWED_MATERIAL_LEADS:ReadonlyArray<Lead>=leads;
 
 export function reviewedMaterialRoutes(name:string,faction:"horde"|"alliance"):MaterialRoute[]{
-  return leads.filter(l=>l.item.toLowerCase()===name.toLowerCase()).map(l=>({
+  return leads.filter(l=>l.item.toLowerCase()===name.toLowerCase()&&
+    !(l.id==="medium-leather-mulgore-supplier"&&faction!=="horde")).map(l=>({
     ...l,
     zone:l.method==="vendor"&&faction==="alliance"
       ?"Stormwind / Ironforge / Darnassus":l.zone,

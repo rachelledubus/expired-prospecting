@@ -22,21 +22,21 @@ const catalog=JSON.parse(fs.readFileSync(path.resolve(__dirname,"../lib/wow-fore
 const reagents=new Set(catalog.recipes.flatMap(r=>r.reagents.map(m=>m.name)));
 const names=new Set(),ids=new Set();
 assert.equal(FOREVER_MATERIAL_REVIEW_DATE,"2026-11-14");
-assert.equal(leads.length,20,"Source batch should contain 20 researched leads");
+assert.ok(leads.length>=20,"Reviewed routes must retain at least the original 20 researched leads");
 for(const lead of leads){
  assert.ok(reagents.has(lead.item),lead.item+" must be a real recipe ingredient in this portal");
  assert.ok(lead.id&&lead.target&&lead.zone&&lead.advice,"Routes must have actionable locations and guidance");
  assert.ok(!ids.has(lead.id),"Duplicate route ID: "+lead.id);
  ids.add(lead.id);
  names.add(lead.item);
- assert.match(lead.sourceUrl,/^https:\/\/www\.wowhead\.com\/forever\/(?:item|spell)=\d+/);
+ assert.match(lead.sourceUrl,/^https:\/\/www\.wowhead\.com\/forever\/(?:item|spell)=\d+|^https:\/\/www\.wowhead\.com\/forever\/guide\//);
  assert.ok(!lead.waypoint,"Unverified spawn coordinates must not be invented");
- if(lead.evidence==="classic-reference")assert.ok(["mob","dungeon"].includes(lead.method),
+ if(lead.evidence==="classic-reference")assert.ok(["mob","dungeon","skinning"].includes(lead.method),
    "Historical drop comments must be marked as mob/dungeon, not Forever-confirmed");
  if(lead.method==="other-profession")assert.equal(lead.evidence,"wowhead-item-page");
  if(lead.method==="vendor")assert.equal(lead.evidence,"wowhead-item-page");
 }
-assert.equal(names.size,20,"Review intended to add source options for 20 distinct recipe reagents");
+assert.ok(names.size>=20,"Review must retain at least 20 distinct recipe ingredient sources");
 const horde=reviewedMaterialRoutes("Green Dye","horde")[0];
 const alliance=reviewedMaterialRoutes("Green Dye","alliance")[0];
 assert.match(horde.zone,/Orgrimmar/);
@@ -45,4 +45,7 @@ assert.equal(horde.reviewedAt,"2026-11-14");
 assert.equal(reviewedMaterialRoutes("Sulfuric Acid","horde")[0].method,"other-profession");
 assert.equal(reviewedMaterialRoutes("Thick Murloc Scale","horde")[0].evidence,"classic-reference");
 assert.equal(reviewedMaterialRoutes("Never Existed","horde").length,0);
+assert.equal(reviewedMaterialRoutes("Kingsblood","horde").some(r=>r.method==="herbalism"&&r.requiredSkill===125),true);
+assert.equal(reviewedMaterialRoutes("Medium Leather","horde").some(r=>r.id==="medium-leather-mulgore-supplier"),true);
+assert.equal(reviewedMaterialRoutes("Medium Leather","alliance").some(r=>r.id==="medium-leather-mulgore-supplier"),false);
 console.log("WoW Forever source coverage regression passed: "+leads.length+" leads, "+names.size+" recipe ingredients, faction and evidence checks.");

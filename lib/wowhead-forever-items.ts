@@ -23,7 +23,7 @@ const known: Record<string,number> = {
   "Elemental Earth":7067,"Elemental Air":7069,"Elemental Water":7070,
   "Deeprock Salt":8150,
   "Jade":1529,"Shadowgem":1210,"Lesser Moonstone":1705,
-  "Raptor Flesh":12184,"Raptor Egg":3685,
+  "Raptor Flesh":12184,"Raptor Egg":3685,"Kingsblood":3356,
   "Green Dye":2605,"Bleach":2324,"Ice Cold Milk":1179,"Melon Juice":1205,
   "Simple Wood":4470,"Empty Vial":3371,"Leaded Vial":3372,
   "Cerulean Dye":249409,"Sulfuric Acid":249410,
