@@ -75,6 +75,20 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
   const toFind=chain?.toAcquire[0];
   const toCraft=chain?.steps[0];
   const source=toFind?sourceFor(toFind.name,faction,level,noXp):undefined;
+  // Group shopping/farming needs by the best *documented* source area.
+  // The grouping is a convenience, not a claim that an optimal travel route is known.
+  const tripGroups=useMemo(()=>{
+    const groups=new Map<string,{name:string;qty:number;source:string;method:string;waypoint?:string}[]>();
+    for(const need of chain?.toAcquire??[]){
+      const route=sourceFor(need.name,faction,level,noXp)?.route;
+      const place=route?.zone??"Unmapped / Auction House";
+      const entries=groups.get(place)??[];
+      entries.push({name:need.name,qty:need.rawShortage,source:route?.target??"Source not mapped",
+        method:route?.method??"unknown",waypoint:route?.waypoint});
+      groups.set(place,entries);
+    }
+    return [...groups.entries()].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]));
+  },[chain,level,faction,noXp]);
   const setStock=(item:string,value:string)=>
     setField(field("stock-"+wowMaterialKey(item)),value.replace(/[^0-9]/g,"").slice(0,9));
   const openItem=(item:string)=>{
@@ -176,6 +190,20 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
           </div>)}
         </div>:<p style={small}>No additional raw materials can be calculated yet, or your recorded stock covers them.</p>}
       </details>
+      {tripGroups.length>0&&<details style={{marginTop:12}} open>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Combine material errands by area ({tripGroups.length} groups)</summary>
+        <p style={small}>Suggested grouping only. Verify vendor stock, dungeon access and individual drop sources before traveling.</p>
+        {tripGroups.map(([place,items])=><div key={place} style={{padding:10,margin:"8px 0",border:"1px solid var(--border,#ddd)",borderRadius:9}}>
+          <b>{place}</b>
+          {items.map(item=><div key={item.name} style={{...small,padding:"6px 0"}}>
+            <b>{item.qty}× {item.name}</b> · {item.source}
+            <div style={{display:"flex",flexWrap:"wrap",gap:7,marginTop:4}}>
+              <button type="button" className="gm-pill ghost" onClick={()=>openItem(item.name)}>Inspect sources</button>
+              {item.waypoint&&<button type="button" className="gm-pill ghost" onClick={()=>copy(item.waypoint!)}>Copy waypoint</button>}
+            </div>
+          </div>)}
+        </div>)}
+      </details>}
       {chain?.steps.length? <details open style={{marginTop:12}}>
         <summary style={{cursor:"pointer",fontWeight:700}}>Craft these components first ({chain.steps.length})</summary>
         <div style={{display:"grid",gap:9,marginTop:10}}>
