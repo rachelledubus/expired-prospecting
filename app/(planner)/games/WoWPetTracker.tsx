@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
-import { WOW_PET_FAMILIES, wowExtraField } from "@/lib/wow-portal-extras";
+import { wowExtraField } from "@/lib/wow-portal-extras";
 import { WOW_FOREVER_PET_FAMILIES, WOW_FOREVER_PET_FAMILY_SOURCE } from "@/lib/wow-forever-pet-families";
 type Props={gameId:string;prog:GameProgress;setField:(key:string,value:string)=>void};
 const textField:React.CSSProperties={background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",borderRadius:8,padding:10,font:"inherit",width:"100%",minWidth:0};
@@ -13,7 +13,7 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
  const field=(id:string)=>wowExtraField(gameId,id);
  const val=(slot:number,name:string)=>prog.fields[field("pet-"+slot+"-"+name)]??"";
  const save=(slot:number,name:string,v:string)=>setField(field("pet-"+slot+"-"+name),v);
- const familyNames=[...new Set([...WOW_FOREVER_PET_FAMILIES.map(p=>p.name),...WOW_PET_FAMILIES.map(p=>p.name)])];
+ const familyNames=WOW_FOREVER_PET_FAMILIES.map(p=>p.name);
  return <section className="gm-card" style={{padding:16,marginTop:12}} aria-label="Hunter pet roster">
   <div className="gm-panel-label">Hunter pet management</div>
   <h3 style={{margin:"6px 0"}}>Pet roster and threat control</h3>
@@ -81,12 +81,6 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
         <a href={WOW_FOREVER_PET_FAMILY_SOURCE} target="_blank" rel="noopener noreferrer">Find a tameable {p.name} by level ↗</a>
       </div>)}
     </div>
-  </details>
-  <details style={{marginTop:14}}>
-   <summary style={{cursor:"pointer",fontWeight:700}}>Which pet fits my goal?</summary>
-   <div style={{display:"grid",gap:8,marginTop:10}}>
-    {WOW_PET_FAMILIES.map(p=><p key={p.name} style={{...hint,margin:0}}><b>{p.name} — {p.purpose}:</b> {p.note}</p>)}
-   </div>
   </details>
   <details style={{marginTop:12}}>
    <summary style={{cursor:"pointer",fontWeight:700}}>Pet won't hold several enemies?</summary>
