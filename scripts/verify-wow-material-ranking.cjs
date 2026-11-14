@@ -46,6 +46,6 @@ assert.ok(relaxed.some(x=>x.route.id==="xp-skin"));
 assert.ok(relaxed.some(x=>x.route.id==="unknown-dungeon"));
 assert.ok(!rankMaterialRoutes(all,{...defaults,includeHistorical:false}).some(x=>x.route.id==="historical-gray"));
 assert.equal(materialRouteAdvice(make("mixed","mob",23,29),34).xp,"unknown","A mixed-level spawn must not be described as zero XP");
-const now40=rankMaterialRoutes([xpOutdoor],{...defaults,level:40});
-assert.equal(now40.length,1,"Gray suitability must update with character level");
+const now42=rankMaterialRoutes([xpOutdoor],{...defaults,level:42});
+assert.equal(now42.length,1,"Gray suitability must update with character level");
 console.log("WoW material farming ranking regression passed");
