@@ -54,6 +54,11 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
       </a>
     </div>
     <p style={hint}>Taming checklist: stable a pet slot first, confirm the creature is tameable at your level, bring pet food, and review any ability ranks you still need.</p>
+    <p style={{...hint,margin:"9px 0 0"}}><b>Detailed Forever references:</b>{" "}
+      <a href="https://classicwowforever.com/hunter-pets/" target="_blank" rel="noopener noreferrer">Search tameable pets by family and level ↗</a>
+      {" · "}<a href="https://mobalytics.gg/wow-forever/guides/hunter-pets" target="_blank" rel="noopener noreferrer">Pet abilities and early taming locations ↗</a>
+    </p>
+    <p style={hint}>Third-party guides disagree on some family counts and may reflect different client builds. Verify the NPC and its abilities in your game.</p>
   </div>
   <details style={{marginTop:14}}>
    <summary style={{cursor:"pointer",fontWeight:700}}>Which pet fits my goal?</summary>
