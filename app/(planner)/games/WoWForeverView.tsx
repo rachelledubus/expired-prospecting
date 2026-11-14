@@ -108,6 +108,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [searchTarget,setSearchTarget]=useState("");
   const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
+  const [quickMode,setQuickMode]=useState(false);
+  const [quickDraft,setQuickDraft]=useState("");
   const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
@@ -158,8 +160,32 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
         onClick={()=>{setSearchTarget("");openView(v.id)}} style={chip}>{v.label}</button>)}
     </nav>
-    <p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>
+    <section className="gm-card" aria-label="Quick in-game tools" style={{padding:12,marginTop:8}}>
+      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+        <strong style={{fontSize:13}}>Quick actions</strong>
+        {(["next","materials","professions","gold","gear","lookup"] as View[]).map(id=>
+          <button key={id} type="button" className="gm-pill ghost" onClick={()=>openView(id)}>
+            {id==="next"?"Play next":id==="lookup"?"Find anything":id==="materials"?"Farm materials":id==="professions"?"Recipes":id==="gear"?"Dungeon loot":"Gold"}
+          </button>)}
+        <button type="button" className="gm-pill" aria-pressed={quickMode} onClick={()=>setQuickMode(v=>!v)}>
+          {quickMode?"Show complete guide":"Compact companion"}
+        </button>
+      </div>
+      <form onSubmit={e=>{e.preventDefault();if(quickDraft.trim()){setFilter(quickDraft.trim());openView("lookup");}}}
+        style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+        <input aria-label="Quick search WoW Forever" type="search" placeholder="Search any item, recipe, pet or dungeon…"
+          value={quickDraft} onChange={e=>setQuickDraft(e.target.value)} style={{...uiInput,flex:"1 1 190px",minWidth:0}}/>
+        <button type="submit" className="gm-pill" disabled={!quickDraft.trim()}>Search</button>
+      </form>
+    </section>
+    {!quickMode&&<p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>}
 
+    {quickMode&&view!=="next"&&<p className="gm-note" style={{...note,margin:"12px 0"}}>Compact mode is on. Use Quick actions or Show complete guide to return to the full reference.</p>}
+    {quickMode&&view!=="next"&&<WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
+      faction={faction==="alliance"?"alliance":"horde"}
+      mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"?playMode:"gold"}
+      onOpen={openView} onFindMaterial={openMaterial}/>}
+    {!quickMode&&<>
     {view==="next" && <>
       <div className="gm-card" style={card}>
         <div className="gm-panel-label">What do you want to work on today?</div>
@@ -362,6 +388,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         </div>
         <p className="gm-note" style={{marginTop:12}}>Guide references are updated as sources are verified; source availability can change. Check game tooltips for differences from published guides.</p>
       </SmallInfo>
+    </>}
     </>}
   </div>;
 }
