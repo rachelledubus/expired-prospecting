@@ -21,20 +21,20 @@ type Props = {
   setField: (key: string, value: string) => void;
 };
 type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyborne" | "gear" | "professions" | "materials" | "gold" | "lookup";
-const VIEWS: { id: View; label: string; help: string }[] = [
-  {id:"next",label:"🎯 Play next",help:"One clear task and your immediate objectives"},
-  {id:"professions",label:"🧵 Professions",help:"Saved skills, patterns, recipe acquisition and market comparisons"},
-  {id:"materials",label:"🪨 Farm materials",help:"Search exact crafting ingredients, mob drop locations, mining nodes and source links"},
-  {id:"gold",label:"💰 Gold farms",help:"Gray-mob farming routes and personal measured gold per hour"},
-  {id:"roadmap",label:"🗺️ 1–60 roadmap",help:"All chapters and checkable tasks"},
-  {id:"zones",label:"🧭 Where to go",help:"Zones and dungeon suggestions for your level and faction"},
-  {id:"talents",label:"🌿 Talents",help:"Exact leveling point at every level"},
-  {id:"combat",label:"🏹 Combat & keys",help:"Rotations, keybinds and macros"},
-  {id:"pets",label:"🐾 Pet guide",help:"Taming, training, feeding and control"},
-  {id:"skyborne",label:"🌬️ Skyborne",help:"Racials, convergence and faction routes"},
-  {id:"gear",label:"🎒 Gear & groups",help:"Stats, professions, dungeons and duo play"},
-  {id:"lookup",label:"🔎 Find anything",help:"Search goals, abilities and sources"}
+const GUIDE_GROUPS: { id:string; label:string; views:View[] }[]=[
+  {id:"next",label:"🎯 Play Next",views:["next"]},
+  {id:"professions",label:"🧵 Professions",views:["professions"]},
+  {id:"farming",label:"💰 Gold & Farming",views:["materials","gold"]},
+  {id:"hunter",label:"🏹 Hunter Guide",views:["pets","combat","talents","gear"]},
+  {id:"world",label:"🗺️ World & Dungeons",views:["zones","roadmap","skyborne"]},
+  {id:"search",label:"🔎 Search Everything",views:["lookup"]}
 ];
+const VIEW_LABELS:Record<View,string>={
+ next:"Play Next",professions:"Recipes & Skills",materials:"Material Sources",
+ gold:"Gold Farms",roadmap:"1–60 Roadmap",zones:"Dungeons & Zones",
+ talents:"Talents",combat:"Combat & Macros",pets:"Pets",
+ skyborne:"Skyborne",gear:"Gear & Dungeon Loot",lookup:"Search"
+};
 const K = (gameId: string, stageId: string, stepId: string) => questKey(gameId, "wow-" + stageId, stepId);
 const F = (id: string, key: string) => id + "|" + key;
 const uiInput: React.CSSProperties = { background: "var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ddd)",borderRadius:9,padding:"9px 12px",font:"inherit",maxWidth:"100%" };
@@ -102,14 +102,12 @@ function SmallInfo({title,children}:{title:string;children:React.ReactNode}) {
 export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [view,setView]=useState<View>(() => {
     const saved=prog.fields[wowExtraField(game.id,"last-view")];
-    return VIEWS.some(v=>v.id===saved) ? saved as View : "next";
+    return GUIDE_GROUPS.some(g=>g.views.includes(saved as View)) ? saved as View : "next";
   });
   const [filter,setFilter]=useState("");
   const [searchTarget,setSearchTarget]=useState("");
   const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
-  const [quickMode,setQuickMode]=useState(false);
-  const [quickDraft,setQuickDraft]=useState("");
   const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
@@ -156,36 +154,24 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </details>
       <Counter done={count} total={total}/>
     </div>
-    <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav" style={{display:"flex",gap:8,margin:"16px 0"}}>
-      {VIEWS.map(v=><button key={v.id} type="button" className={"gm-chip"+(view===v.id?" on":"")} aria-pressed={view===v.id} title={v.help}
-        onClick={()=>{setSearchTarget("");openView(v.id)}} style={chip}>{v.label}</button>)}
+    <nav aria-label="WoW Forever guide sections" className="gm-chips gm-wow-nav"
+      style={{display:"flex",gap:8,margin:"16px 0",flexWrap:"wrap"}}>
+      {GUIDE_GROUPS.map(group=><button key={group.id} type="button"
+        className={"gm-chip"+(group.views.includes(view)?" on":"")}
+        aria-pressed={group.views.includes(view)} style={chip}
+        onClick={()=>{setSearchTarget("");openView(group.views[0]);}}>
+        {group.label}
+      </button>)}
     </nav>
-    <section className="gm-card" aria-label="Quick in-game tools" style={{padding:12,marginTop:8}}>
-      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
-        <strong style={{fontSize:13}}>Quick actions</strong>
-        {(["next","materials","professions","gold","gear","lookup"] as View[]).map(id=>
-          <button key={id} type="button" className="gm-pill ghost" onClick={()=>{if(id!=="next")setQuickMode(false);openView(id)}}>
-            {id==="next"?"Play next":id==="lookup"?"Find anything":id==="materials"?"Farm materials":id==="professions"?"Recipes":id==="gear"?"Dungeon loot":"Gold"}
-          </button>)}
-        <button type="button" className="gm-pill" aria-pressed={quickMode} onClick={()=>setQuickMode(v=>!v)}>
-          {quickMode?"Show complete guide":"Compact companion"}
-        </button>
-      </div>
-      <form onSubmit={e=>{e.preventDefault();if(quickDraft.trim()){setFilter(quickDraft.trim());setQuickMode(false);openView("lookup");}}}
-        style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-        <input aria-label="Quick search WoW Forever" type="search" placeholder="Search any item, recipe, pet or dungeon…"
-          value={quickDraft} onChange={e=>setQuickDraft(e.target.value)} style={{...uiInput,flex:"1 1 190px",minWidth:0}}/>
-        <button type="submit" className="gm-pill" disabled={!quickDraft.trim()}>Search</button>
-      </form>
-    </section>
-    {!quickMode&&<p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>}
-
-    {quickMode&&<p className="gm-note" style={{...note,margin:"12px 0"}}>Compact mode is on. Use Quick actions or Show complete guide to return to the full reference.</p>}
-    {quickMode&&<WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
-      faction={faction==="alliance"?"alliance":"horde"}
-      mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"?playMode:"gold"}
-      onOpen={openView} onFindMaterial={openMaterial}/>}
-    {!quickMode&&<>
+    {GUIDE_GROUPS.filter(group=>group.views.includes(view)&&group.views.length>1).map(group=>
+      <nav key={group.id} aria-label={group.label+" subsections"}
+        style={{display:"flex",gap:7,flexWrap:"wrap",margin:"0 0 14px"}}>
+        {group.views.map(id=><button key={id} type="button"
+          className={"gm-pill"+(view===id?"":" ghost")} aria-pressed={view===id}
+          onClick={()=>{setSearchTarget("");openView(id)}}>
+          {VIEW_LABELS[id]}
+        </button>)}
+      </nav>)}
     {view==="next" && <>
       <div className="gm-card" style={card}>
         <div className="gm-panel-label">What do you want to work on today?</div>
@@ -388,7 +374,6 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         </div>
         <p className="gm-note" style={{marginTop:12}}>Guide references are updated as sources are verified; source availability can change. Check game tooltips for differences from published guides.</p>
       </SmallInfo>
-    </>}
     </>}
   </div>;
 }
