@@ -23,7 +23,14 @@ const known: Record<string,number> = {
   "Elemental Earth":7067,"Elemental Air":7069,"Elemental Water":7070,
   "Deeprock Salt":8150,
   "Jade":1529,"Shadowgem":1210,"Lesser Moonstone":1705,
-  "Raptor Flesh":12184,"Raptor Egg":3685
+  "Raptor Flesh":12184,"Raptor Egg":3685,
+  "Green Dye":2605,"Bleach":2324,"Ice Cold Milk":1179,"Melon Juice":1205,
+  "Simple Wood":4470,"Empty Vial":3371,"Leaded Vial":3372,
+  "Cerulean Dye":249409,"Sulfuric Acid":249410,
+  "Raptor Hide":4461,"Thick Murloc Scale":5785,
+  "Small Venom Sac":1475,"Large Venom Sac":1288,
+  "Bear Meat":3173,"Lean Wolf Flank":1015,"Murloc Fin":1468,
+  "Thick Spider's Silk":4337,"Tender Crocolisk Meat":3667
 };
 export const WOWHEAD_FOREVER_ITEM_IDS: Readonly<Record<string,number>> = known;
 export const wowheadForeverItemUrl = (name:string): string | null => {

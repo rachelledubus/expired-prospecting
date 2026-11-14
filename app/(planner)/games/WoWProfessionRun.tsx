@@ -26,12 +26,14 @@ const num=(raw:string|undefined):number|null=>{
 const colorRank=(r:WowRecipe,skill:number):number=>
   ({orange:0,yellow:1,chance:2,green:3,locked:6,gray:7})[recipeStatus(r,skill)];
 const typeLabel:Record<MaterialRoute["method"],string>={
-  vendor:"Check supplier",crafting:"Craft",skinning:"Skin",mob:"Loot",
+  vendor:"Check supplier",crafting:"Craft","other-profession":"Ask another crafter / check Auction House",skinning:"Skin",mob:"Loot",
   dungeon:"Dungeon drop",mining:"Mine",herbalism:"Gather"
 };
 const sourceText=(r:MaterialRoute)=>r.evidence==="forever-reported"?
   "Forever-reported; confirm this drop in-game":r.evidence==="wowhead-item-page"?
-  "Wowhead Forever supplier area; exact NPC and stock not confirmed":
+  (r.method==="other-profession"?
+    "Wowhead Forever confirms another profession creates this item; ask a crafter or check Auction House.":
+    "Wowhead Forever supplier area; exact NPC and stock not confirmed"):
   r.evidence==="client-recipe"?"Catalog recipe; skill and output yield must be checked":
   "Classic/historical reference; not verified as a current Forever drop";
 const sourceFor=(item:string,faction:"horde"|"alliance",level:number,noXp:boolean)=>{
@@ -41,7 +43,7 @@ const sourceFor=(item:string,faction:"horde"|"alliance",level:number,noXp:boolea
     // have already been expanded by the bill-of-materials planner.
     .filter(r=>r.method!=="mining"&&r.method!=="herbalism"&&r.method!=="crafting")
     .map(route=>{
-      const nonCombat=route.method==="vendor";
+      const nonCombat=route.method==="vendor"||route.method==="other-profession";
       const gray=route.maxMob!==undefined&&route.maxMob<=cutoff;
       const xpRisk=route.minMob!==undefined&&route.minMob>cutoff;
       const score=(nonCombat?80:gray?55:xpRisk?-30:0)+

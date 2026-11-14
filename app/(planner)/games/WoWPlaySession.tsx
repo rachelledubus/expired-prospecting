@@ -29,7 +29,7 @@ const isGatheringOnly = (r: MaterialRoute) => r.method === "mining" || r.method 
 const sortSources = (level: number, a: MaterialRoute, b: MaterialRoute) => {
   const gray = grayMobThreshold(level);
   const score = (r: MaterialRoute) =>
-    (isGatheringOnly(r) ? -100 : 0) +
+    (isGatheringOnly(r) ? -100 : r.method==="vendor"||r.method==="other-profession"?45:0) +
     (r.maxMob === undefined ? 0 : r.maxMob <= gray ? 10 : -15) +
     (r.waypoint ? 4 : 0) +
     (r.evidence === "forever-reported" ? 3 : 0);
@@ -111,7 +111,8 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
           Mob level {bestSource.minMob}–{bestSource.maxMob} · {bestSource.maxMob<=cutoff?"Gray expected":"Potential XP; check the enemy"}
         </p>}
         <p style={helper}>
-          {bestSource.method==="vendor"?"Buy from a profession or trade supplier. Confirm NPC and current stock.":
+          {bestSource.method==="other-profession"?"Created by another profession. Ask a crafter or check Auction House.":
+           bestSource.method==="vendor"?"Buy from a profession or trade supplier. Confirm NPC and current stock.":
             bestSource.method==="crafting"?"Recipe exists in the client catalog; check skill and unlock before crafting.":
             bestSource.evidence==="forever-reported"?"Forever-reported rare source; drops are not guaranteed.":
             "Classic / historical farming lead; drop rates are not verified for Forever."}

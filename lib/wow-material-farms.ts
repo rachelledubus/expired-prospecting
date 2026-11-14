@@ -9,8 +9,9 @@ import { WOW_RECIPES, type WowRecipe } from "./wow-forever-professions";
 import { WOW_DUNGEON_PROFESSION_DROPS } from "./wow-forever-dungeon-professions";
 import { WOW_HUNTER_DUNGEONS } from "./wow-forever-dungeon-gear";
 import { WOWHEAD_FOREVER_HORDE_VENDOR_ITEMS, wowheadForeverItemUrl } from "./wowhead-forever-items";
+import { reviewedMaterialRoutes } from "./wow-forever-source-expansion";
 
-export type MaterialMethod = "mob" | "dungeon" | "skinning" | "mining" | "herbalism" | "vendor" | "crafting";
+export type MaterialMethod = "mob" | "dungeon" | "skinning" | "mining" | "herbalism" | "vendor" | "crafting" | "other-profession";
 export type MaterialRoute = {
   id:string;
   item:string;
@@ -22,6 +23,7 @@ export type MaterialRoute = {
   minMob?:number;
   maxMob?:number;
   requiredSkill?:number;
+  reviewedAt?:string;
   sourceUrl:string;
   evidence:"classic-reference"|"forever-reported"|"wowhead-item-page"|"client-recipe";
 };
@@ -223,7 +225,8 @@ export const materialRoutes = (name:string,faction:"horde"|"alliance"="horde"):M
         drop.sourceUrl,{method:drop.method==="skin"?"skinning":"dungeon",evidence:drop.reliability==="forever-reported"?"forever-reported":"classic-reference"});
     });
   const vendor=vendorRoute(name,faction);
-  return [...exact,...(vendor?[vendor]:[]),...craftRoutes(name),
+  const reviewed=reviewedMaterialRoutes(name,faction);
+  return [...exact,...reviewed,...(vendor?[vendor]:[]),...craftRoutes(name),
     ...dungeon.filter(d=>!exact.some(r=>r.zone===d.zone&&r.target===d.target))];
 };
 /** The search link is a fallback, not a claim that a precise in-game farm is known. */

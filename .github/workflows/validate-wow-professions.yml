@@ -9,6 +9,9 @@ on:
       - 'lib/wow-forever-professions.ts'
       - 'lib/games-data.ts'
       - 'lib/wow-crafting-chain.ts'
+      - 'lib/wow-material-farms.ts'
+      - 'lib/wow-forever-source-expansion.ts'
+      - 'lib/wowhead-forever-items.ts'
       - 'scripts/verify-wow-crafting-chain.cjs'
 jobs:
   typecheck:
@@ -21,3 +24,4 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx tsc --noEmit --pretty false
       - run: node scripts/verify-wow-crafting-chain.cjs
+      - run: node scripts/verify-wow-forever-source-coverage.cjs
