@@ -7,6 +7,7 @@ const textField:React.CSSProperties={background:"var(--panel,#fff)",color:"var(-
 const hint:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.85};
 export default function WoWPetTracker({gameId,prog,setField}:Props){
  const [expanded,setExpanded]=useState(0);
+ const [petSearch,setPetSearch]=useState("");
  const field=(id:string)=>wowExtraField(gameId,id);
  const val=(slot:number,name:string)=>prog.fields[field("pet-"+slot+"-"+name)]??"";
  const save=(slot:number,name:string,v:string)=>setField(field("pet-"+slot+"-"+name),v);
@@ -37,6 +38,22 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
       <label style={{...hint,gridColumn:"1/-1"}}>Taming / trainer notes<input style={textField} value={val(slot,"notes")} maxLength={350} onChange={e=>save(slot,"notes",e.target.value)} placeholder="Where found; next rank to learn"/></label>
     </div>}
    </section>)}
+  </div>
+  <div style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12,marginTop:14}}>
+    <b>Find a tameable pet or ability rank</b>
+    <p style={hint}>Search Forever-specific creature and ability records before traveling. This search does not imply a particular pet is tameable or that its spawn is confirmed.</p>
+    <div style={{display:"flex",gap:8,alignItems:"end",flexWrap:"wrap"}}>
+      <label style={{...hint,flex:"1 1 160px"}}>Pet name, family, or skill
+        <input style={textField} type="search" value={petSearch}
+          onChange={e=>setPetSearch(e.target.value.slice(0,100))}
+          placeholder="e.g. Screech, Ghost Saber, Owl"/>
+      </label>
+      <a className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer"
+        href={"https://www.wowhead.com/forever/search?q="+encodeURIComponent(petSearch.trim()||"hunter pets")}>
+        Search Wowhead Forever ↗
+      </a>
+    </div>
+    <p style={hint}>Taming checklist: stable a pet slot first, confirm the creature is tameable at your level, bring pet food, and review any ability ranks you still need.</p>
   </div>
   <details style={{marginTop:14}}>
    <summary style={{cursor:"pointer",fontWeight:700}}>Which pet fits my goal?</summary>
