@@ -180,8 +180,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     </section>
     {!quickMode&&<p className="gm-wow-nav-hint">Swipe tabs sideways to see more sections →</p>}
 
-    {quickMode&&view!=="next"&&<p className="gm-note" style={{...note,margin:"12px 0"}}>Compact mode is on. Use Quick actions or Show complete guide to return to the full reference.</p>}
-    {quickMode&&view!=="next"&&<WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
+    {quickMode&&<p className="gm-note" style={{...note,margin:"12px 0"}}>Compact mode is on. Use Quick actions or Show complete guide to return to the full reference.</p>}
+    {quickMode&&<WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
       faction={faction==="alliance"?"alliance":"horde"}
       mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"?playMode:"gold"}
       onOpen={openView} onFindMaterial={openMaterial}/>}
