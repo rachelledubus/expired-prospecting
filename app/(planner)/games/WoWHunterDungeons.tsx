@@ -95,7 +95,7 @@ function DungeonCard({
       ? "All listed Hunter targets marked acquired"
       : result.band==="soon" ? "Coming up as you level" : "No documented current-level target";
   return <article className={"gm-wow-dungeon-card" + (featured?" featured":"")}>
-    <details defaultOpen={!!highlight&&((d.name+" "+d.region+" "+d.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.toLowerCase()))}>
+    <details open={!!highlight&&((d.name+" "+d.region+" "+d.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.toLowerCase()))}>
       <summary className="gm-wow-dungeon-summary">
         <div className="gm-wow-dungeon-heading">
           <b>{d.name}</b>
