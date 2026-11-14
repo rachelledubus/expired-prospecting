@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { dungeonProfessionDrops } from "@/lib/wow-forever-dungeon-professions";
@@ -30,6 +31,27 @@ const slotLabels: Record<HunterLootTarget["slot"], string> = {
   legs: "Legs", back: "Back", feet: "Feet", ring: "Ring",
   neck: "Neck", waist: "Waist",
 };
+
+function DungeonPrepChecklist({name}:{name:string}) {
+  const [checks,setChecks]=useState<boolean[]>([false,false,false,false,false,false]);
+  const steps=[
+    "Confirm entrance and group access",
+    "Repair equipment and restock ammunition",
+    "Feed / summon pet and check training",
+    "Disable Growl when a player is tanking",
+    "Check enemies for XP if avoiding leveling",
+    "Review remaining Hunter loot and crafting materials"
+  ];
+  return <details style={{marginTop:12}}>
+    <summary style={{cursor:"pointer",fontWeight:700}}>Run preparation · {checks.filter(Boolean).length}/{steps.length}</summary>
+    <p className="gm-wow-dungeon-caption">Temporary checklist for this {name} run. Marking a step does not change your saved gear ownership.</p>
+    {steps.map((step,i)=><label key={step} style={{display:"flex",gap:9,alignItems:"center",padding:"7px 0",fontSize:13}}>
+      <input type="checkbox" checked={checks[i]} onChange={e=>setChecks(prev=>prev.map((x,j)=>j===i?e.target.checked:x))}/>
+      <span>{step}</span>
+    </label>)}
+    <button className="gm-pill ghost" type="button" onClick={()=>setChecks(steps.map(()=>false))}>Reset checklist</button>
+  </details>;
+}
 
 function TargetRow({
   gameId, dungeonId, item, prog, setCheck,
@@ -124,6 +146,7 @@ function DungeonCard({
           </p>
         </details>}
         {!entrance && <p className="gm-wow-dungeon-caption">Detailed entrance route is not yet verified for this dungeon. Use the linked dungeon reference before traveling.</p>}
+        <DungeonPrepChecklist name={d.name}/>
         <WoWDungeonProfessionDrops dungeonId={d.id} gameId={gameId} prog={prog}
           setCheck={setCheck} setField={setField}/>
         {d.travelNote && <p className="gm-wow-dungeon-caution"><b>Travel:</b> {d.travelNote}</p>}
