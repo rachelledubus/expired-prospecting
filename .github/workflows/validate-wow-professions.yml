@@ -2,7 +2,13 @@ name: Validate WoW Professions PR
 on:
   push:
     branches:
+      - main
       - feature/wow-professions-starter-20261111
+    paths:
+      - 'app/(planner)/games/**'
+      - 'lib/wow-*.ts'
+      - 'scripts/verify-wow-*.cjs'
+      - '.github/workflows/validate-wow-professions.yml'
   pull_request:
     paths:
       - 'app/(planner)/games/**'
@@ -10,9 +16,12 @@ on:
       - 'lib/games-data.ts'
       - 'lib/wow-crafting-chain.ts'
       - 'lib/wow-material-farms.ts'
+      - 'lib/wow-material-route-ranking.ts'
       - 'lib/wow-forever-source-expansion.ts'
       - 'lib/wowhead-forever-items.ts'
       - 'scripts/verify-wow-crafting-chain.cjs'
+      - 'scripts/verify-wow-material-ranking.cjs'
+      - 'scripts/verify-wow-forever-source-coverage.cjs'
 jobs:
   typecheck:
     runs-on: ubuntu-latest
@@ -25,3 +34,4 @@ jobs:
       - run: npx tsc --noEmit --pretty false
       - run: node scripts/verify-wow-crafting-chain.cjs
       - run: node scripts/verify-wow-forever-source-coverage.cjs
+      - run: node scripts/verify-wow-material-ranking.cjs
