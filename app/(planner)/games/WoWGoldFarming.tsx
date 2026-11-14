@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_FARMS, grayMobThreshold, wowExtraField } from "@/lib/wow-portal-extras";
+import { measureFarm } from "@/lib/wow-gold-session-metrics";
 
 type Props = {
   gameId:string; level:number; prog:GameProgress;
@@ -26,16 +27,8 @@ export default function WoWGoldFarming({gameId,level,prog,setField,compact=false
       cost=prog.fields[field(base+"expenses")];
     return {n,g,m,cost,valid:g!==undefined&&g!==""&&m!==undefined&&parse(m)>0};
   }).filter(x=>x.valid);
-  const earnings=(id:string)=>{
-    const history=runs(id);
-    if(history.length){
-      const minutesTotal=history.reduce((sum,x)=>sum+parse(x.m),0);
-      const net=history.reduce((sum,x)=>sum+parse(x.g)-parse(x.cost),0);
-      return minutesTotal>0?60*net/minutesTotal:null;
-    }
-    const g=gold(id),t=minutes(id);
-    return g!==undefined&&t!==undefined&&parse(t)>0?60*parse(g)/parse(t):null;
-  };
+  const metrics=(id:string)=>measureFarm(k=>prog.fields[field(k)],id);
+  const earnings=(id:string)=>metrics(id)?.netPerHour??null;
   const farms=useMemo(()=>WOW_FARMS.filter(f=>(!noXpOnly||f.maxMob<=grayAt)&&(kind==="all"||kind===f.kind)).sort((a,b)=>{
     const av=earnings(a.id),bv=earnings(b.id);
     if(av!==null||bv!==null)return (bv??-1)-(av??-1);
