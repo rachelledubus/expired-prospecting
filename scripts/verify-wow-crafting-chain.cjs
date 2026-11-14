@@ -43,7 +43,7 @@ assert.equal(byName(plan,"Medium Leather").stockUsed,2,"Use known intermediate s
 assert.equal(byName(plan,"Light Leather").rawShortage,6,"Need six additional light leather");
 assert.equal(byName(plan,"Medium Hide").rawShortage,1,"Need one medium hide");
 assert.equal(byName(plan,"Salt").rawShortage,0,"Already own enough salt");
-assert.deepEqual(plan.steps.map(s=>s.recipe.id),["cure","medium"],"Craft steps included");
+assert.deepEqual(plan.steps.map(s=>s.recipe.id).sort(),["cure","medium"],"Both independent craft steps included");
 assert.equal(plan.ready,false);
 
 plan=prepare(initial,{mediumYield:2});
@@ -80,4 +80,14 @@ const cyclic=planCraftChain({recipe:cyclicRoot,batch:1,recipes:[cyclicRoot,cycli
   isLearned:()=>true,inventory:()=>0});
 assert.ok(cyclic.toAcquire.length>=1,"Cyclic formulas must terminate with unmet source");
 
-console.log("WoW crafting-chain regression tests passed (7 scenarios).");
+const top={id:"top",name:"Top",reagents:[{name:"Second",quantity:1}]};
+const second={id:"second",name:"Second",reagents:[{name:"First",quantity:2}]};
+const first={id:"first",name:"First",reagents:[{name:"Ore",quantity:1}]};
+const nested=planCraftChain({recipe:top,batch:1,recipes:[top,second,first],
+  isLearned:()=>true,inventory:()=>0});
+assert.deepEqual(nested.steps.map(s=>s.recipe.id),["first","second"],
+  "True crafting dependencies must appear in prerequisite order");
+assert.equal(byName(nested,"Ore").rawShortage,2,"Nested required quantities propagate correctly");
+
+
+console.log("WoW crafting-chain regression tests passed (8 scenarios).");
