@@ -64,6 +64,9 @@ export default function WoWGoldFarming({gameId,level,prog,setField,compact=false
           {f.hordeWarning&&<p style={note}><b>Travel caution:</b> {f.hordeWarning}</p>}
           {f.waypoint&&<p style={note}><code>{f.waypoint}</code> <button type="button" className="gm-pill" onClick={()=>copy(f.waypoint!)}>Copy TomTom</button></p>}
           <p style={note}><a href={f.sourceUrl} target="_blank" rel="noopener noreferrer">Check reference route ↗</a> · Server XP and drop rates not verified live.</p>
+          {!runs(f.id).length&&<details style={{marginTop:9}}>
+            <summary style={{cursor:"pointer",fontSize:13}}>Existing single-run entry (optional)</summary>
+            <p style={note}>Edit your original saved run here. For new sessions use the log below.</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9}}>
             <label style={note}>Gold earned (one session)
               <input style={input} type="number" min={0} step=".01" placeholder="Enter gold" value={gold(f.id)??""} onChange={e=>setField(field("farm-"+f.id+"-gold"),e.target.value)}/>
@@ -72,9 +75,10 @@ export default function WoWGoldFarming({gameId,level,prog,setField,compact=false
               <input style={input} type="number" min={0} step="1" placeholder="20" value={minutes(f.id)??""} onChange={e=>setField(field("farm-"+f.id+"-minutes"),e.target.value)}/>
             </label>
           </div>
-          <p style={note}>{earnings(f.id)===null?"Enter one measured session to compare actual gold/hour.":"Your measured pace: "+earnings(f.id)!.toFixed(2)+" net gold/hour (not a forecast)."} {runs(f.id).length?"From "+runs(f.id).length+" recorded run(s).":"Legacy single-session entry; expenses not included."}</p>
+          </details>}
+          <p style={note}>{earnings(f.id)===null?"Enter one measured session to compare actual gold/hour.":"Your measured pace: "+earnings(f.id)!.toFixed(2)+(runs(f.id).length?" net":" gross")+" gold/hour (not a forecast)."} {runs(f.id).length?"From "+runs(f.id).length+" recorded run(s).":"Using your original saved run; no expenses recorded."}</p>
           <details style={{marginTop:10}}>
-            <summary style={{cursor:"pointer",fontWeight:650,fontSize:13}}>Detailed session log · 3 runs with expenses</summary>
+            <summary style={{cursor:"pointer",fontWeight:650,fontSize:13}}>Log farming sessions (gold, time, expenses)</summary>
             <p style={note}>Enter actual gold received, elapsed minutes and repairs / supplies for each run. The net gold/hour summary uses valid completed rows only.</p>
             {([1,2,3] as const).map(n=><div key={n} style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,110px),1fr))",gap:8,padding:"9px 0",borderBottom:"1px solid var(--border,#ddd)"}}>
               {(["gold","minutes","expenses"] as const).map(kind=><label key={kind} style={note}>
