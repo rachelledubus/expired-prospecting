@@ -2,12 +2,14 @@
 import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_PET_FAMILIES, wowExtraField } from "@/lib/wow-portal-extras";
+import { WOW_FOREVER_PET_FAMILIES, WOW_FOREVER_PET_FAMILY_SOURCE } from "@/lib/wow-forever-pet-families";
 type Props={gameId:string;prog:GameProgress;setField:(key:string,value:string)=>void};
 const textField:React.CSSProperties={background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",borderRadius:8,padding:10,font:"inherit",width:"100%",minWidth:0};
 const hint:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.85};
 export default function WoWPetTracker({gameId,prog,setField}:Props){
  const [expanded,setExpanded]=useState(0);
  const [petSearch,setPetSearch]=useState("");
+ const [familyRole,setFamilyRole]=useState("all");
  const field=(id:string)=>wowExtraField(gameId,id);
  const val=(slot:number,name:string)=>prog.fields[field("pet-"+slot+"-"+name)]??"";
  const save=(slot:number,name:string,v:string)=>setField(field("pet-"+slot+"-"+name),v);
@@ -60,6 +62,26 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
     </p>
     <p style={hint}>Third-party guides disagree on some family counts and may reflect different client builds. Verify the NPC and its abilities in your game.</p>
   </div>
+  <details style={{marginTop:14}}>
+    <summary style={{cursor:"pointer",fontWeight:700}}>Browse 18 pet families · abilities, roles and food</summary>
+    <p style={hint}>Catalog based on a November 10, 2026 client snapshot. This is family guidance, not guaranteed creature spawn data.</p>
+    <label style={hint}>What job should my pet do?
+      <select style={{...textField,marginTop:5}} value={familyRole} onChange={e=>setFamilyRole(e.target.value)}>
+        <option value="all">All families</option>
+        {["Solo / tank","Damage","Group","Control","Utility"].map(role=><option key={role} value={role}>{role}</option>)}
+      </select>
+    </label>
+    <div style={{display:"grid",gap:9,marginTop:10}}>
+      {WOW_FOREVER_PET_FAMILIES.filter(p=>familyRole==="all"||p.role===familyRole).map(p=><div key={p.name}
+        style={{border:"1px solid var(--border,#ddd)",borderRadius:9,padding:10}}>
+        <b>{p.name}</b> · {p.role}
+        <p style={{...hint,margin:"5px 0"}}><b>{p.skill}:</b> {p.use}</p>
+        <p style={{...hint,margin:"5px 0"}}><b>Food:</b> {p.diet}</p>
+        {p.note&&<p style={{...hint,margin:"5px 0"}}>{p.note}</p>}
+        <a href={WOW_FOREVER_PET_FAMILY_SOURCE} target="_blank" rel="noopener noreferrer">Find a tameable {p.name} by level ↗</a>
+      </div>)}
+    </div>
+  </details>
   <details style={{marginTop:14}}>
    <summary style={{cursor:"pointer",fontWeight:700}}>Which pet fits my goal?</summary>
    <div style={{display:"grid",gap:8,marginTop:10}}>
