@@ -35,6 +35,50 @@ const classic=(item:string,id:string,zone:string,target:string,advice:string,url
 const leads:Lead[]=[
   // Additional Wowhead Forever item pages reviewed 2026-11-14.
   // Drop information below is historical or unverified for current Forever.
+  // Forever-only Excavation Site: Wetlands creature entries on the Medium Leather
+  // item's "Skinned from" table. The listing reports recorded samples, not
+  // a guaranteed drop or solo-safe route. This is a custom dungeon, not the
+  // outdoor Wetlands zone. NPC levels without a verified range stay unknown.
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-marsh-skulker",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Marsh Skulker (elite)",
+    advice:"Wowhead Forever identifies this as a NEW custom-dungeon skinnable source of Medium Leather. Kill, fully loot and skin when permitted; no reliable mob level or solo safety is established. This is not an outdoor Wetlands route.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-young-riptooth",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Young Riptooth",
+    advice:"Listed as a NEW skinnable Medium Leather source in Wowhead Forever's custom dungeon. Fully loot before skinning. Check the instance difficulty, faction access, and whether your party can clear it.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-thicket-lurker",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Thicket Lurker (elite)",
+    advice:"Wowhead Forever's custom-dungeon skinning list includes Thicket Lurker for Medium Leather. Recorded samples do not promise your next skin; avoid planning an XP-free solo route without verifying enemy levels.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-marsh-crocolisk",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Marsh Crocolisk (level 26)",
+    advice:"A NEW level-26 skinnable source appears in the Forever Medium Leather table. Fully loot then skin. Dungeon accessibility and XP still depend on actual in-game conditions.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",minMob:26,maxMob:26,evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-young-crocolisk",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Young Crocolisk",
+    advice:"Listed as a NEW Medium Leather skinnable source inside the Forever custom Excavation Site: Wetlands dungeon. Confirm the mob level and dungeon entrance before traveling; source is not a guaranteed drop.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
   classic("Medium Leather","medium-bfd-snapjaw","Blackfathom Deeps, Ashenvale",
     "Aku'mai Snapjaw (level 26–27 elite)",
     "Wowhead Forever's Medium Leather item listing names Aku'mai Snapjaw among skinnable creatures. Fully loot, then skin; the listed rate is a mixed-reference observation, not a guaranteed current drop.",
