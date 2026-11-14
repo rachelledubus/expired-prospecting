@@ -1,0 +1,1 @@
+// Temporary CI-only diagnostic trigger. No production behavior.\n
