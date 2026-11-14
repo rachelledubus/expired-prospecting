@@ -11,7 +11,7 @@ const small:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.86};
 const input:React.CSSProperties={width:"100%",minWidth:0,padding:"9px 11px",border:"1px solid var(--border,#ccc)",borderRadius:8,background:"var(--panel,#fff)",color:"var(--text,#222)",font:"inherit"};
 const mine=(r:MaterialRoute)=>r.method==="mining"||r.method==="herbalism";
 const typeLabel=(r:MaterialRoute)=>({
-  mob:"Kill and loot",dungeon:"Dungeon drop",skinning:"Kill, loot and skin",mining:"Mining node",herbalism:"Herbalism node",vendor:"Buy from supplier",crafting:"Craft with your profession"
+  mob:"Kill and loot",dungeon:"Dungeon drop",skinning:"Kill, loot and skin",mining:"Mining node",herbalism:"Herbalism node",vendor:"Buy from supplier",crafting:"Craft with your profession","other-profession":"Ask another crafter or use Auction House"
 })[r.method];
 
 export default function WoWMaterialFarming({gameId,level,faction="horde",prog,setField,initialQuery=""}:Props){
@@ -31,11 +31,14 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
  const ordered=options.slice().sort((a,b)=>{
    const aRisk=typeof a.maxMob==="number"&&a.maxMob<=cutoff?0:typeof a.maxMob==="number"?2:1;
    const bRisk=typeof b.maxMob==="number"&&b.maxMob<=cutoff?0:typeof b.maxMob==="number"?2:1;
-   if(a.method==="vendor"||a.method==="crafting")return b.method==="vendor"||b.method==="crafting"?a.method.localeCompare(b.method):1;
-   if(b.method==="vendor"||b.method==="crafting")return -1;
+   const aTrade=["vendor","crafting","other-profession"].includes(a.method);
+   const bTrade=["vendor","crafting","other-profession"].includes(b.method);
+   if(aTrade!==bTrade)return aTrade?-1:1;
    return aRisk-bRisk||Number(mine(a))-Number(mine(b));
  });
- const visible=ordered.filter(r=>(showOtherProfessions||!mine(r))&&(!grayOnly||(r.maxMob!==undefined&&r.maxMob<=cutoff)));
+ const visible=ordered.filter(r=>(showOtherProfessions||!mine(r))&&(!grayOnly||
+   ["vendor","crafting","other-profession"].includes(r.method)||
+   (r.maxMob!==undefined&&r.maxMob<=cutoff)));
  const inventoryKey=chosen?wowExtraField(gameId,"stock-"+wowMaterialKey(chosen)):"";
  const invValue=chosen?prog.fields[inventoryKey]??"":"";
  const copy=(value:string)=>{void navigator.clipboard.writeText(value).then(()=>setMessage("Copied waypoint: "+value)).catch(()=>setMessage("Copy blocked. Select the waypoint manually."));};
@@ -91,20 +94,22 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
     </label>
     <label style={{...small,display:"inline-flex",alignItems:"center",gap:6}}>
      <input type="checkbox" checked={grayOnly} onChange={e=>setGrayOnly(e.target.checked)}/>
-     Only gray enemy farms
+     Only sources without expected kill XP
     </label>
    </div>
    <p style={small}>At character level <b>{level}</b>, ordinary Classic-style mobs level <b>{cutoff} or below</b> should be gray. Confirm enemy color and Forever XP rules before killing; dungeon level ranges are not guarantees.</p>
    {options.length===0&&<p style={small}>No named farming route is mapped for this material yet. {foreverItem?
      "Its specific Wowhead Forever item page is linked above; check its source tabs before you travel.":
      "Search Wowhead Forever above to investigate new item and drop records."} This does not mean the item is unavailable.</p>}
-   {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Turn off the gray-only filter or include Mining/Herbalism to inspect other possibilities.</p>}
+   {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Allow XP-risk sources or include Mining/Herbalism to inspect other possibilities.</p>}
    <div style={{display:"grid",gap:10,marginTop:10}}>
     {visible.map(r=>{
      const safe=r.maxMob!==undefined&&r.maxMob<=cutoff;
      const dangerous=r.minMob!==undefined&&r.minMob>cutoff;
-     const nonCombat=r.method==="vendor"||r.method==="crafting";
-     const provenance=r.evidence==="wowhead-item-page"?"Wowhead Forever lists seller zones; NPC / stock unconfirmed":
+     const nonCombat=["vendor","crafting","other-profession"].includes(r.method);
+     const provenance=r.evidence==="wowhead-item-page"?(r.method==="other-profession"?
+       "Wowhead Forever profession spell / item; ask a crafter, check output":
+       "Wowhead Forever lists seller zones; NPC / stock unconfirmed"):
        r.evidence==="client-recipe"?"Forever client recipe; exact unlock may need verification":
        r.evidence==="forever-reported"?"Reported on Wowhead Forever; recheck current server":
        "Classic / historical reference; not verified as a Forever drop";
@@ -123,6 +128,7 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
       <p style={{...small,margin:"7px 0 0"}}>
        <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">Check source ↗</a>
        {" · "}{provenance}
+       {r.reviewedAt?" · Reviewed "+r.reviewedAt:""}
       </p>
      </article>;
     })}
