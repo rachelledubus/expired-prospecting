@@ -164,14 +164,14 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
         <strong style={{fontSize:13}}>Quick actions</strong>
         {(["next","materials","professions","gold","gear","lookup"] as View[]).map(id=>
-          <button key={id} type="button" className="gm-pill ghost" onClick={()=>openView(id)}>
+          <button key={id} type="button" className="gm-pill ghost" onClick={()=>{if(id!=="next")setQuickMode(false);openView(id)}}>
             {id==="next"?"Play next":id==="lookup"?"Find anything":id==="materials"?"Farm materials":id==="professions"?"Recipes":id==="gear"?"Dungeon loot":"Gold"}
           </button>)}
         <button type="button" className="gm-pill" aria-pressed={quickMode} onClick={()=>setQuickMode(v=>!v)}>
           {quickMode?"Show complete guide":"Compact companion"}
         </button>
       </div>
-      <form onSubmit={e=>{e.preventDefault();if(quickDraft.trim()){setFilter(quickDraft.trim());openView("lookup");}}}
+      <form onSubmit={e=>{e.preventDefault();if(quickDraft.trim()){setFilter(quickDraft.trim());setQuickMode(false);openView("lookup");}}}
         style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
         <input aria-label="Quick search WoW Forever" type="search" placeholder="Search any item, recipe, pet or dungeon…"
           value={quickDraft} onChange={e=>setQuickDraft(e.target.value)} style={{...uiInput,flex:"1 1 190px",minWidth:0}}/>
