@@ -63,10 +63,6 @@ export function planCraftChain({recipe,batch,recipes,isLearned,inventory,yieldPe
 
   function demand(name:string,quantity:number,stack:readonly string[],depth:number):void{
     const id=norm(name);
-    if(depth>7){
-      warnings.add("Nested crafting for "+name+" is deeper than 7 steps. Check the recipe manually.");
-      return;
-    }
     const amount=Math.max(0,Math.floor(quantity));
     if(!amount)return;
     let row=requirements.get(id);
@@ -95,6 +91,11 @@ export function planCraftChain({recipe,batch,recipes,isLearned,inventory,yieldPe
       row.crafted+=usedProduced;
     }
     if(!toFill)return;
+    if(depth>7){
+      warnings.add("Nested crafting for "+name+" exceeds the documented depth limit. This remaining requirement must be obtained or checked manually.");
+      row.rawShortage+=toFill;
+      return;
+    }
 
     const producer=expandLearned
       ?(candidates.get(id)??[]).find(item=>!stack.includes(item.id)&&!item.reagents.some(m=>norm(m.name)===id))
