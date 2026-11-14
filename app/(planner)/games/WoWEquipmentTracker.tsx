@@ -16,6 +16,13 @@ export default function WoWEquipmentTracker({gameId,prog,setField,level}:Props){
  const current=chosen?{dps:read("gear-"+chosen.slot+"-dps"),agi:read("gear-"+chosen.slot+"-agi"),ap:read("gear-"+chosen.slot+"-ap")}:null;
  const candidate=chosen?{dps:read("target-"+chosen.key+"-dps"),agi:read("target-"+chosen.key+"-agi"),ap:read("target-"+chosen.key+"-ap")}:null;
  const comp=(label:string,a:string|undefined,b:string|undefined)=>!a||!b?"":label+": "+(number(b)-number(a)>=0?"+":"")+(number(b)-number(a)).toFixed(1);
+ const comparison=chosen&&current&&candidate?(["dps","agi","ap"] as const)
+   .filter(k=>current[k]!==""&&candidate[k]!=="")
+   .map(k=>({k,delta:number(candidate[k])-number(current[k])})):[];
+ const comparisonVerdict=!comparison.length?"Enter matching current and candidate stats to compare":
+   comparison.some(x=>x.delta<0)?"Stat tradeoff: review the full tooltip":
+   comparison.some(x=>x.delta>0)?"Potential improvement on the compared stats":
+   "No increase on the compared stats";
  return <section className="gm-card" style={{padding:16,marginTop:12}}>
    <div className="gm-panel-label">Gear ownership &amp; tooltip comparison</div>
    <h3 style={{margin:"6px 0"}}>What am I wearing?</h3>
@@ -52,6 +59,7 @@ export default function WoWEquipmentTracker({gameId,prog,setField,level}:Props){
       {current&&candidate&&<p style={{...note,marginTop:10}}>
        {([comp("DPS",current.dps,candidate.dps),comp("Agility",current.agi,candidate.agi),comp("AP",current.ap,candidate.ap)].filter(Boolean).join(" · "))||"Enter both current and candidate values for a stat to see the difference."}
       </p>}
+      <p style={{...note,fontWeight:700}}>{comparisonVerdict}</p>
       <p style={note}>This is a side-by-side stat difference, <b>not</b> a full damage simulation. If you decide it is not worth farming, use Have / skip in Dungeon Gear to remove it from your priority list.</p>
     </div>}
    </div>
