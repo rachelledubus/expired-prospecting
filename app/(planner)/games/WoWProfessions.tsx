@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import WoWCraftingEconomy from "./WoWCraftingEconomy";
 import { wowExtraField } from "@/lib/wow-portal-extras";
+import { WOWHEAD_FOREVER_PATTERN_LEADS } from "@/lib/wowhead-forever-pattern-leads";
 import {
   WOW_PROFESSIONS, WOW_RECIPES, WOW_RECIPE_CATALOG, professionField, recipeLearnedKey, recipeHiddenKey, recipeStatus,
   type WowProfessionId, type WowRecipe, type SourceLocation,
@@ -186,7 +187,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
   const next = baseRecipes.find(r => recipeStatus(r, skill) === "orange" && isLearned(r.id))
     || baseRecipes.find(r => recipeStatus(r, skill) === "orange" && !opposingVendorsOnly(r, faction));
   const nextToLearn = baseRecipes.find(r => !isLearned(r.id) && r.learnAt !== null && r.learnAt <= skill &&
-    (r.acquisition === "trainer" || usableVendorLocations(r,faction).length > 0 || !!manualArea(r.id)));
+    (r.acquisition === "trainer" || usableVendorLocations(r,faction).length > 0 || !!manualArea(r.id) || !!WOWHEAD_FOREVER_PATTERN_LEADS[r.name]));
   // Unlearned recipes with only opposing-faction vendor records stay searchable
   // but will not be presented as your next vendor acquisition.
 
@@ -210,11 +211,23 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
     <summary>Review learned recipes ({learnedRecipes.length})</summary>
     <p className="gm-note" style={small}>These stay out of Recipe Finder. Uncheck a recipe below if it was marked Learned by mistake.</p>
     <div style={{ display: "grid", gap: 8, maxHeight: 240, overflowY: "auto", paddingTop: 6 }}>
-      {learnedRecipes.map(r => <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 14 }}>
-        <input type="checkbox" checked={isLearned(r.id)}
-          onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
-        <span>{r.name}{isHidden(r.id) ? " · Hidden separately" : ""}</span>
-      </label>)}
+      {learnedRecipes.map(r => <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,justifyContent:"space-between",flexWrap:"wrap"}}>
+        <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 14 }}>
+          <input type="checkbox" checked={isLearned(r.id)}
+            onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
+          <span>{r.name}{isHidden(r.id) ? " · Hidden separately" : ""}</span>
+        </label>
+        <button className="gm-pill" type="button"
+          disabled={isHidden(r.id)||["gray","locked"].includes(recipeStatus(r,skill))}
+          onClick={()=>{
+            setField(extra("session-profession"),selected);
+            setField(extra("session-recipe"),r.id);
+            setField(extra("play-mode"),"professions");
+            setConfirmed("Set "+r.name+" as your Play Next crafting objective. Open Play Next to review ingredients.");
+          }}>
+          Plan skill-up
+        </button>
+      </div>)}
     </div>
     <p className="gm-note" style={small}>Unlearned recipes return to Recipe Finder when its gray, hidden, and search filters permit.</p>
   </details> : null;
@@ -222,6 +235,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
   const renderRecipe = (r: WowRecipe) => {
             const state = recipeStatus(r, skill);
             const learned = isLearned(r.id);
+            const foreverLead=WOWHEAD_FOREVER_PATTERN_LEADS[r.name];
             return <article key={r.id} className="gm-wow-recipe">
               <div className="gm-wow-recipe-head">
                 <div className="gm-wow-recipe-heading">
@@ -260,6 +274,17 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
                   </div>}
                   <p><b>Learning:</b> {r.acquisition === "trainer" ? "Trainer (verify unlock skill in game)" : r.acquisition === "pattern" ? "Recipe or pattern item" : "Source unknown"}</p>
                    <p className="gm-note" style={small}><b>Source details:</b> {r.source}</p>
+                  {foreverLead && <div style={{padding:10,border:"1px solid var(--border,#ddd)",borderRadius:9,margin:"10px 0"}}>
+                    <b>Wowhead Forever pattern lead</b>
+                    <p className="gm-note" style={small}>{foreverLead.details}</p>
+                    {foreverLead.factionWarning&&faction==="horde"&&
+                      <p className="gm-wow-source-warning">{foreverLead.factionWarning}</p>}
+                    {foreverLead.levelHint&&<p className="gm-note" style={small}>{foreverLead.levelHint}</p>}
+                    <a href={foreverLead.itemUrl} target="_blank" rel="noopener noreferrer">
+                      Open exact pattern item on Wowhead Forever ↗
+                    </a>
+                    <p className="gm-note" style={small}>Reported source, not guaranteed current server loot or vendor stock.</p>
+                  </div>}
                   {usableVendorLocations(r, faction).length > 0 ? <div className="gm-wow-locations">
                     <b>{faction === "horde" ? "Horde" : "Alliance"} / neutral vendor references</b>
                     {usableVendorLocations(r, faction).map((loc, idx) => {
@@ -424,7 +449,7 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
         <p className="gm-note" style={small}>
           {nextToLearn.acquisition === "trainer" ? "Check a profession trainer for its actual current unlock skill." :
             usableVendorLocations(nextToLearn,faction).length ? "Vendor: " + usableVendorLocations(nextToLearn,faction).map(l=>l.npc+" · "+l.area).join("; ") :
-            "My recorded source: "+manualArea(nextToLearn.id)}
+            WOWHEAD_FOREVER_PATTERN_LEADS[nextToLearn.name] ? "Wowhead Forever reports: "+WOWHEAD_FOREVER_PATTERN_LEADS[nextToLearn.name].details : "My recorded source: "+manualArea(nextToLearn.id)}
           {" "}No source here guarantees live Forever stock.
         </p>
         <label className="gm-wow-learned"><input type="checkbox" checked={isLearned(nextToLearn.id)}
