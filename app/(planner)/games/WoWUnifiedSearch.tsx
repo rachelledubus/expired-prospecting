@@ -3,7 +3,8 @@ import type { GameProgress } from "@/lib/games-data";
 import { WOW_RECIPES, recipeLearnedKey, recipeHiddenKey } from "@/lib/wow-forever-professions";
 import { WOW_DUNGEON_PROFESSION_DROPS } from "@/lib/wow-forever-dungeon-professions";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
-import { WOW_FARMS, WOW_PET_FAMILIES } from "@/lib/wow-portal-extras";
+import { WOW_FARMS } from "@/lib/wow-portal-extras";
+import { WOW_FOREVER_PET_FAMILIES } from "@/lib/wow-forever-pet-families";
 import { ALL_RECIPE_MATERIALS, materialRoutes, externalMaterialLookup } from "@/lib/wow-material-farms";
 import type { WowGame } from "@/lib/wow-forever-data";
 type Destination="roadmap"|"professions"|"gear"|"gold"|"materials"|"pets"|"combat";
@@ -40,7 +41,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
    (item.itemName+" "+item.source+" "+item.professions.join(" ")+" "+WOW_HUNTER_DUNGEONS.find(d=>d.id===item.dungeonId)?.name)
      .toLowerCase().includes(q)).slice(0,20):[];
  const farms=q?WOW_FARMS.filter(f=>(f.name+" "+f.zone+" "+f.rewards.join(" ")).toLowerCase().includes(q)):[],
-  pets=q?WOW_PET_FAMILIES.filter(f=>(f.name+" "+f.purpose+" "+f.note).toLowerCase().includes(q)):[],
+  pets=q?WOW_FOREVER_PET_FAMILIES.filter(f=>(f.name+" "+f.role+" "+f.skill+" "+f.use).toLowerCase().includes(q)):[],
   matchingAbilities=q?abilities.filter(([name,detail])=>(name+" "+detail).toLowerCase().includes(q)):[];
  const groups:{name:string;destination:Destination;entries:{id:string;title:string;detail:string}[]}[]=[
   {name:"Guide objectives",destination:"roadmap",entries:steps},
@@ -54,7 +55,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     detail:(WOW_HUNTER_DUNGEONS.find(d=>d.id===item.dungeonId)?.name||"Dungeon")+" · "+item.source+" · "+item.professions.join(", ")
   }))},
   {name:"Gold farming routes",destination:"gold",entries:farms.map(f=>({id:f.id,title:f.name,detail:f.zone+" · mobs "+f.minMob+"–"+f.maxMob+" · "+f.rewards.join(", ")}))},
-  {name:"Hunter pet families",destination:"pets",entries:pets.map(f=>({id:f.name,title:f.name,detail:f.purpose+" · "+f.note}))},
+  {name:"Hunter pet families",destination:"pets",entries:pets.map(f=>({id:f.name,title:f.name,detail:f.role+" · "+f.skill+" · "+f.use}))},
   {name:"Hunter abilities",destination:"combat",entries:matchingAbilities.map(([name,detail])=>({id:name,title:name,detail}))}
  ];
  const total=groups.reduce((sum,g)=>sum+g.entries.length,0);
