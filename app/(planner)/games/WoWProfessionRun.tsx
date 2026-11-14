@@ -79,6 +79,10 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
   const availableAll=materials.length>0&&materials.every(m=>m.have!==null&&m.missing===0);
   const unknownCount=materials.filter(m=>m.have===null).length;
   const missingCount=materials.filter(m=>m.missing!==null&&m.missing>0).length;
+  const openMaterial=(name:string)=>{
+    setField(field("session-material"),name);
+    onFindMaterial(name);
+  };
   const copy=(value:string)=>{
     void navigator.clipboard.writeText(value).then(()=>setCopyText("Waypoint copied. Paste in-game using TomTom."))
       .catch(()=>setCopyText("Copy unavailable; select the waypoint text manually."));
@@ -111,7 +115,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
       <label style={note}>Recipe
         <select style={fieldStyle} value={chosen?.id??""}
           onChange={e=>setField(field("session-recipe"),e.target.value)}>
-          {known.slice(0,100).map(r=><option value={r.id} key={r.id}>{r.name} · {recipeStatus(r,skill)}</option>)}
+          {known.map(r=><option value={r.id} key={r.id}>{r.name} · {recipeStatus(r,skill)}</option>)}
         </select>
       </label>
       <p style={{...note,margin:"9px 0"}}>
@@ -131,6 +135,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
           <p style={{...note,margin:"6px 0"}}>{typeLabel[missingFirst.route.route.method]}:
             <b> {missingFirst.route.route.target}</b> · {missingFirst.route.route.zone}
           </p>
+          <p style={{...note,margin:"6px 0"}}>{missingFirst.route.route.advice}</p>
           <p style={{...note,margin:"6px 0"}}>{missingFirst.route.route.evidence==="forever-reported"?
             "Reported for Forever; check current availability.":missingFirst.route.route.evidence==="client-recipe"?
             "Based on your learned recipe, check the required tools and inputs.":missingFirst.route.route.evidence==="wowhead-item-page"?
@@ -141,7 +146,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
           </div>}
         </>:<p style={note}>{requireNoXp?"No documented non-XP method or fully gray mob range is available here. Avoid assuming unverified mobs give no XP.":"No documented source is mapped. Check Wowhead Forever before traveling."}</p>}
         <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:7}}>
-          <button className="gm-pill" type="button" onClick={()=>onFindMaterial(missingFirst.name)}>See sources</button>
+          <button className="gm-pill" type="button" onClick={()=>openMaterial(missingFirst.name)}>See sources and set focus</button>
           <a href={wowheadForeverItemUrl(missingFirst.name)??externalMaterialLookup(missingFirst.name)}
             className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer">Wowhead Forever ↗</a>
         </div>
@@ -163,7 +168,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
                 (m.route.grayKnown?" · estimated gray mob":m.route.uncertainCombat?" · XP risk / unknown range":""):
                 "No eligible sourced route under current filters"}
             </p>
-            <button className="gm-pill ghost" type="button" onClick={()=>onFindMaterial(m.name)}>Open {m.name} sources</button>
+            <button className="gm-pill ghost" type="button" onClick={()=>openMaterial(m.name)}>Open {m.name} sources</button>
           </div>)}
         </div>
       </details>
