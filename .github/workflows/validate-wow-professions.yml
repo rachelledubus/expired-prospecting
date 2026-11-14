@@ -8,6 +8,8 @@ on:
       - 'app/(planner)/games/**'
       - 'lib/wow-forever-professions.ts'
       - 'lib/games-data.ts'
+      - 'lib/wow-crafting-chain.ts'
+      - 'scripts/verify-wow-crafting-chain.cjs'
 jobs:
   typecheck:
     runs-on: ubuntu-latest
@@ -18,3 +20,4 @@ jobs:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: npx tsc --noEmit --pretty false
+      - run: node scripts/verify-wow-crafting-chain.cjs
