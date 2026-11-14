@@ -6,6 +6,7 @@ import WoWProfessionRun from "./WoWProfessionRun";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
 import { rankMaterialRoutes } from "@/lib/wow-material-route-ranking";
+import { measureFarm } from "@/lib/wow-gold-session-metrics";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 import { grayMobThreshold, wowExtraField, wowMaterialKey, WOW_FARMS } from "@/lib/wow-portal-extras";
 
@@ -47,11 +48,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const rankedGear = rankHunterDungeons(level,(d,i)=>!!prog.checks[dungeonLootOwnedKey(gameId,d,i)],faction);
   const nextGear = rankedGear.find(r=>r.band==="current"&&r.gearTargets.length>0);
   const safeFarms = WOW_FARMS.filter(r=>r.maxMob<=cutoff).sort((a,b)=>{
-    const rate = (farmId:string) => {
-      const gold=formatAmount(prog.fields[wowExtraField(gameId,"farm-"+farmId+"-gold")]);
-      const minutes=formatAmount(prog.fields[wowExtraField(gameId,"farm-"+farmId+"-minutes")]);
-      return gold!==null&&minutes!==null&&minutes>0 ? 60*gold/minutes:null;
-    };
+    const rate=(farmId:string)=>measureFarm(k=>prog.fields[wowExtraField(gameId,k)],farmId)?.netPerHour??null;
     const ar=rate(a.id),br=rate(b.id);
     if(ar!==null||br!==null)return (br??-1)-(ar??-1);
     if(Boolean(a.requiresSkinning)!==Boolean(b.requiresSkinning))return a.requiresSkinning?-1:1;
