@@ -37,8 +37,7 @@ export function materialRouteAdvice(route:MaterialRoute,level:number):MaterialRo
   const dungeon=isDungeon(route);
   const gathering=needsGathering(route);
   const trade=nonCombat(route);
-  const hasRange=route.minMob!==undefined&&route.maxMob!==undefined;
-  const allGray=hasRange&&route.maxMob!<=cutoff;
+  const allGray=route.minMob!==undefined&&route.maxMob!==undefined&&route.maxMob<=cutoff;
   const allExp=route.minMob!==undefined&&route.minMob>cutoff;
   const xp:MaterialRouteAdvice["xp"]=trade||gathering?"none":
     allGray?"gray-expected":allExp?"xp-possible":"unknown";
