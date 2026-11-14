@@ -211,11 +211,23 @@ export default function WoWProfessions({ gameId, prog, setCheck, setField, initi
     <summary>Review learned recipes ({learnedRecipes.length})</summary>
     <p className="gm-note" style={small}>These stay out of Recipe Finder. Uncheck a recipe below if it was marked Learned by mistake.</p>
     <div style={{ display: "grid", gap: 8, maxHeight: 240, overflowY: "auto", paddingTop: 6 }}>
-      {learnedRecipes.map(r => <label key={r.id} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 14 }}>
-        <input type="checkbox" checked={isLearned(r.id)}
-          onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
-        <span>{r.name}{isHidden(r.id) ? " · Hidden separately" : ""}</span>
-      </label>)}
+      {learnedRecipes.map(r => <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,justifyContent:"space-between",flexWrap:"wrap"}}>
+        <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 14 }}>
+          <input type="checkbox" checked={isLearned(r.id)}
+            onChange={e => setCheck(recipeLearnedKey(gameId, r.id), e.target.checked)}/>
+          <span>{r.name}{isHidden(r.id) ? " · Hidden separately" : ""}</span>
+        </label>
+        <button className="gm-pill" type="button"
+          disabled={isHidden(r.id)||["gray","locked"].includes(recipeStatus(r,skill))}
+          onClick={()=>{
+            setField(extra("session-profession"),selected);
+            setField(extra("session-recipe"),r.id);
+            setField(extra("play-mode"),"professions");
+            setConfirmed("Set "+r.name+" as your Play Next crafting objective. Open Play Next to review ingredients.");
+          }}>
+          Plan skill-up
+        </button>
+      </div>)}
     </div>
     <p className="gm-note" style={small}>Unlearned recipes return to Recipe Finder when its gray, hidden, and search filters permit.</p>
   </details> : null;
