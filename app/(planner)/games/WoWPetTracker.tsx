@@ -13,7 +13,7 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
  const field=(id:string)=>wowExtraField(gameId,id);
  const val=(slot:number,name:string)=>prog.fields[field("pet-"+slot+"-"+name)]??"";
  const save=(slot:number,name:string,v:string)=>setField(field("pet-"+slot+"-"+name),v);
- const familyNames=WOW_PET_FAMILIES.map(p=>p.name);
+ const familyNames=[...new Set([...WOW_FOREVER_PET_FAMILIES.map(p=>p.name),...WOW_PET_FAMILIES.map(p=>p.name)])];
  return <section className="gm-card" style={{padding:16,marginTop:12}} aria-label="Hunter pet roster">
   <div className="gm-panel-label">Hunter pet management</div>
   <h3 style={{margin:"6px 0"}}>Pet roster and threat control</h3>
