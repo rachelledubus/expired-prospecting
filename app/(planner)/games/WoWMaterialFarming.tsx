@@ -36,6 +36,14 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
  const inventoryKey=chosen?wowExtraField(gameId,"stock-"+wowMaterialKey(chosen)):"";
  const invValue=chosen?prog.fields[inventoryKey]??"":"";
  const copy=(value:string)=>{void navigator.clipboard.writeText(value).then(()=>setMessage("Copied waypoint: "+value)).catch(()=>setMessage("Copy blocked. Select the waypoint manually."));};
+ const report=(r:MaterialRoute)=> {
+   const summary=["WoW Forever material source correction", "Item: "+r.item,
+     "Route: "+r.target, "Zone: "+r.zone, "Current source: "+r.sourceUrl,
+     "Evidence category: "+r.evidence, "What is incorrect:", "Correct source / in-game observation:"].join("\n");
+   void navigator.clipboard.writeText(summary)
+     .then(()=>setMessage("Source correction template copied. Paste it into a GitHub issue with your observations."))
+     .catch(()=>setMessage("Copy blocked. Please select the route details manually."));
+ };
  return <section className="gm-card" style={{padding:16,marginTop:12}} aria-label="Material farming locations">
   <div className="gm-panel-label">Crafting material finder · {faction==="horde"?"Horde":"Alliance"} · Skinning and no-XP preference</div>
   <h3 style={{margin:"6px 0"}}>Where can I farm this material?</h3>
@@ -136,6 +144,10 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
        <button type="button" className="gm-pill" onClick={()=>copy(r.waypoint!)}>Copy TomTom</button></p>}
       <p style={{...small,margin:"7px 0 0"}}>
        <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">Check source ↗</a>
+       {" · "}<button type="button" className="gm-pill ghost"
+         onClick={()=>report(r)} style={{fontSize:12,minHeight:34,padding:"4px 9px"}}>
+         Copy correction report
+       </button>
        {" · "}{provenance}
        {r.reviewedAt?" · Reviewed "+r.reviewedAt:""}
       </p>
