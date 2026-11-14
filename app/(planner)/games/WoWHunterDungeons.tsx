@@ -166,9 +166,21 @@ function DungeonCard({
 
 export default function WoWHunterDungeons({gameId,level,faction,prog,setCheck,setField,mode="full",highlight=""}:Props) {
   const ranked=rankHunterDungeons(level,(dId,itemId)=>!!prog.checks[dungeonLootOwnedKey(gameId,dId,itemId)],faction);
-  const exactMatch=highlight.trim()?ranked.find(x=>
-    (x.dungeon.name+" "+x.dungeon.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.trim().toLowerCase())
+  const searchedDungeon=highlight.trim()?WOW_HUNTER_DUNGEONS.find(d=>
+    (d.name+" "+d.loot.map(t=>t.name).join(" ")).toLowerCase().includes(highlight.trim().toLowerCase())
   ):undefined;
+  // Exact search must not hide an older dungeon just because the level-based
+  // recommendation window excludes it.
+  const exactMatch:HunterDungeonAssessment|undefined=searchedDungeon?
+    ranked.find(x=>x.dungeon.id===searchedDungeon.id)??(()=>{
+      const loot=searchedDungeon.loot.filter(t=>!t.faction||t.faction===faction);
+      return {dungeon:searchedDungeon,score:0,
+        gearTargets:loot.filter(t=>t.requiredLevel<=level&&!prog.checks[dungeonLootOwnedKey(gameId,searchedDungeon.id,t.id)]),
+        upcomingTargets:loot.filter(t=>t.requiredLevel>level&&t.requiredLevel<=level+4&&!prog.checks[dungeonLootOwnedKey(gameId,searchedDungeon.id,t.id)]),
+        acquiredCount:loot.filter(t=>prog.checks[dungeonLootOwnedKey(gameId,searchedDungeon.id,t.id)]).length,
+        band:level<searchedDungeon.min?"soon":level>searchedDungeon.max?"past":"current"
+      };
+    })():undefined;
   const playGoal=prog.fields[wowExtraField(gameId,"play-mode")];
   const goalValue=prog.fields[wowExtraField(gameId,"dungeon-goal")]??
     (playGoal==="professions"?"professions":playGoal==="gold"?"no-xp":"gear");
