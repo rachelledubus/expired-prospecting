@@ -20,7 +20,19 @@ export default function WoWGoldFarming({gameId,level,prog,setField,compact=false
   const field=(name:string)=>wowExtraField(gameId,name);
   const gold=(id:string)=>prog.fields[field("farm-"+id+"-gold")];
   const minutes=(id:string)=>prog.fields[field("farm-"+id+"-minutes")];
+  const runs=(id:string)=>[1,2,3].map(n=>{
+    const base="farm-"+id+"-run-"+n+"-";
+    const g=prog.fields[field(base+"gold")],m=prog.fields[field(base+"minutes")],
+      cost=prog.fields[field(base+"expenses")];
+    return {n,g,m,cost,valid:g!==undefined&&g!==""&&m!==undefined&&parse(m)>0};
+  }).filter(x=>x.valid);
   const earnings=(id:string)=>{
+    const history=runs(id);
+    if(history.length){
+      const minutesTotal=history.reduce((sum,x)=>sum+parse(x.m),0);
+      const net=history.reduce((sum,x)=>sum+parse(x.g)-parse(x.cost),0);
+      return minutesTotal>0?60*net/minutesTotal:null;
+    }
     const g=gold(id),t=minutes(id);
     return g!==undefined&&t!==undefined&&parse(t)>0?60*parse(g)/parse(t):null;
   };
@@ -67,7 +79,20 @@ export default function WoWGoldFarming({gameId,level,prog,setField,compact=false
               <input style={input} type="number" min={0} step="1" placeholder="20" value={minutes(f.id)??""} onChange={e=>setField(field("farm-"+f.id+"-minutes"),e.target.value)}/>
             </label>
           </div>
-          <p style={note}>{earnings(f.id)===null?"Enter one measured session to compare actual gold/hour.":"Your recorded pace: "+earnings(f.id)!.toFixed(2)+" gold/hour (not a forecast)."}</p>
+          <p style={note}>{earnings(f.id)===null?"Enter one measured session to compare actual gold/hour.":"Your measured pace: "+earnings(f.id)!.toFixed(2)+" net gold/hour (not a forecast)."} {runs(f.id).length?"From "+runs(f.id).length+" recorded run(s).":"Legacy single-session entry; expenses not included."}</p>
+          <details style={{marginTop:10}}>
+            <summary style={{cursor:"pointer",fontWeight:650,fontSize:13}}>Detailed session log · 3 runs with expenses</summary>
+            <p style={note}>Enter actual gold received, elapsed minutes and repairs / supplies for each run. The net gold/hour summary uses valid completed rows only.</p>
+            {([1,2,3] as const).map(n=><div key={n} style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,110px),1fr))",gap:8,padding:"9px 0",borderBottom:"1px solid var(--border,#ddd)"}}>
+              {(["gold","minutes","expenses"] as const).map(kind=><label key={kind} style={note}>
+                Run {n} · {kind==="gold"?"Gold earned":kind==="minutes"?"Minutes":"Expenses (g)"}
+                <input style={input} type="number" min={0} step={kind==="minutes"?1:".01"}
+                  value={prog.fields[field("farm-"+f.id+"-run-"+n+"-"+kind)]??""}
+                  onChange={e=>setField(field("farm-"+f.id+"-run-"+n+"-"+kind),e.target.value)}/>
+              </label>)}
+            </div>)}
+            {runs(f.id).length>0&&<p style={note}>Total net proceeds: {runs(f.id).reduce((sum,x)=>sum+parse(x.g)-parse(x.cost),0).toFixed(2)}g over {runs(f.id).reduce((sum,x)=>sum+parse(x.m),0)} minutes.</p>}
+          </details>
         </details>
       </article>)}
     </div>
