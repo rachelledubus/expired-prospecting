@@ -49,11 +49,13 @@ assert.equal(reviewedMaterialRoutes("Kingsblood","horde").some(r=>r.method==="he
 assert.equal(reviewedMaterialRoutes("Medium Leather","horde").some(r=>r.id==="medium-leather-mulgore-supplier"),true);
 assert.equal(reviewedMaterialRoutes("Medium Leather","alliance").some(r=>r.id==="medium-leather-mulgore-supplier"),false);
 const excavation=reviewedMaterialRoutes("Medium Leather","horde").filter(r=>r.id.startsWith("medium-forever-excavation-"));
-assert.equal(excavation.length,5,"Keep the five distinct Forever-only dungeon skinnable leads");
+assert.equal(excavation.length,9,"Keep the nine distinct Forever-only dungeon skinnable leads");
 assert.ok(excavation.every(r=>r.zone.includes("Excavation Site: Wetlands")&&r.method==="skinning"&&r.evidence==="forever-reported"));
 assert.ok(excavation.every(r=>!r.waypoint),"Never fabricate custom dungeon waypoints");
-assert.ok(excavation.filter(r=>r.minMob!==undefined).every(r=>r.minMob===26&&r.maxMob===26),
-  "Only the verified Marsh Crocolisk level is recorded");
-assert.equal(reviewedMaterialRoutes("Medium Leather","alliance").filter(r=>r.id.startsWith("medium-forever-excavation-")).length,5,
+assert.ok(excavation.filter(r=>r.minMob!==undefined).every(r=>
+  (r.id==="medium-forever-excavation-marsh-crocolisk"&&r.minMob===26&&r.maxMob===26)||
+  (r.id==="medium-forever-excavation-elder-crocolisk"&&r.minMob===27&&r.maxMob===27)),
+  "Only source-listed crocolisk levels are recorded");
+assert.equal(reviewedMaterialRoutes("Medium Leather","alliance").filter(r=>r.id.startsWith("medium-forever-excavation-" )).length,9,
   "Neutral dungeon references must remain discoverable to both factions");
 console.log("WoW Forever source coverage regression passed: "+leads.length+" leads, "+names.size+" recipe ingredients, faction and evidence checks.");
