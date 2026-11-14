@@ -29,13 +29,21 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
  const foreverItem=chosen?wowheadForeverItemUrl(chosen):null;
  const recipes=chosen?materialRecipes(chosen):[];
  const options=chosen?materialRoutes(chosen,faction):[];
+ // A plausible Classic-era route is less useful than a source tied to Forever.
+ // The evidence score measures provenance, not a guarantee of today's drop rate or vendor stock.
+ const evidenceRank=(r:MaterialRoute)=>({
+   "forever-reported":0,"client-recipe":1,"wowhead-item-page":2,"classic-reference":3
+ }[r.evidence]??4);
  const ordered=options.slice().sort((a,b)=>{
-   const aRisk=typeof a.maxMob==="number"&&a.maxMob<=cutoff?0:typeof a.maxMob==="number"?2:1;
-   const bRisk=typeof b.maxMob==="number"&&b.maxMob<=cutoff?0:typeof b.maxMob==="number"?2:1;
+   const sourceDifference=evidenceRank(a)-evidenceRank(b);
+   if(sourceDifference!==0)return sourceDifference;
    const aTrade=["vendor","crafting","other-profession"].includes(a.method);
    const bTrade=["vendor","crafting","other-profession"].includes(b.method);
    if(aTrade!==bTrade)return aTrade?-1:1;
-   return aRisk-bRisk||Number(mine(a))-Number(mine(b));
+   const risk=(r:MaterialRoute)=>r.maxMob!==undefined&&r.maxMob<=cutoff?0:
+     r.minMob!==undefined&&r.minMob>cutoff?2:1;
+   return risk(a)-risk(b)||Number(mine(a))-Number(mine(b))||
+     a.zone.localeCompare(b.zone)||a.target.localeCompare(b.target);
  });
  const visible=ordered.filter(r=>(!foreverOnly||r.evidence!=="classic-reference")&&
    (showOtherProfessions||!mine(r))&&(!grayOnly||
@@ -108,12 +116,15 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
      "Its specific Wowhead Forever item page is linked above; check its source tabs before you travel.":
      "Search Wowhead Forever above to investigate new item and drop records."} This does not mean the item is unavailable.</p>}
    {options.length>0&&visible.length===0&&<p style={small}>No listed routes match these filters. Try turning off the historical-source filter, allowing XP-risk sources, or including Mining/Herbalism. A Forever item page can exist without a validated current drop.</p>}
-   {options.length>0&&<p style={{...small,margin:"7px 0"}}>Showing <b>{visible.length}</b> of <b>{options.length}</b> source leads. A Wowhead Forever item identity or historic comment is not proof of current loot.</p>}
+   {options.length>0&&<p style={{...small,margin:"7px 0"}}>Showing <b>{visible.length}</b> of <b>{options.length}</b> source leads, ordered by <b>Forever-specific evidence first</b>, then no-XP access and expected mob XP. Historical Classic leads come last. A Wowhead Forever item identity or historic comment is not proof of current loot.</p>}
    <div style={{display:"grid",gap:10,marginTop:10}}>
     {visible.map(r=>{
      const safe=r.maxMob!==undefined&&r.maxMob<=cutoff;
      const dangerous=r.minMob!==undefined&&r.minMob>cutoff;
      const nonCombat=["vendor","crafting","other-profession"].includes(r.method);
+     const evidenceLabel=r.evidence==="forever-reported"?"Forever-reported route":
+       r.evidence==="client-recipe"?"Forever client data":
+       r.evidence==="wowhead-item-page"?"Forever item record":"Historical reference";
      const provenance=r.evidence==="wowhead-item-page"?(r.method==="other-profession"?
        "Wowhead Forever profession spell / item; ask a crafter, check output":
        "Wowhead Forever lists seller zones; NPC / stock unconfirmed"):
@@ -122,7 +133,10 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
        "Classic / historical reference; not verified as a Forever drop";
      return <article key={r.id} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
-       <b style={{fontSize:14}}>{r.target}</b>
+       <div style={{display:"grid",gap:3,minWidth:0}}>
+        <b style={{fontSize:14}}>{r.target}</b>
+        <span style={{...small}}>Source: {evidenceLabel}</span>
+       </div>
        <span style={{...small,fontWeight:650}}>{nonCombat?"No mob XP":safe?"Gray expected":dangerous?"XP likely":r.method==="mining"||r.method==="herbalism"?"Check gathering skill":"Verify mob XP"}</span>
       </div>
       <p style={{...small,margin:"5px 0"}}><b>{r.zone}</b> · {typeLabel(r)}
