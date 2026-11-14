@@ -155,7 +155,8 @@ export const FOREVER_MATERIAL_REVIEW_DATE=reviewedAt;
 export const FOREVER_REVIEWED_MATERIAL_LEADS:ReadonlyArray<Lead>=leads;
 
 export function reviewedMaterialRoutes(name:string,faction:"horde"|"alliance"):MaterialRoute[]{
-  return leads.filter(l=>l.item.toLowerCase()===name.toLowerCase()).map(l=>({
+  return leads.filter(l=>l.item.toLowerCase()===name.toLowerCase()&&
+    !(l.id==="medium-leather-mulgore-supplier"&&faction!=="horde")).map(l=>({
     ...l,
     zone:l.method==="vendor"&&faction==="alliance"
       ?"Stormwind / Ironforge / Darnassus":l.zone,
