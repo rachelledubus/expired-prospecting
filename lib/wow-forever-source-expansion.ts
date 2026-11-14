@@ -13,7 +13,7 @@ import type {MaterialRoute,MaterialMethod} from "./wow-material-farms";
 type Lead = {
   item:string; id:string; zone:string; target:string; advice:string;
   sourceUrl:string; method:MaterialMethod; evidence:MaterialRoute["evidence"];
-  minMob?:number;maxMob?:number;waypoint?:string;
+  minMob?:number;maxMob?:number;waypoint?:string;requiredSkill?:number;
 };
 const reviewedAt="2026-11-14";
 const supplier = (item:string,id:number,target:string="Trade or drink supplier"):Lead =>({
