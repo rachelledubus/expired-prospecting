@@ -79,6 +79,39 @@ const leads:Lead[]=[
     sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
     method:"skinning",evidence:"forever-reported"
   },
+  // Additional NEW skinnable sources in the Forever Medium Leather item table.
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-highland-snapper",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Highland Snapper (elite)",
+    advice:"Listed in the Forever Medium Leather skinning table as a new dungeon source. Fully loot before skinning; sampled outcomes and dungeon safety may vary by patch.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-elder-crocolisk",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Elder Crocolisk (level 27 elite)",
+    advice:"Listed as a NEW level-27 elite source for Medium Leather. Check enemy color before pulling; expect additional enemies within the dungeon.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",minMob:27,maxMob:27,evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-thicket-matriarch",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Thicket Matriarch (elite)",
+    advice:"The Forever item table lists this as a NEW skinnable Medium Leather source. Nearby thicket enemies may join the fight; do not assume a safe solo or XP-free pull.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
+  {
+    item:"Medium Leather",id:"medium-forever-excavation-thicket-hunter",
+    zone:"Excavation Site: Wetlands (custom dungeon)",
+    target:"Thicket Hunter (elite)",
+    advice:"Listed among new Forever skinning sources for Medium Leather. Clear safely with a group, loot fully, then skin if eligible. No guaranteed result.",
+    sourceUrl:"https://www.wowhead.com/forever/item=2319/medium-leather",
+    method:"skinning",evidence:"forever-reported"
+  },
   classic("Medium Leather","medium-bfd-snapjaw","Blackfathom Deeps, Ashenvale",
     "Aku'mai Snapjaw (level 26–27 elite)",
     "Wowhead Forever's Medium Leather item listing names Aku'mai Snapjaw among skinnable creatures. Fully loot, then skin; the listed rate is a mixed-reference observation, not a guaranteed current drop.",
