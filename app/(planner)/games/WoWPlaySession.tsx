@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
-import { WOW_RECIPES, WOW_PROFESSIONS, professionField, recipeHiddenKey, recipeLearnedKey, recipeStatus } from "@/lib/wow-forever-professions";
+import WoWProfessionRun from "./WoWProfessionRun";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes, type MaterialRoute } from "@/lib/wow-material-farms";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
@@ -41,7 +41,6 @@ const formatAmount = (value: string | undefined) =>
 export default function WoWPlaySession({ gameId, prog, level, faction, mode, setField, onOpen, onFindMaterial }: Props) {
   const activeKey = wowExtraField(gameId, "session-material");
   const savedMaterial = prog.fields[activeKey] ?? "Moss Agate";
-  const sessionProfession = prog.fields[wowExtraField(gameId,"session-profession")] ?? "leatherworking";
   const [draft, setDraft] = useState(savedMaterial);
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
@@ -51,22 +50,6 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const bestSource = routes[0];
   const foreverItemUrl = wowheadForeverItemUrl(currentMaterial);
   const owned = currentMaterial ? formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(currentMaterial))]) : null;
-  const savedSkills = (profession: string) => {
-    const stored = prog.fields[professionField(gameId, "skill-" + profession)];
-    return stored !== undefined ? Math.max(0,Number(stored)||0) :
-      WOW_PROFESSIONS.find(p=>p.id===profession)?.initial ?? 0;
-  };
-  const nextCraft = WOW_RECIPES.filter(r =>
-    r.profession === sessionProfession && prog.checks[recipeLearnedKey(gameId,r.id)] &&
-    !prog.checks[recipeHiddenKey(gameId,r.id)] &&
-    r.learnAt !== null &&
-    recipeStatus(r,savedSkills(r.profession)) === "orange"
-  ).sort((a,b) => (a.learnAt??999)-(b.learnAt??999)||a.name.localeCompare(b.name))[0];
-  const supply = nextCraft?.reagents.map(r => {
-    const quantity = formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(r.name))]);
-    return {...r, have:quantity, missing:quantity===null?null:Math.max(0,r.quantity-quantity)};
-  }) ?? [];
-  const need = supply.find(r => r.missing !== null && r.missing > 0) ?? supply.find(r => r.have === null);
   const rankedGear = rankHunterDungeons(level,(d,i)=>!!prog.checks[dungeonLootOwnedKey(gameId,d,i)],faction);
   const nextGear = rankedGear.find(r=>r.band==="current"&&r.gearTargets.length>0);
   const safeFarms = WOW_FARMS.filter(r=>r.maxMob<=cutoff).sort((a,b)=>{
@@ -95,26 +78,9 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":"Leveling"}</span>
       {mode==="gold"&&<span>Gray estimate: level {cutoff} or lower</span>}
     </div>
-    {mode==="professions"&&<div className="gm-wow-session-focus">
-      <h4>Craft next for skill</h4>
-      <label style={{...helper,display:"block",fontWeight:650,marginBottom:8}}>Choose profession
-        <select style={input} value={sessionProfession} onChange={e=>setField(wowExtraField(gameId,"session-profession"),e.target.value)}>
-          {WOW_PROFESSIONS.filter(p=>p.id!=="skinning").map(p=><option key={p.id} value={p.id}>{p.label} · {savedSkills(p.id)}</option>)}
-        </select>
-      </label>
-      {nextCraft ? <>
-        <p><b>{nextCraft.name}</b> · {nextCraft.profession} skill {savedSkills(nextCraft.profession)}</p>
-        <p style={helper}>Marked Learned and currently orange in your stored recipe snapshot. Confirm the recipe is orange in Forever before gathering materials.</p>
-        <div className="gm-wow-session-ingredients">
-          {supply.map(r=><button key={r.name} className="gm-pill ghost" type="button" onClick={()=>onFindMaterial(r.name)}>
-            {r.quantity}× {r.name} · {r.have===null?"inventory unknown":(r.missing ?? 0)>0?"need "+r.missing:"ready"}
-          </button>)}
-        </div>
-        {need&&<p style={helper}><b>Next preparation:</b> {need.have===null?"Record your "+need.name+" inventory or find a farm.":"Farm or buy "+need.missing+" more "+need.name+"."}</p>}
-        {!need&&<p style={helper}>Your entered inventory covers one craft. Check the skill color and craft when ready.</p>}
-      </>:<p style={helper}>No orange recipe is marked Learned in this profession at your stored skill. Open Professions to mark what you know and choose a recipe to learn.</p>}
-      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("professions")}>Open profession recommendations</button>
-    </div>}
+    {mode==="professions"&&<WoWProfessionRun gameId={gameId} level={level} faction={faction}
+      prog={prog} setField={setField} onFindMaterial={onFindMaterial}
+      onOpenProfessions={()=>onOpen("professions")}/>}
     {mode==="gear"&&<div className="gm-wow-session-focus">
       <h4>Current Hunter gear lead</h4>
       {nextGear ? <>
