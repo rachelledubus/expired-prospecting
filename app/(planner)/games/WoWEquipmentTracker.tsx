@@ -2,17 +2,17 @@
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { WOW_GEAR_SLOTS, wowExtraField } from "@/lib/wow-portal-extras";
-type Props={gameId:string;prog:GameProgress;setField:(key:string,value:string)=>void;level:number};
+type Props={gameId:string;prog:GameProgress;setField:(key:string,value:string)=>void;level:number;highlight?:string};
 const input:React.CSSProperties={background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",borderRadius:8,padding:"8px 10px",font:"inherit",width:"100%",minWidth:0};
 const note:React.CSSProperties={fontSize:13,opacity:.85,lineHeight:1.5};
 const number=(s:string)=>{const n=Number(s);return Number.isFinite(n)&&n>=0?n:0;};
-export default function WoWEquipmentTracker({gameId,prog,setField,level}:Props){
+export default function WoWEquipmentTracker({gameId,prog,setField,level,highlight=""}:Props){
  const field=(id:string)=>wowExtraField(gameId,id);
  const read=(id:string)=>prog.fields[field(id)]??"";
  const save=(id:string,v:string)=>setField(field(id),v);
  const targetOptions=WOW_HUNTER_DUNGEONS.flatMap(d=>d.loot.map(t=>({key:d.id+"-"+t.id,slot:t.slot,name:t.name,dungeon:d.name,level:t.requiredLevel})))
     .filter(t=>t.level<=level+4);
- const chosen=targetOptions.find(t=>t.key===read("compare-target"));
+ const chosen=targetOptions.find(t=>t.key===read("compare-target"))??targetOptions.find(t=>t.name.toLowerCase()===highlight.trim().toLowerCase());
  const current=chosen?{dps:read("gear-"+chosen.slot+"-dps"),agi:read("gear-"+chosen.slot+"-agi"),ap:read("gear-"+chosen.slot+"-ap")}:null;
  const candidate=chosen?{dps:read("target-"+chosen.key+"-dps"),agi:read("target-"+chosen.key+"-agi"),ap:read("target-"+chosen.key+"-ap")}:null;
  const comp=(label:string,a:string|undefined,b:string|undefined)=>!a||!b?"":label+": "+(number(b)-number(a)>=0?"+":"")+(number(b)-number(a)).toFixed(1);
@@ -44,7 +44,7 @@ export default function WoWEquipmentTracker({gameId,prog,setField,level}:Props){
    <div style={{marginTop:15}}>
     <h4 style={{margin:"0 0 7px"}}>Compare a dungeon item</h4>
     <label style={note}>Candidate from known dungeon targets
-     <select style={{...input,marginTop:5}} value={read("compare-target")} onChange={e=>save("compare-target",e.target.value)}>
+     <select style={{...input,marginTop:5}} value={chosen?.key??""} onChange={e=>save("compare-target",e.target.value)}>
       <option value="">Select a potential drop</option>
       {targetOptions.map(t=><option key={t.key} value={t.key}>{t.name} · {t.dungeon}</option>)}
      </select>
