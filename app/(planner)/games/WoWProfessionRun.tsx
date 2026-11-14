@@ -7,7 +7,8 @@ import { WOW_RECIPES, WOW_PROFESSIONS, professionField, recipeHiddenKey,
 import { materialRoutes, externalMaterialLookup, type MaterialRoute } from "@/lib/wow-material-farms";
 import { planCraftChain, type PlanRequirement } from "@/lib/wow-crafting-chain";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
-import { grayMobThreshold, wowExtraField, wowMaterialKey } from "@/lib/wow-portal-extras";
+import { wowExtraField, wowMaterialKey } from "@/lib/wow-portal-extras";
+import { rankMaterialRoutes } from "@/lib/wow-material-route-ranking";
 
 type Props={
   gameId:string;level:number;faction:"horde"|"alliance";prog:GameProgress;
@@ -37,21 +38,12 @@ const sourceText=(r:MaterialRoute)=>r.evidence==="forever-reported"?
   r.evidence==="client-recipe"?"Catalog recipe; skill and output yield must be checked":
   "Classic/historical reference; not verified as a current Forever drop";
 const sourceFor=(item:string,faction:"horde"|"alliance",level:number,noXp:boolean)=>{
-  const cutoff=grayMobThreshold(level);
-  const options=materialRoutes(item,faction)
-    // These professions do not include Mining or Herbalism. Crafted inputs
-    // have already been expanded by the bill-of-materials planner.
-    .filter(r=>r.method!=="mining"&&r.method!=="herbalism"&&r.method!=="crafting")
-    .map(route=>{
-      const nonCombat=route.method==="vendor"||route.method==="other-profession";
-      const gray=route.maxMob!==undefined&&route.maxMob<=cutoff;
-      const xpRisk=route.minMob!==undefined&&route.minMob>cutoff;
-      const score=(nonCombat?80:gray?55:xpRisk?-30:0)+
-        (route.evidence==="forever-reported"?4:0)+(route.waypoint?3:0);
-      return {route,nonCombat,gray,score};
-    }).filter(item=>!noXp||item.nonCombat||item.gray)
-    .sort((a,b)=>b.score-a.score);
-  return options[0];
+  // One source of truth: same ranking as Farm Materials and Play Next.
+  const results=rankMaterialRoutes(materialRoutes(item,faction).filter(r=>r.method!=="crafting"),{
+    level,faction,noXp,includeGathering:false,includeHistorical:true
+  });
+  const result=results.find(r=>r.usable==="direct")??results[0];
+  return result?{route:result.route,nonCombat:result.xp==="none",gray:result.xp==="gray-expected",notes:result.notes}:undefined;
 };
 
 export default function WoWProfessionRun({gameId,level,faction,prog,setField,onFindMaterial,onOpenProfessions}:Props){
@@ -153,7 +145,7 @@ export default function WoWProfessionRun({gameId,level,faction,prog,setField,onF
           {source?<div>
             <p style={{...small,margin:"6px 0"}}><b>{typeLabel[source.route.method]}:</b> {source.route.target} · {source.route.zone}</p>
             <p style={{...small,margin:"6px 0"}}>{source.route.advice}</p>
-            <p style={{...small,margin:"6px 0"}}>{sourceText(source.route)}{source.gray?" · Gray expected, verify mob color":""}</p>
+            <p style={{...small,margin:"6px 0"}}>{sourceText(source.route)}{source.gray?" · Gray expected, verify mob color":""}{source.notes.length?" · "+source.notes.join(" · "):""}</p>
             {source.route.waypoint&&<div className="gm-wow-session-waypoint">
               <code>{source.route.waypoint}</code>
               <button type="button" className="gm-pill" onClick={()=>copy(source.route.waypoint!)}>Copy TomTom</button>
