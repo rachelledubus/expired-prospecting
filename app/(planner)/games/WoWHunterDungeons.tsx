@@ -152,6 +152,11 @@ function DungeonCard({
           setCheck={setCheck} setField={setField}/>
         {d.travelNote && <p className="gm-wow-dungeon-caution"><b>Travel:</b> {d.travelNote}</p>}
         {d.sourceNote && <p className="gm-wow-dungeon-caution">{d.sourceNote}</p>}
+        <p className="gm-wow-dungeon-caption"><b>Boss mechanics, quests & maps:</b>{" "}
+          <a href="https://www.icy-veins.com/wow-forever/dungeon-and-raid-guides/" target="_blank" rel="noopener noreferrer">Icy Veins dungeon guides ↗</a>
+          {" · "}<a href="https://wofwforever.com/en/dungeons/" target="_blank" rel="noopener noreferrer">Forever dungeon maps and boss/quest index ↗</a>
+        </p>
+        <p className="gm-wow-dungeon-caption">Reference indexes vary in coverage. Confirm the dungeon and boss details on the linked page; this guide does not invent unverified encounter instructions.</p>
         <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer">Review dungeon loot source ↗</a>
       </div>
     </details>
