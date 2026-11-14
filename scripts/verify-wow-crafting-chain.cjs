@@ -90,4 +90,15 @@ assert.deepEqual(nested.steps.map(s=>s.recipe.id),["first","second"],
 assert.equal(byName(nested,"Ore").rawShortage,2,"Nested required quantities propagate correctly");
 
 
-console.log("WoW crafting-chain regression tests passed (8 scenarios).");
+const deepRecipes=Array.from({length:10},(_,i)=>({
+  id:"deep-"+i,name:"Material "+i,
+  reagents:[{name:i===9?"Raw Rock":"Material "+(i+1),quantity:1}]
+}));
+const deepRoot={id:"deep-root",name:"Deep Root",reagents:[{name:"Material 0",quantity:1}]};
+const deep=planCraftChain({recipe:deepRoot,batch:1,
+  recipes:[deepRoot,...deepRecipes],isLearned:()=>true,inventory:()=>0});
+assert.equal(deep.ready,false,"Depth guard must not report ready when inputs remain unresolved");
+assert.ok(deep.toAcquire.length>0,"Depth guard accounts for unmet raw inputs");
+assert.ok(deep.warnings.length>0,"Depth guard explains the limit");
+
+console.log("WoW crafting-chain regression tests passed (9 scenarios).");
