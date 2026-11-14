@@ -49,6 +49,15 @@ assert.equal(plan.ready,false);
 plan=prepare(initial,{mediumYield:2});
 assert.equal(byRecipe(plan,"medium").casts,2,"Output yield reduces casts required");
 assert.equal(byName(plan,"Light Leather").rawShortage,0,"Enough Light Leather with corrected output");
+const sharedRoot={id:"shared-root",name:"Shared Materials",reagents:[
+  {name:"Light Leather",quantity:8},{name:"Medium Leather",quantity:1}
+]};
+const shared=planCraftChain({recipe:sharedRoot,batch:1,recipes:[sharedRoot,medium],
+  isLearned:r=>r.id==="medium",
+  inventory:name=>name==="Light Leather"?10:0});
+assert.equal(byName(shared,"Light Leather").stockUsed,10,"Shared material stock is consumed only once");
+assert.equal(byName(shared,"Light Leather").rawShortage,2,"Repeated demands correctly account for leftover stock");
+
 
 plan=prepare({...initial,"Medium Leather":undefined});
 assert.equal(byName(plan,"Medium Leather").unknown,true,"Missing count must not be zero");
