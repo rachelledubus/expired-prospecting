@@ -29,7 +29,7 @@ export default function WoWMaterialFarming({gameId,level,faction="horde",prog,se
  const foreverItem=chosen?wowheadForeverItemUrl(chosen):null;
  const recipes=chosen?materialRecipes(chosen):[];
  const options=chosen?materialRoutes(chosen,faction):[];
- const ranked=rankMaterialRoutes(options,{level,noXp:grayOnly,
+ const ranked=rankMaterialRoutes(options,{level,faction,noXp:grayOnly,
    includeGathering:showOtherProfessions,includeHistorical:!foreverOnly});
  const visible=ranked.map(x=>x.route);
  const top=ranked.find(x=>x.usable==="direct");
