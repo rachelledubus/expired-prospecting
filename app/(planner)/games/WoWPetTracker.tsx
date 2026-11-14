@@ -28,7 +28,7 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
       <label style={hint}>Pet name<input style={textField} value={val(slot,"name")} maxLength={70}
        onChange={e=>save(slot,"name",e.target.value)} placeholder="Pet's name"/></label>
       <label style={hint}>Family<select style={textField} value={val(slot,"family")} onChange={e=>save(slot,"family",e.target.value)}>
-       <option value="">Select family</option>{familyNames.map(n=><option key={n}>{n}</option>)}
+       <option value="">Select family</option>{val(slot,"family")&&!familyNames.includes(val(slot,"family"))&&val(slot,"family")!=="Other"&&<option value={val(slot,"family")}>{val(slot,"family")} (saved legacy name)</option>}{familyNames.map(n=><option key={n}>{n}</option>)}
        <option value="Other">Other / custom</option>
       </select></label>
       <label style={hint}>Pet level<input style={textField} type="number" min={1} max={60} value={val(slot,"level")} onChange={e=>save(slot,"level",e.target.value)}/></label>
