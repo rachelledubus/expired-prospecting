@@ -6,11 +6,13 @@ import WoWProfessionRun from "./WoWProfessionRun";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
 import { rankMaterialRoutes } from "@/lib/wow-material-route-ranking";
+import { rankLevelSkinning } from "@/lib/wow-level-skinning";
+import { professionField } from "@/lib/wow-forever-professions";
 import { measureFarm } from "@/lib/wow-gold-session-metrics";
 import { wowheadForeverItemUrl } from "@/lib/wowhead-forever-items";
 import { grayMobThreshold, wowExtraField, wowMaterialKey, WOW_FARMS } from "@/lib/wow-portal-extras";
 
-type Mode = "gold" | "professions" | "gear" | "leveling";
+type Mode = "gold" | "professions" | "gear" | "leveling" | "skin-xp";
 type Props = {
   gameId: string;
   prog: GameProgress;
@@ -37,6 +39,8 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
   const cutoff = grayMobThreshold(level);
+  const skinningXp=useMemo(()=>rankLevelSkinning(level,faction),[level,faction]);
+  const skinningSkill=prog.fields[professionField(gameId,"skill-skinning")];
   // Use exactly the same no-XP, faction and Skinning ranking as Farm Materials.
   const routeAdvice = useMemo(() => rankMaterialRoutes(materialRoutes(currentMaterial,faction),{
     level,faction,noXp:true,includeGathering:false,includeHistorical:true
@@ -66,7 +70,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
     <h3 style={{margin:"5px 0 8px"}}>One objective, one next action</h3>
     <div className="gm-wow-session-stats">
       <span>Hunter · {faction==="horde"?"Horde":"Alliance"}</span>
-      <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":"Leveling"}</span>
+      <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":mode==="skin-xp"?"Level + Skin":"Leveling"}</span>
       {mode==="gold"&&<span>Gray estimate: level {cutoff} or lower</span>}
     </div>
     {mode==="professions"&&<WoWProfessionRun gameId={gameId} level={level} faction={faction}
@@ -81,7 +85,31 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gear")}>Open dungeon and equipment guides</button>
     </div>}
     {mode==="leveling"&&<p style={helper}>Use the leveling objective below. You can still maintain a material target here for later.</p>}
-    <div className="gm-wow-session-focus">
+    {mode==="skin-xp"&&<div className="gm-wow-session-focus" aria-label="XP and Skinning leveling routes">
+      <h4>Level up while skinning</h4>
+      <p style={helper}>Choose outdoor skinnable creatures near level {level}. Avoid gray enemies when your goal is kill XP. Loot every corpse before skinning; leather and Skinning skill-ups aren't guaranteed.</p>
+      <p style={helper}><b>Recorded Skinning skill:</b> {skinningSkill===undefined?"Not entered":skinningSkill}. Check in-game whether your skill is high enough to skin each target; mob level alone does not establish skinning eligibility.</p>
+      {skinningXp.length ? <>
+        <div style={{display:"grid",gap:9,marginTop:10}}>
+          {skinningXp.slice(0,4).map(({route,grade,notes},i)=><article key={route.id}
+            style={{padding:12,border:"1px solid var(--border,#ddd)",borderRadius:10}}>
+            <div className="gm-panel-label">{i===0?"Best documented starting lead":i===1?"Alternative":"Other documented lead"} · {grade==="level-appropriate"?"Near your level":grade==="mixed-levels"?"Mixed levels":"Lower-level XP option"}</div>
+            <p style={{margin:"5px 0"}}><b>{route.target}</b> · {route.zone}</p>
+            <p style={helper}>Listed mob levels {route.minMob}–{route.maxMob}. {route.advice}</p>
+            <p style={helper}>{notes.join(" · ")}</p>
+            <div className="gm-wow-session-actions">
+              {route.waypoint&&<button type="button" className="gm-pill ghost" onClick={()=>copy(route.waypoint!)}>Copy TomTom</button>}
+              <a href={route.sourceUrl} className="gm-pill ghost" target="_blank" rel="noopener noreferrer">Verify source ↗</a>
+              <button type="button" className="gm-pill ghost" onClick={()=>onFindMaterial(route.item)}>Farm {route.item}</button>
+            </div>
+          </article>)}
+        </div>
+      </>:<p style={helper}>No documented outdoor skinning target has a suitable level range in the current catalog. Check a nearby questing area for level-appropriate skinnable beasts and verify the creature on Wowhead Forever before traveling.</p>}
+      <p style={helper}><b>Simple loop:</b> Kill a suitable beast → loot everything → skin → move to the next beast. If the enemy is gray, choose a higher-level target for XP. If it is too dangerous, move down a level or two.</p>
+      <a href="https://www.wowhead.com/forever/search?q=skinning" target="_blank" rel="noopener noreferrer">Research more skinning sources on Wowhead Forever ↗</a>
+    </div>}
+
+    {mode!=="skin-xp"&&<div className="gm-wow-session-focus">
       <h4>{mode==="gold"?"Find a valuable material":mode==="professions"?"Other material to find":"Optional material to find"}</h4>
       <div className="gm-wow-session-entry">
         <label>Search or enter any item
@@ -122,7 +150,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
           {foreverItemUrl?"Open exact Wowhead Forever item ↗":"Search Wowhead Forever ↗"}
         </a>
       </div>
-    </div>
+    </div>}
     {mode==="gold"&&<details className="gm-wow-session-focus">
       <summary style={{cursor:"pointer",fontWeight:700}}>Alternative: farm raw gold or leather</summary>
       {nextGold ? <>
