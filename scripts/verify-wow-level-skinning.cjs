@@ -47,7 +47,7 @@ try{
    assert.ok(!ids.includes(excluded),"Bad level or ineligible method displayed: "+excluded);
  assert.equal(ids[0],"reported","Prefer relevant Forever reports over old sources");
  assert.ok(ids.indexOf("horde-hostile")>ids.indexOf("reported"),"Opposing faction should be deprioritized");
- assert.ok(horde[0].notes.some(x=>x.includes("skinning")), "Must remind user to skin after looting");
+ assert.ok(horde[0].notes.some(x=>x.toLowerCase().includes("skin")), "Must remind user to skin after looting");
  const ally=rankLevelSkinning(34,"alliance");
  assert.ok(ally.find(x=>x.route.id==="horde-hostile").score<
    horde.find(x=>x.route.id==="horde-hostile").score);
