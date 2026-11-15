@@ -24,7 +24,7 @@ type View = "next" | "roadmap" | "zones" | "talents" | "combat" | "pets" | "skyb
 const GUIDE_GROUPS: { id:string; label:string; views:View[] }[]=[
   {id:"next",label:"🎯 Play Next",views:["next"]},
   {id:"professions",label:"🧵 Professions",views:["professions"]},
-  {id:"farming",label:"💰 Gold & Farming",views:["materials","gold"]},
+  {id:"farming",label:"💰 Gold & Farming",views:["gold","materials"]},
   {id:"hunter",label:"🏹 Hunter Guide",views:["pets","combat","talents","gear"]},
   {id:"world",label:"🗺️ World & Dungeons",views:["zones","roadmap","skyborne"]},
   {id:"search",label:"🔎 Search Everything",views:["lookup"]}
