@@ -182,13 +182,14 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
             <option value="professions">Improve professions / crafting</option>
             <option value="gear">Farm Hunter gear</option>
             <option value="leveling">Level my Hunter</option>
+            <option value="skin-xp">Gain XP + Skin beasts</option>
           </select>
         </label>
         <p className="gm-note" style={note}>This choice saves for your next visit. The guide no longer assumes leveling is your default goal.</p>
       </div>
       <WoWPlaySession gameId={game.id} level={currentLevel} prog={prog} setField={setField}
         faction={faction==="alliance"?"alliance":"horde"}
-        mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"?playMode:"gold"}
+        mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"||playMode==="skin-xp"?playMode:"gold"}
         onOpen={openView} onFindMaterial={openMaterial}/>
       {playMode==="leveling"&&<>
         <div className="gm-card" style={card}>
