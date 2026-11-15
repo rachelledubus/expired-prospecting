@@ -37,7 +37,7 @@ export const WOW_FARMS: WowFarm[] = [
     waypoint:"/way Silverpine Forest 44.5 68",sourceUrl:"https://www.warcrafttavern.com/wow-classic/guides/shadowfang-keep" },
   { id:"bfd",name:"Blackfathom Deeps — mixed loot",kind:"dungeon",zone:"Ashenvale",
     minMob:24,maxMob:32,rewards:["Cloth","BoE drops","Vendor items"],
-    note:"Some mobs remain XP-eligible at level 34. Check mobs individually and skip any non-gray targets.",
+    note:"Enemy levels vary. If avoiding XP, check each enemy's color; when leveling, target enemies that still award XP.",
     waypoint:"/way Ashenvale 14.5 14.6",sourceUrl:"https://shokadezz.com/wow-classic-era/answers/dungeon-entrances-and-locations" },
 ];
 /** Conservative Classic-style gray cutoff. Verify against actual in-game mob color in Forever. */
