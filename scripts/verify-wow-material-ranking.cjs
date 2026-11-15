@@ -7,6 +7,14 @@ const fs=require("node:fs");
 const path=require("node:path");
 const Module=require("node:module");
 const ts=require("typescript");
+// Resolve the shared WoW gray-level helper from TypeScript during standalone Node tests.
+require.extensions[".ts"]=(loaded,filename)=>{
+ const source=fs.readFileSync(filename,"utf8");
+ const compiled=ts.transpileModule(source,{
+   compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}
+ }).outputText;
+ loaded._compile(compiled,filename);
+};
 const file=path.resolve(__dirname,"../lib/wow-material-route-ranking.ts");
 const js=ts.transpileModule(fs.readFileSync(file,"utf8"),{
  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}
