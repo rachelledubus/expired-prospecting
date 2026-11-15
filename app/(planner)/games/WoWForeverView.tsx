@@ -120,8 +120,9 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     if(!needsLevel40Migration||levelMigrationStarted.current)return;
     levelMigrationStarted.current=true;
     if(storedLevel<40)setField(F(game.id,"level"),"40");
+    if(!prog.fields[wowExtraField(game.id,"play-mode")])setField(wowExtraField(game.id,"play-mode"),"skin-xp");
     setField(level40Marker,"done");
-  },[game.id,level40Marker,needsLevel40Migration,setField,storedLevel]);
+  },[game.id,level40Marker,needsLevel40Migration,prog.fields,setField,storedLevel]);
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
   const openMaterial=(name:string)=>{setMaterialTarget(name);openView("materials");};
