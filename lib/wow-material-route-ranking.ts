@@ -4,6 +4,7 @@
  * Keep this helper independent of React and recipe/catalog imports for testing.
  */
 import type {MaterialRoute} from "./wow-material-farms";
+import { grayMobThreshold } from "./wow-portal-extras";
 
 export type MaterialRoutePreferences = {
   level:number;
@@ -30,12 +31,8 @@ const nonCombat=(r:MaterialRoute)=>r.method==="vendor"||r.method==="crafting"||r
 const evidenceOrder:Record<MaterialRoute["evidence"],number>={
   "forever-reported":0,"client-recipe":1,"wowhead-item-page":2,"classic-reference":3
 };
-/** Mirrors the portal's conservative reference calculation; confirm mob color in-game. */
-export function expectedGrayCutoff(level:number):number {
-  const n=Math.max(1,Math.min(60,Math.floor(level)||1));
-  if(n<=5)return 0;
-  return Math.max(0,n-Math.floor(n/10)-(n>=45?6:5));
-}
+/** Shared conservative gray cutoff used by Gold, Dungeons, and Materials. */
+export const expectedGrayCutoff=grayMobThreshold;
 export function materialRouteAdvice(route:MaterialRoute,level:number,faction:"horde"|"alliance"="horde"):MaterialRouteAdvice {
   const cutoff=expectedGrayCutoff(level);
   const dungeon=isDungeon(route);
