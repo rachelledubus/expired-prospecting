@@ -112,7 +112,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   // the authenticated guide next opens, without resetting later progress.
   const level40Marker=wowExtraField(game.id,"level-40-update-20261115");
   const levelMigrationStarted=useRef(false);
-  const storedLevel=Number(prog.fields[F(game.id,"level")]||"34")||34;
+  const storedLevel=Number(prog.fields[F(game.id,"level")]||"40")||40;
   const needsLevel40Migration=prog.fields[level40Marker]!=="done";
   const currentLevel=Math.max(1,Math.min(60,
     needsLevel40Migration?Math.max(40,storedLevel):storedLevel));
