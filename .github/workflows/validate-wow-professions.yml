@@ -24,6 +24,8 @@ on:
       - 'lib/wow-gold-session-metrics.ts'
       - 'scripts/verify-wow-gold-metrics.cjs'
       - 'scripts/verify-wow-cleanup.cjs'
+      - 'lib/wow-level-skinning.ts'
+      - 'scripts/verify-wow-level-skinning.cjs'
       - 'scripts/verify-wow-forever-source-coverage.cjs'
 jobs:
   typecheck:
@@ -40,3 +42,4 @@ jobs:
       - run: node scripts/verify-wow-material-ranking.cjs
       - run: node scripts/verify-wow-gold-metrics.cjs
       - run: node scripts/verify-wow-cleanup.cjs
+      - run: node scripts/verify-wow-level-skinning.cjs
