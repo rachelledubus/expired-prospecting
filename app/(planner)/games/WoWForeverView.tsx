@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
 import WoWProfessions from "./WoWProfessions";
@@ -108,7 +108,20 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [searchTarget,setSearchTarget]=useState("");
   const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
-  const currentLevel=Math.max(1,Math.min(60,Number(prog.fields[F(game.id,"level")]||"34")||34));
+  // User confirmed level 40 on Nov 15, 2026. Save that change once when
+  // the authenticated guide next opens, without resetting later progress.
+  const level40Marker=wowExtraField(game.id,"level-40-update-20261115");
+  const levelMigrationStarted=useRef(false);
+  const storedLevel=Number(prog.fields[F(game.id,"level")]||"34")||34;
+  const needsLevel40Migration=prog.fields[level40Marker]!=="done";
+  const currentLevel=Math.max(1,Math.min(60,
+    needsLevel40Migration?Math.max(40,storedLevel):storedLevel));
+  useEffect(()=>{
+    if(!needsLevel40Migration||levelMigrationStarted.current)return;
+    levelMigrationStarted.current=true;
+    if(storedLevel<40)setField(F(game.id,"level"),"40");
+    setField(level40Marker,"done");
+  },[game.id,level40Marker,needsLevel40Migration,setField,storedLevel]);
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
   const openMaterial=(name:string)=>{setMaterialTarget(name);openView("materials");};
@@ -131,7 +144,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <h2 style={{margin:"7px 0"}}>Hunter field guide</h2>
         <label className="gm-wow-level">My level
           <input type="number" inputMode="numeric" min={1} max={60}
-            value={prog.fields[F(game.id,"level")]??"34"}
+            value={String(currentLevel)}
             onChange={e=>setField(F(game.id,"level"),String(Math.max(1,Math.min(60,Number(e.target.value)||1))))}
             style={{...uiInput,width:80}} aria-label="Hunter level"/>
         </label>
