@@ -1,6 +1,7 @@
 "use client";
 
 import { measureFarm } from "@/lib/wow-gold-session-metrics";
+import { hunterBisLeadForDungeonItem } from "@/lib/wow-hunter-bis";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_HUNTER_DUNGEONS } from "@/lib/wow-forever-dungeon-gear";
 import { dungeonProfessionDrops } from "@/lib/wow-forever-dungeon-professions";
@@ -41,15 +42,24 @@ function TargetRow({
 }) {
   const key = dungeonLootOwnedKey(gameId,dungeonId,item.id);
   const owned = !!prog.checks[key];
-  return <label className={"gm-wow-dungeon-target" + (owned ? " owned" : "")}>
+  const bis=hunterBisLeadForDungeonItem(dungeonId,item.id);
+  return <><label className={"gm-wow-dungeon-target" + (owned ? " owned" : "")}>
     <input type="checkbox" checked={owned} onChange={value => setCheck(key,value.target.checked)}/>
     <span className="gm-wow-dungeon-target-copy">
       <b>{item.name}</b>
+      {bis&&<span style={{fontWeight:700,fontSize:12}}>
+        {bis.tier==="leveling-bis-candidate"?"★ Leveling BiS contender":"Strong leveling option"}
+        {" · Recommended pursuit level "+bis.recommendedLevel}
+      </span>}
       <span>{slotLabels[item.slot]} · {item.kind === "quest" ? "Quest accessible around level " : "Requires level "}{item.requiredLevel} · {item.from}</span>
       {item.note && <span className="gm-wow-dungeon-source-note">{item.note}</span>}
     </span>
     <span className="gm-wow-dungeon-owned-state">{owned ? "Covered" : "Have / skip"}</span>
-  </label>;
+  </label>
+  {bis&&<p className="gm-wow-dungeon-source-note" style={{padding:"0 10px",margin:"3px 0 8px"}}>
+    <b>Where:</b> {bis.location} · <b>From:</b> {bis.source} · <b>Equip at:</b> {bis.minEquipLevel}
+    {" · "}<a href={bis.sourceUrl} target="_blank" rel="noopener noreferrer">Verify Forever item ↗</a>
+  </p>}</>;
 }
 
 function DungeonCard({
