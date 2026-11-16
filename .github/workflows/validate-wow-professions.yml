@@ -26,6 +26,9 @@ on:
       - 'scripts/verify-wow-cleanup.cjs'
       - 'lib/wow-level-skinning.ts'
       - 'scripts/verify-wow-level-skinning.cjs'
+      - 'lib/wow-hunter-bis.ts'
+      - 'app/(planner)/games/WoWHunterBiS.tsx'
+      - 'scripts/verify-wow-hunter-bis.cjs'
       - 'scripts/verify-wow-forever-source-coverage.cjs'
 jobs:
   typecheck:
@@ -43,3 +46,4 @@ jobs:
       - run: node scripts/verify-wow-gold-metrics.cjs
       - run: node scripts/verify-wow-cleanup.cjs
       - run: node scripts/verify-wow-level-skinning.cjs
+      - run: node scripts/verify-wow-hunter-bis.cjs
