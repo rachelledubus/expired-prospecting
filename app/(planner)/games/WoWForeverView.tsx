@@ -352,7 +352,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
 
     {view==="gear" && <>
-      <WoWHunterBiS gameId={game.id} level={currentLevel} prog={prog} setCheck={setCheck} setField={setField}/>
+      <WoWHunterBiS gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField}/>
       <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField} highlight={searchTarget}/>
       <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} highlight={searchTarget}/>
       <SmallInfo title="Simple leveling gear priorities">
