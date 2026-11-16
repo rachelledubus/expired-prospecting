@@ -3,6 +3,7 @@ import { TERRARIA_GAME, type TerrariaGame } from "./terraria-spirit-data";
 import { DREAMLIGHT_GAME, type DreamlightGame } from "./dreamlight-data";
 import { WOW_GAME, type WowGame } from "./wow-forever-data";
 import { WOW_RECIPES, WOW_PROFESSIONS, recipeLearnedKey, recipeHiddenKey, professionField } from "./wow-forever-professions";
+import { WOW_HUNTER_BIS_LEADS } from "./wow-hunter-bis";
 import { WOW_HUNTER_DUNGEONS, dungeonLootOwnedKey } from "./wow-forever-dungeon-gear";
 import { WOW_FARMS, WOW_GEAR_SLOTS, WOW_COMBAT_BINDS, WOW_MACRO_PRESETS, wowExtraField, wowMaterialKey } from "./wow-portal-extras";
 import { DREAMLIGHT_CHARACTERS, dreamlightCharacterKey, dreamlightCharacterVisibilityKey } from "./dreamlight-character-quests";
@@ -505,7 +506,8 @@ export function knownFieldKeys(game: Game): Set<string> {
       game.id + "|level", game.id + "|faction", game.id + "|pet-name",
       ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
       professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
-      extra("play-mode"), extra("level-40-update-20261115"), extra("bis-owned-truthseekers-bow"), extra("compare-target"), extra("session-material"), extra("session-profession"), extra("session-recipe"), extra("session-craft-count"), extra("session-no-xp"), extra("session-expand-crafts"), extra("last-view"), extra("dungeon-goal"),
+      extra("play-mode"), extra("level-40-update-20261115"), extra("bis-owned-truthseekers-bow"),
+      ...WOW_HUNTER_BIS_LEADS.filter(x=>!x.dungeonId||!x.targetId).map(x=>extra("bis-owned-"+x.id)), extra("compare-target"), extra("session-material"), extra("session-profession"), extra("session-recipe"), extra("session-craft-count"), extra("session-no-xp"), extra("session-expand-crafts"), extra("last-view"), extra("dungeon-goal"),
       ...WOW_FARMS.flatMap(f=>[extra("farm-"+f.id+"-gold"),extra("farm-"+f.id+"-minutes"),...([1,2,3] as const).flatMap(n=>[extra("farm-"+f.id+"-run-"+n+"-gold"),extra("farm-"+f.id+"-run-"+n+"-minutes"),extra("farm-"+f.id+"-run-"+n+"-expenses")])]),
       ...WOW_COMBAT_BINDS.map(b=>extra("bind-"+b[0])),
       ...WOW_MACRO_PRESETS.map(m=>extra("macro-"+m.id)),
