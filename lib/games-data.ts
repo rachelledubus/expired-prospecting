@@ -505,7 +505,7 @@ export function knownFieldKeys(game: Game): Set<string> {
       game.id + "|level", game.id + "|faction", game.id + "|pet-name",
       ...WOW_PROFESSIONS.map(p => professionField(game.id, "skill-" + p.id)),
       professionField(game.id, "gold"), professionField(game.id, "goal"), professionField(game.id, "region"),
-      extra("play-mode"), extra("level-40-update-20261115"), extra("compare-target"), extra("session-material"), extra("session-profession"), extra("session-recipe"), extra("session-craft-count"), extra("session-no-xp"), extra("session-expand-crafts"), extra("last-view"), extra("dungeon-goal"),
+      extra("play-mode"), extra("level-40-update-20261115"), extra("bis-owned-truthseekers-bow"), extra("compare-target"), extra("session-material"), extra("session-profession"), extra("session-recipe"), extra("session-craft-count"), extra("session-no-xp"), extra("session-expand-crafts"), extra("last-view"), extra("dungeon-goal"),
       ...WOW_FARMS.flatMap(f=>[extra("farm-"+f.id+"-gold"),extra("farm-"+f.id+"-minutes"),...([1,2,3] as const).flatMap(n=>[extra("farm-"+f.id+"-run-"+n+"-gold"),extra("farm-"+f.id+"-run-"+n+"-minutes"),extra("farm-"+f.id+"-run-"+n+"-expenses")])]),
       ...WOW_COMBAT_BINDS.map(b=>extra("bind-"+b[0])),
       ...WOW_MACRO_PRESETS.map(m=>extra("macro-"+m.id)),
