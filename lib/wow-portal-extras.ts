@@ -87,9 +87,9 @@ export const WOW_MACRO_PRESETS = [
  {id:"auto",name:"Auto Shot",script:"#showtooltip Auto Shot\n/cleartarget [dead]\n/targetenemy [noharm]\n/cast !Auto Shot",note:"May retarget unintended enemies; test Forever support for !Auto Shot."}
 ] as const;
 export const WOW_GEAR_SLOTS = [
- ["ranged","Ranged weapon"],["melee","Melee/stat stick"],["head","Head"],["neck","Neck"],
+ ["ranged","Ranged weapon"],["melee","Main hand / Two-hand"],["offhand","Off hand (one-hand only)"],["head","Head"],["neck","Neck"],
  ["shoulders","Shoulders"],["back","Back"],["chest","Chest"],["wrist","Wrist"],
- ["hands","Hands"],["waist","Waist"],["legs","Legs"],["feet","Feet"],["ring","Rings"]
+ ["hands","Hands"],["waist","Waist"],["legs","Legs"],["feet","Feet"],["ring","Ring 1"],["ring2","Ring 2"],["trinket1","Trinket 1"],["trinket2","Trinket 2"]
 ] as const;
 export const wowExtraField = (id:string,key:string) => id+"|wow-extra|"+key;
 export const wowMaterialKey = (name:string) => name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
