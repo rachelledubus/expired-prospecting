@@ -3,23 +3,23 @@
 import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
-import { WOW_HUNTER_BIS_LEADS, WOW_HUNTER_BIS_REVIEW_DATE, type HunterBisLead } from "@/lib/wow-hunter-bis";
+import {
+  WOW_HUNTER_BIS_LEADS,WOW_HUNTER_BIS_REVIEW_DATE,WOW_HUNTER_BIS_SLOTS,
+  type HunterBisLead
+} from "@/lib/wow-hunter-bis";
 import { wowExtraField } from "@/lib/wow-portal-extras";
 
 type Props={
-  gameId:string;level:number;prog:GameProgress;
+  gameId:string;level:number;faction:"horde"|"alliance";prog:GameProgress;
   setCheck:(key:string,value:boolean)=>void;
   setField:(key:string,value:string)=>void;
 };
-const note:React.CSSProperties={fontSize:13,lineHeight:1.5,opacity:.86};
-const slotName:Record<HunterBisLead["slot"],string>={
-  ranged:"Ranged weapon",melee:"Melee stat stick",head:"Head",shoulders:"Shoulders",
-  chest:"Chest",hands:"Hands",wrist:"Wrist",legs:"Legs",back:"Cloak",
-  feet:"Boots",ring:"Ring",neck:"Neck",waist:"Belt"
-};
+const hint:React.CSSProperties={fontSize:13,lineHeight:1.55,opacity:.85};
+const title:React.CSSProperties={fontSize:15,fontWeight:700};
 
-export default function WoWHunterBiS({gameId,level,prog,setCheck,setField}:Props){
+export default function WoWHunterBiS({gameId,level,faction,prog,setCheck,setField}:Props){
   const [hideOwned,setHideOwned]=useState(false);
+  const [showFuture,setShowFuture]=useState(true);
   const ownedKey=(x:HunterBisLead)=>x.dungeonId&&x.targetId
     ?dungeonLootOwnedKey(gameId,x.dungeonId,x.targetId):"";
   const owned=(x:HunterBisLead)=>x.dungeonId&&x.targetId
@@ -29,64 +29,97 @@ export default function WoWHunterBiS({gameId,level,prog,setCheck,setField}:Props
     if(x.dungeonId&&x.targetId)setCheck(ownedKey(x),next);
     else setField(wowExtraField(gameId,"bis-owned-"+x.id),next?"yes":"");
   };
-  const sorted=[...WOW_HUNTER_BIS_LEADS].sort((a,b)=>{
-    const aState=a.recommendedLevel>level?1:0,bState=b.recommendedLevel>level?1:0;
-    return aState-bState||Math.abs(a.recommendedLevel-level)-Math.abs(b.recommendedLevel-level)
-      ||(a.slot==="ranged"?-1:b.slot==="ranged"?1:0);
-  });
-  const visible=hideOwned?sorted.filter(x=>!owned(x)):sorted;
+  const factionLeads=WOW_HUNTER_BIS_LEADS.filter(x=>!x.faction||x.faction===faction);
+  const currentSlots=WOW_HUNTER_BIS_SLOTS.filter(([slot])=>
+    factionLeads.some(x=>x.slot===slot&&x.recommendedLevel<=level));
+  const doneSlots=currentSlots.filter(([slot])=>factionLeads
+    .filter(x=>x.slot===slot&&x.recommendedLevel<=level).some(owned));
+  const Item=({item}:{item:HunterBisLead})=>{
+    const has=owned(item);
+    const isReady=level>=item.recommendedLevel;
+    return <div style={{padding:"10px 0",borderBottom:"1px solid var(--border,#ddd)"}}>
+      <div style={{display:"flex",alignItems:"start",justifyContent:"space-between",gap:9,flexWrap:"wrap"}}>
+        <div style={{flex:"1 1 200px",minWidth:0}}>
+          <div style={{fontSize:12,fontWeight:700}}>
+            {item.tier==="leveling-bis-candidate"?"★ Ranked BiS contender":"Practical leveling option"}
+            {" · "}{item.evidence==="game-client"?"Recipe in Forever client":
+              item.evidence==="forever-item"?"Forever item/source":"Classic-source lead; verify"}
+          </div>
+          <b>{item.name}</b>
+          <p style={{...hint,margin:"4px 0"}}><b>Pursue:</b> level {item.recommendedLevel} 
+            {" · "}<b>Equip:</b> level {item.minEquipLevel}
+            {" · "}{has?"Obtained":isReady?"Ready to pursue":"Upcoming"}</p>
+          <p style={{...hint,margin:"4px 0"}}><b>Where:</b> {item.location}</p>
+          <p style={{...hint,margin:"4px 0"}}><b>How:</b> {item.source}</p>
+        </div>
+        <label style={{fontSize:12,display:"inline-flex",gap:6,alignItems:"center"}}>
+          <input type="checkbox" checked={has} onChange={e=>setOwned(item,e.target.checked)}/>
+          I have this
+        </label>
+      </div>
+      <details style={{marginTop:5}}>
+        <summary style={{cursor:"pointer",fontSize:12,fontWeight:600}}>Notes and verification</summary>
+        <p style={{...hint,margin:"6px 0"}}>{item.note}</p>
+      </details>
+      <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>
+        Verify item / acquisition source ↗
+      </a>
+    </div>;
+  };
   return <section className="gm-card" style={{padding:16,marginTop:12}}
-    aria-label="Hunter best-in-slot leveling gear">
-    <div className="gm-panel-label">Hunter gear goals · Beast Mastery · level {level}</div>
-    <h3 style={{margin:"6px 0"}}>★ Leveling BiS contenders and where to get them</h3>
-    <p style={note}><b>BiS contender</b> means a strong leveling candidate, not proven absolute best in slot.
-      This list is not a complete raid/pre-raid BiS chart. Compare your actual game tooltips before replacing an equipped piece.</p>
-    <label style={{display:"inline-flex",alignItems:"center",gap:8,...note,margin:"8px 0 12px"}}>
-      <input type="checkbox" checked={hideOwned} onChange={e=>setHideOwned(e.target.checked)}/>
-      Hide items marked obtained
-    </label>
-    {visible.length===0&&<p style={note}>All currently listed targets are marked obtained. Uncheck the filter to review them.</p>}
+    aria-label="Every Hunter gear slot and BiS candidate">
+    <div className="gm-panel-label">Beast Mastery Hunter · Gear by slot · level {level}</div>
+    <h3 style={{margin:"6px 0"}}>★ BiS and practical upgrades — every equipment slot</h3>
+    <p style={hint}>All <b>{WOW_HUNTER_BIS_SLOTS.length}</b> combat equipment positions are tracked, including two rings and two trinkets.
+      These are <b>leveling contenders</b>, not guaranteed absolute BiS, since some Forever drops are unconfirmed.
+      The current set is researched around level 40; future upgrades appear when documented.</p>
+    <p style={{...hint,fontWeight:650,margin:"8px 0"}}>
+      {doneSlots.length}/{currentSlots.length} current slots have a tracked item marked obtained.
+    </p>
+    <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap",margin:"8px 0 14px"}}>
+      <label style={{...hint,display:"inline-flex",gap:6,alignItems:"center"}}>
+        <input type="checkbox" checked={hideOwned} onChange={e=>setHideOwned(e.target.checked)}/>
+        Hide obtained items
+      </label>
+      <label style={{...hint,display:"inline-flex",gap:6,alignItems:"center"}}>
+        <input type="checkbox" checked={showFuture} onChange={e=>setShowFuture(e.target.checked)}/>
+        Show upcoming upgrades
+      </label>
+    </div>
     <div style={{display:"grid",gap:10}}>
-      {visible.map(item=>{
-        const isReady=level>=item.recommendedLevel;
-        const has=owned(item);
-        return <article key={item.id} style={{padding:12,border:"1px solid var(--border,#ddd)",borderRadius:10}}>
-          <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"start"}}>
-            <div style={{minWidth:0,flex:"1 1 210px"}}>
-              <div style={{fontSize:12,fontWeight:700,marginBottom:5}}>
-                {item.tier==="leveling-bis-candidate"?"★ Leveling BiS contender":"Strong leveling option"}
-                {" · "}{slotName[item.slot]}
-              </div>
-              <strong>{item.name}</strong>
-              <p style={{...note,margin:"5px 0"}}>
-                <b>Recommended to pursue:</b> level {item.recommendedLevel}
-                {" · "}<b>Equip:</b> level {item.minEquipLevel}
-              </p>
-              <p style={{...note,margin:"5px 0"}}>
-                <b>Where:</b> {item.location}
-                {" · "}<b>How:</b> {item.source} ({item.method})
-              </p>
-            </div>
-            <span style={{fontWeight:650,fontSize:12}}>
-              {has?"Obtained":isReady?"Ready to pursue":"At level "+item.recommendedLevel}
-            </span>
+      {WOW_HUNTER_BIS_SLOTS.map(([slot,label])=>{
+        const options=factionLeads.filter(x=>x.slot===slot).sort((a,b)=>a.recommendedLevel-b.recommendedLevel);
+        const now=options.filter(x=>x.recommendedLevel<=level);
+        const future=options.filter(x=>x.recommendedLevel>level);
+        const current=now.length?[now[now.length-1]]:future.length?[future[0]]:[];
+        const allItems=[...current,...(showFuture?future.filter(x=>!current.includes(x)):[])].filter(x=>!hideOwned||!owned(x));
+        const isOffhand=slot==="offhand";
+        return <article key={slot} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"baseline",flexWrap:"wrap"}}>
+            <b style={title}>{label}</b>
+            <span style={{...hint,fontSize:12}}>{now.length?"Level "+now[now.length-1].recommendedLevel+" target":future.length?"Available later":"Not yet verified"}</span>
           </div>
-          <p style={{...note,margin:"6px 0"}}>{item.note}</p>
-          <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:12}}>
-            <label style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:13}}>
-              <input type="checkbox" checked={has} onChange={e=>setOwned(item,e.target.checked)}/>
-              I have this item
-            </label>
-            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:13}}>
-              Check Forever item and source ↗
-            </a>
-          </div>
+          {isOffhand&&<p style={{...hint,margin:"5px 0"}}>
+            A <b>two-handed weapon fills this slot</b>. Only use an off-hand target if you equip one-handed weapons.</p>}
+          {!options.length&&<p style={hint}>No reliable {faction==="horde"?"Horde":"Alliance"} target documented yet. Check the source database before spending gold.</p>}
+          {!!options.length&&!allItems.length&&<p style={hint}>No unowned target to show. Uncheck Hide obtained to review the previous recommendation.</p>}
+          {allItems.map(item=><Item key={item.id} item={item}/>)}
+          {!!now.length&&now.length>1&&<details style={{marginTop:8}}>
+            <summary style={{fontSize:12,cursor:"pointer"}}>Other previous leveling targets ({now.length-1})</summary>
+            {now.slice(0,-1).filter(x=>!hideOwned||!owned(x)).map(item=><Item key={item.id} item={item}/>)}
+          </details>}
         </article>;
       })}
     </div>
-    <p style={{...note,marginTop:12}}>
-      Source review: {WOW_HUNTER_BIS_REVIEW_DATE}. Farming levels are recommendations, not instance entry requirements.
-      Exact BiS varies with specialization, equipped weapon DPS, item stats, and future loot updates.
+    <p style={{...hint,marginTop:12}}>
+      Research reviewed {WOW_HUNTER_BIS_REVIEW_DATE}. Recommended farming levels are planning advice, not entry requirements.
+      Classic-era boss/reputation data must be rechecked in Forever. Cosmetic shirt/tabard slots have no meaningful DPS BiS.
+      This guide cannot compare against your live equipment automatically.
+    </p>
+    <p style={{...hint,marginTop:8}}>
+      <a href="https://theforeverera.com/en/bis/hunter/beast-mastery/40/" target="_blank" rel="noopener noreferrer">
+        View the source-ranked Beast Mastery level-40 slot chart ↗
+      </a>
     </p>
   </section>;
 }
