@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import WoWProfessionRun from "./WoWProfessionRun";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
+import { WOW_HUNTER_BIS_LEADS } from "@/lib/wow-hunter-bis";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
 import { rankMaterialRoutes } from "@/lib/wow-material-route-ranking";
 import { rankLevelSkinning } from "@/lib/wow-level-skinning";
@@ -51,6 +52,16 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const owned = currentMaterial ? formatAmount(prog.fields[wowExtraField(gameId,"stock-"+wowMaterialKey(currentMaterial))]) : null;
   const rankedGear = rankHunterDungeons(level,(d,i)=>!!prog.checks[dungeonLootOwnedKey(gameId,d,i)],faction);
   const nextGear = rankedGear.find(r=>r.band==="current"&&r.gearTargets.length>0);
+  const nextBis=[...WOW_HUNTER_BIS_LEADS].filter(item=>{
+    const has=item.dungeonId&&item.targetId
+      ?!!prog.checks[dungeonLootOwnedKey(gameId,item.dungeonId,item.targetId)]
+      :prog.fields[wowExtraField(gameId,"bis-owned-"+item.id)]==="yes";
+    return !has&&item.recommendedLevel>=Math.max(1,level-12)&&item.recommendedLevel<=level+8;
+  }).sort((a,b)=>{
+    const aReady=a.recommendedLevel<=level?0:1,bReady=b.recommendedLevel<=level?0:1;
+    return aReady-bReady||(a.slot==="ranged"?-1:b.slot==="ranged"?1:0)
+      ||Math.abs(a.recommendedLevel-level)-Math.abs(b.recommendedLevel-level);
+  })[0];
   const safeFarms = WOW_FARMS.filter(r=>r.maxMob<=cutoff).sort((a,b)=>{
     const rate=(farmId:string)=>measureFarm(k=>prog.fields[wowExtraField(gameId,k)],farmId)?.netPerHour??null;
     const ar=rate(a.id),br=rate(b.id);
@@ -78,11 +89,17 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       onOpenProfessions={()=>onOpen("professions")}/>}
     {mode==="gear"&&<div className="gm-wow-session-focus">
       <h4>Current Hunter gear lead</h4>
+      {nextBis&&<div style={{border:"1px solid var(--accent,#659e8b)",borderRadius:9,padding:10,marginBottom:12}}>
+        <b>★ {nextBis.tier==="leveling-bis-candidate"?"Leveling BiS contender":"Strong leveling pick"}: {nextBis.name}</b>
+        <p style={helper}>From {nextBis.source} · {nextBis.location}</p>
+        <p style={helper}>Pursue around level {nextBis.recommendedLevel}; requires level {nextBis.minEquipLevel} to equip.</p>
+        <a href={nextBis.sourceUrl} target="_blank" rel="noopener noreferrer">Check Forever source ↗</a>
+      </div>}
       {nextGear ? <>
         <p><b>{nextGear.dungeon.name}</b> · {nextGear.dungeon.region}</p>
         <p style={helper}>{nextGear.gearTargets.slice(0,2).map(r=>r.name).join(" · ")} are unmarked targets in your guide—not verified upgrades over your equipment.</p>
       </>:<p style={helper}>No documented unmarked Hunter target in your current dungeon range. Look at upcoming dungeons or your equipment comparison.</p>}
-      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gear")}>Open dungeon and equipment guides</button>
+      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gear")}>Open BiS targets, dungeon and equipment guides</button>
     </div>}
     {mode==="leveling"&&<p style={helper}>Use the leveling objective below. You can still maintain a material target here for later.</p>}
     {mode==="skin-xp"&&<div className="gm-wow-session-focus" aria-label="XP and Skinning leveling routes">
