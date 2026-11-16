@@ -53,6 +53,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
   const rankedGear = rankHunterDungeons(level,(d,i)=>!!prog.checks[dungeonLootOwnedKey(gameId,d,i)],faction);
   const nextGear = rankedGear.find(r=>r.band==="current"&&r.gearTargets.length>0);
   const nextBis=[...WOW_HUNTER_BIS_LEADS].filter(item=>{
+    if(item.faction&&item.faction!==faction)return false;
     const has=item.dungeonId&&item.targetId
       ?!!prog.checks[dungeonLootOwnedKey(gameId,item.dungeonId,item.targetId)]
       :prog.fields[wowExtraField(gameId,"bis-owned-"+item.id)]==="yes";
