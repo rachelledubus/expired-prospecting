@@ -17,6 +17,16 @@ export type HunterBisLead={
   faction?:"horde"|"alliance";
   note:string;
 };
+/** Equipment layout is fixed; two-handed weapons use main hand and occupy off hand. */
+export const WOW_HUNTER_BIS_SLOTS=[
+  ["head","Head"],["neck","Neck"],["shoulders","Shoulders"],["back","Back / Cloak"],
+  ["chest","Chest"],["wrist","Wrists"],["hands","Hands"],["waist","Waist"],
+  ["legs","Legs"],["feet","Feet"],["ring","Ring 1"],["ring2","Ring 2"],
+  ["trinket1","Trinket 1"],["trinket2","Trinket 2"],
+  ["melee","Main hand / Two-handed"],["offhand","Off-hand (when dual wielding)"],
+  ["ranged","Ranged weapon"]
+] as const;
+
 export const WOW_HUNTER_BIS_REVIEW_DATE="2026-11-16";
 export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
   {
@@ -145,7 +155,7 @@ export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
     source:"Greater Friend of the Library (25 library books)",
     location:"Horde: Owen Thadd, Magic Quarter, Undercity / Alliance: Garion Wendell, Mage Tower, Stormwind",
     sourceUrl:"https://www.wowhead.com/forever/item=277254/truthseekers-bow",
-    tier:"leveling-bis-candidate",method:"quest",
+    tier:"leveling-bis-candidate",evidence:"forever-item",method:"quest",
     note:"Choose the bow as the 25-book quest reward. The quest and item levels differ; bow requires level 40 to equip. Do not replace a better equipped weapon without checking tooltip DPS."
   },
   {
@@ -153,7 +163,7 @@ export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
     minEquipLevel:42,recommendedLevel:44,
     source:"Galgann Firehammer",location:"Uldaman, Badlands",
     sourceUrl:"https://www.wowhead.com/forever/item=9412/galganns-fireblaster",
-    tier:"leveling-bis-candidate",method:"dungeon boss",dungeonId:"uldaman",targetId:"galganns-fireblaster",
+    tier:"leveling-bis-candidate",evidence:"forever-item",method:"dungeon boss",dungeonId:"uldaman",targetId:"galganns-fireblaster",
     note:"Level 42 to equip; around level 44 is a group-run planning recommendation, not a dungeon requirement. Compare against Truthseeker's Bow before farming."
   },
   {
@@ -161,7 +171,7 @@ export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
     minEquipLevel:37,recommendedLevel:40,
     source:"Glutton",location:"Razorfen Downs, Southern Barrens",
     sourceUrl:"https://www.wowhead.com/forever/item=10774/fleshhide-shoulders",
-    tier:"strong-leveling-option",method:"dungeon boss",dungeonId:"razorfen-downs",targetId:"fleshhide-shoulders",
+    tier:"strong-leveling-option",evidence:"forever-item",method:"dungeon boss",dungeonId:"razorfen-downs",targetId:"fleshhide-shoulders",
     note:"Confirmed Forever dungeon-journal boss source; leather shoulder option while leveling. Actual BiS depends on your equipped stats."
   },
   {
@@ -169,7 +179,7 @@ export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
     minEquipLevel:42,recommendedLevel:44,
     source:"Grimlok",location:"Uldaman, Badlands",
     sourceUrl:"https://www.wowhead.com/forever/item=9414/oilskin-leggings",
-    tier:"strong-leveling-option",method:"dungeon boss",dungeonId:"uldaman",targetId:"oilskin-leggings",
+    tier:"strong-leveling-option",evidence:"forever-item",method:"dungeon boss",dungeonId:"uldaman",targetId:"oilskin-leggings",
     note:"Forever tooltip reports +18 Agility. Level 42 to equip; recommended group run about level 44."
   },
   {
@@ -177,7 +187,7 @@ export const WOW_HUNTER_BIS_LEADS:readonly HunterBisLead[]=[
     minEquipLevel:48,recommendedLevel:49,
     source:"Tinkerer Gizlock",location:"Maraudon, Desolace",
     sourceUrl:"https://www.wowhead.com/forever/item=17717/megashot-rifle",
-    tier:"leveling-bis-candidate",method:"dungeon boss",dungeonId:"maraudon",targetId:"megashot-rifle",
+    tier:"leveling-bis-candidate",evidence:"forever-item",method:"dungeon boss",dungeonId:"maraudon",targetId:"megashot-rifle",
     note:"Level 48 to equip. A later ranged weapon option, not an upgrade guaranteed over a quest bow in your bags."
   }
 ] as const;
