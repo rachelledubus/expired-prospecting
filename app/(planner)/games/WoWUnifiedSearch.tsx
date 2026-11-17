@@ -33,6 +33,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
  const steps=q?game.stages.flatMap(s=>s.steps.filter(t=>(t.title+" "+t.how+" "+s.place+" "+s.title).toLowerCase().includes(q))
   .map(t=>({title:t.title,detail:s.place+" · "+t.how,id:s.id+"-"+t.id}))).slice(0,12):[];
  const recipes=q?WOW_RECIPES.filter(r=>!prog.checks[recipeLearnedKey(game.id,r.id)]&&
+    !prog.checks[recipeHiddenKey(game.id,r.id)]&&
    (r.name+" "+r.profession+" "+r.reagents.map(m=>m.name).join(" ")+" "+r.sourceLocations.map(l=>l.area+" "+l.zone+" "+l.npc).join(" ")).toLowerCase().includes(q)).slice(0,20):[];
  const materials=q?ALL_RECIPE_MATERIALS.filter(name=>name.toLowerCase().includes(q)).slice(0,20):[];
  const gear=q?WOW_HUNTER_DUNGEONS.flatMap(d=>d.loot.filter(t=>(d.name+" "+t.name+" "+t.from+" "+t.slot).toLowerCase().includes(q)).map(t=>({id:d.id+"-"+t.id,title:t.name,detail:d.name+" · "+t.from+" · level "+t.requiredLevel}))).slice(0,12):[];
@@ -74,7 +75,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     </a>
     <span style={small}>Works even when your portal has no matching item or verified source.</span>
   </div>}
-  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Learned recipes remain in Recommended Next rather than showing in these general search results.</p>:
+  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Learned and hidden recipes are excluded from general search. Review your saved recipes in Professions.</p>:
    <><p style={small}>{total} results displayed · sections are capped for readability.</p>
     {groups.map(g=>g.entries.length?<section key={g.name} style={{marginTop:14}}>
       <h4 style={{margin:"0 0 5px"}}>{g.name} ({g.entries.length})</h4>
