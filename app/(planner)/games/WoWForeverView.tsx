@@ -51,6 +51,14 @@ const ZONE_ROUTES = [
   {min:50,max:59,alliance:"Un'Goro Crater / Felwood / Burning Steppes / Western & Eastern Plaguelands / Winterspring",horde:"Un'Goro Crater / Felwood / Burning Steppes / Western & Eastern Plaguelands / Winterspring",dungeons:"Sunken Temple (50–60); Blackrock Depths (52–60); Blackmaw Hold (55–60); Lower Blackrock Spire (55–60)",tip:"Replace outdated ammunition and weapon; get ready for level-60 activities."},
   {min:60,max:60,alliance:"Finish chosen stories, endgame dungeons or Mount Hyjal content",horde:"Finish chosen stories, endgame dungeons or Mount Hyjal content",dungeons:"Scholomance, Stratholme, Dire Maul, Upper Blackrock Spire, Shaper's Terrace",tip:"The leveling build is a starting point; consult the current patch for high-end content."}
 ];
+function ZoneRouteCard({z,faction,isCurrent}:{z:(typeof ZONE_ROUTES)[number];faction:string;isCurrent:boolean}) {
+  return <div className="gm-card" style={{...card,border:isCurrent?"2px solid var(--accent,#659e8b)":undefined}}>
+    <div className="gm-panel-label">Levels {z.min}–{z.max}{isCurrent?" · YOUR CURRENT BRACKET":""}</div>
+    <h3 style={{margin:"7px 0"}}>{faction==="horde"?"Horde":"Alliance"} questing route</h3>
+    <p style={note}><b>Go to:</b> {faction==="horde"?z.horde:z.alliance}</p>
+    <p className="gm-note">{z.tip}</p>
+  </div>;
+}
 function Counter({done,total}:{done:number;total:number}) {
   return <div style={{margin:"10px 0 15px"}}>
     <div className="gm-note">{done}/{total} finished · {total ? Math.round(done/total*100) : 0}%</div>
@@ -136,7 +144,6 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
     [...game.stages].reverse().find(s=>currentLevel>=s.from) ?? game.stages[0];
   const stageNow=stageAtLevel.steps.some(s=>!done(stageAtLevel,s))
     ? stageAtLevel : game.stages.find(s=>s.from>stageAtLevel.to && s.steps.some(t=>!done(s,t))) ?? stageAtLevel;
-  const nextUnfinished=stageNow.steps.find(s=>!done(stageNow,s));
   const talentsAvailable=WOW_TALENT_PATH.filter(t=>t.level<=currentLevel);
   const nextTalent=WOW_TALENT_PATH.find(t=>t.level>currentLevel);
   return <div className="gm-wow-guide" style={{marginTop:14}}>
@@ -158,10 +165,6 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
             <select value={faction} onChange={e=>setField(F(game.id,"faction"),e.target.value)} aria-label="Skyborne faction">
               <option value="horde">Horde · Windshaper</option><option value="alliance">Alliance · High Order</option>
             </select>
-          </label>
-          <label>My pet's name (optional)
-            <input type="text" maxLength={70} value={prog.fields[F(game.id,"pet-name")]||""}
-              placeholder="My companion" onChange={e=>setField(F(game.id,"pet-name"),e.target.value)}/>
           </label>
         </div>
         <p className="gm-note" style={note}>Your next objective is based on character level. Checkboxes save with the other Games trackers.</p>
@@ -207,24 +210,10 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         mode={playMode==="professions"||playMode==="gear"||playMode==="leveling"||playMode==="skin-xp"?playMode:"gold"}
         onOpen={openView} onFindMaterial={openMaterial}/>
       {playMode==="leveling"&&<>
-        <div className="gm-card" style={card}>
-          <div className="gm-panel-label">Your next move · level {currentLevel}</div>
-          <h3 style={{margin:"7px 0"}}>{nextUnfinished?nextUnfinished.title:"Chapter finished!"}</h3>
-          <p className="gm-note" style={note}>{nextUnfinished?nextUnfinished.how:"Review your roadmap to check missed goals."}</p>
-          <p className="gm-note">Recommended chapter: <strong>{stageNow.title}</strong></p>
-          {currentLevel>=10&&<p className="gm-note">Your current keys: Mouse 4 = Auto Shot · wheel up = pet attacks the tank's target (when configured) · wheel down = recall · R = Feign Death. Your editable combat setup is in Combat &amp; Keys.</p>}
-        </div>
         <StageTasks game={game} stage={stageNow} prog={prog} setCheck={setCheck} focused/>
         <SmallInfo title={"Where to quest next · level "+currentLevel}>
           <p><b>Suggested areas:</b> {faction==="horde"?zoneAtLevel.horde:zoneAtLevel.alliance}</p>
           <p style={{marginBottom:0}}>{zoneAtLevel.tip}</p>
-        </SmallInfo>
-        <SmallInfo title="Simple fight routine">
-          <ol style={{paddingLeft:20,margin:"6px 0"}}>
-            <li>Allow your tank or pet to establish threat, then attack the same target.</li>
-            <li>Start Auto Shot with your current Mouse 4 binding; use your numbered shots as needed.</li>
-            <li>Recall your pet with wheel down before shortcuts. R is your Feign Death key.</li>
-          </ol>
         </SmallInfo>
       </>}
     </>}
@@ -250,13 +239,19 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         These are flexible areas, not a strict quest-by-quest rail. Choose a nearby zone with quests around your level; if your Paladin partner is there, play together. Dungeon level bands are approximate and may be adjusted in patches.
       </SmallInfo>
       <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField}/>
-      {ZONE_ROUTES.map(z=><div key={z.min} className="gm-card" style={{...card,border:z===zoneAtLevel?"2px solid var(--accent,#659e8b)":undefined}}>
-        <div className="gm-panel-label">Levels {z.min}–{z.max}{z===zoneAtLevel?" · YOUR CURRENT BRACKET":""}</div>
-        <h3 style={{margin:"7px 0"}}>{faction==="horde"?"Horde":"Alliance"} questing route</h3>
-        <p style={note}><b>Go to:</b> {faction==="horde"?z.horde:z.alliance}</p>
-        <p style={note}><b>Other bracket dungeon options (not gear-ranked):</b> {z.dungeons}</p>
-        <p className="gm-note">{z.tip}</p>
-      </div>)}
+      <details className="gm-card" style={card}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Dungeon run checklist · optional</summary>
+        <p><b>Before:</b> Repair, restock ammunition and pet food, and turn Growl off if another player tanks.</p>
+        <p><b>During:</b> Assist the tank, avoid accidental Multi-Shot pulls and recall pets before shortcuts.</p>
+        <p><b>Control:</b> Use traps deliberately; Forever traps share a cooldown.</p>
+      </details>
+      <ZoneRouteCard z={zoneAtLevel} faction={faction} isCurrent />
+      <details className="gm-card" style={card}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Other level ranges · early game and upcoming</summary>
+        <div style={{display:"grid",gap:8,marginTop:12}}>
+          {ZONE_ROUTES.filter(z=>z!==zoneAtLevel).map(z=><ZoneRouteCard key={z.min} z={z} faction={faction} isCurrent={false}/>) }
+        </div>
+      </details>
       <SmallInfo title="Simple travel rules">
         Pick up flight paths, bind your Hearthstone at a useful hub, combine quests in the same subzone, and skip dangerous elite quests until your partner or a group is available. A dungeon is optional, not a mandatory step.
       </SmallInfo>
@@ -292,24 +287,26 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
 
     {view==="combat" && <>
       <WoWCombatControls gameId={game.id} prog={prog} setField={setField}/>
-      <SmallInfo title="Hunter combat reminders">
-        <p><b>With a Paladin tank:</b> Assist his target; disable pet Growl and recall before shortcuts.</p>
-        <p><b>Solo:</b> Let your pet establish threat, keep Auto Shot running and Mend Pet early.</p>
+      <SmallInfo title="Quick combat reference">
+        <p><b>With a Paladin tank:</b> Let the tank establish threat, assist his target, turn Growl OFF and recall before shortcuts.</p>
+        <p><b>Solo:</b> Let your pet establish threat with Growl ON, keep Auto Shot running and Mend Pet early.</p>
+        <p><b>Current keys:</b> Mouse 4 = Auto Shot; wheel up = pet attack; wheel down = recall; R = Feign Death. Edit these in the keybind tracker above if your setup changes.</p>
         <p><b>When threatened:</b> Intimidation, traps, Wing Clip, and Feign Death are situational controls. Test Forever-specific macro commands in a safe place.</p>
       </SmallInfo>
     </>}
 
     {view==="pets" && <>
       <WoWPetTracker gameId={game.id} prog={prog} setField={setField}/>
-      <SmallInfo title="First pet: get one at level 10">
+      <details className="gm-card" style={card} open={currentLevel<15}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Earlier training · First pet at level 10</summary>
         <ol style={{paddingLeft:20,margin:0}}>
           <li>Speak to a Hunter trainer and finish the Tame Beast class quest.</li>
           <li>Tame a nearby useful pet first; don't delay leveling to camp a rare spawn.</li>
           <li>Keep it fed, monitor happiness, and learn Mend Pet / Revive Pet.</li>
           <li>Train Growl and appropriate Claw or Bite ranks; recheck skill ranks as you level.</li>
-          <li>Configure wheel up as your tested tank-target pet attack, wheel down to recall, Mouse 4 to Auto Shot, and your numbered shots in Combat & Keys.</li>
+          <li>See Combat &amp; Macros for your current keybindings.</li>
         </ol>
-      </SmallInfo>
+      </details>
       <SmallInfo title="Which pet should I use?">
         <p><b>Cat — recommended damage pet:</b> Good damage while you attack from range. The Starving Mountain Lion in Hillsbrad Foothills is a documented fast-attack option. The Rake in Mulgore is a rare alternative, not necessary for success.</p>
         <p><b>Durable pet — comfort option:</b> If your cat keeps dying while soloing, prioritize a sturdier available family and your pet's training rather than chasing theoretical best DPS.</p>
@@ -325,7 +322,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </>}
 
-    {view==="skyborne" && <>
+    {view==="skyborne" && <details className="gm-card" style={card} open={currentLevel<15}>
+      <summary style={{cursor:"pointer",fontWeight:700}}>Skyborne heritage and early-game travel reference</summary>
       <SmallInfo title={faction==="horde"?"Horde · Windshaper racials":"Alliance · High Order racials"}>
         <p><b>Walk on Air:</b> Glide downward for a short time; handy for cliffs and shortcuts. Practice without taking unnecessary falls.</p>
         {faction==="horde" ?
@@ -344,7 +342,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
         <p><b>Exit:</b> Horde west dock to Mulgore/Thunder Bluff; Alliance east dock to Dalaran. Follow the quest What Comes Next and the corresponding ship quest.</p>
         <p>The linked Zephras Isle directory in Find anything has individual quest names, hubs and step requirements for side quests.</p>
       </SmallInfo>
-    </>}
+    </details>}
 
     {view==="professions" && <WoWProfessions key={searchTarget||"profession-default"} gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget} onFindMaterial={openMaterial}/>}
     {view==="materials" && <WoWMaterialFarming key={materialTarget} gameId={game.id} level={currentLevel}
@@ -353,9 +351,17 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
 
     {view==="gear" && <>
       <WoWHunterBiS gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField}/>
-      <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField} highlight={searchTarget}/>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} highlight={searchTarget}/>
-      <SmallInfo title="Simple leveling gear priorities">
+      <details className="gm-card" style={card}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Advanced · Compare equipment stats (optional)</summary>
+        <WoWEquipmentTracker gameId={game.id} level={currentLevel} prog={prog} setField={setField} highlight={searchTarget}/>
+      </details>
+      <div className="gm-card" style={card}>
+        <h3 style={{margin:"0 0 8px"}}>Where should I farm gear?</h3>
+        <p className="gm-note">Dungeon rankings, loot, profession drops, and entrances are centralized under World &amp; Dungeons.</p>
+        <button type="button" className="gm-pill" onClick={()=>openView("zones")}>Open dungeon planner</button>
+      </div>
+      <details className="gm-card" style={card}>
+        <summary style={{cursor:"pointer",fontWeight:700}}>Optional · Gear priorities and supplies</summary>
         <ol style={{paddingLeft:20,margin:0}}>
           <li><b>Ranged weapon damage:</b> Check upgrades often; a better bow/gun/crossbow greatly affects Auto Shot.</li>
           <li><b>Ammunition + quiver/pouch:</b> Refill and upgrade; don't head out with an empty bag.</li>
@@ -363,21 +369,8 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           <li><b>Survivability:</b> Stamina can be valuable when you're undergeared or playing solo.</li>
           <li><b>Pet performance:</b> Keep pet skills current because the pet inherits some Hunter stats in Forever.</li>
         </ol>
-      </SmallInfo>
-      <SmallInfo title="Professions and supplies">
-        <p><b>Skinning + Leatherworking:</b> Excellent if you want to craft/use leather gear, quivers and ammo pouches.</p>
-        <p><b>Skinning + gathering:</b> Lower effort, useful for gold while questing.</p>
-        <p><b>Always pack:</b> Pet food, your food/water, ammunition, and a few health/mana potions if available.</p>
-      </SmallInfo>
-      <SmallInfo title="Dungeon checklist">
-        <p><b>Before:</b> Repair gear, restock ammunition, check your pet is summoned and fed, and <b>turn OFF Growl</b> when a player is tanking.</p>
-        <p><b>During:</b> Attack the marked or tanked target, send your pet only where the group is fighting, and recall it before shortcuts. Keep Auto Shot running and use Multi-Shot only when extra enemies are safe to hit.</p>
-        <p><b>Control:</b> Frost/Freezing Trap for dangerous packs. In Forever all traps share a cooldown, so choose intentionally.</p>
-        <p><b>Your Paladin duo:</b> If they pull and hold threat, follow them rather than initiating extra packs. Use pet damage, Serpent Sting on durable targets, and Mend Pet as needed.</p>
-      </SmallInfo>
-      <SmallInfo title="Level 60: choose your goal">
-        The included 31/20/0 build is for leveling. At endgame, compare current dungeon and raid builds before changing talents; balance and best-in-slot lists may shift as Forever updates.
-      </SmallInfo>
+        <p><b>Always pack:</b> Pet food, food/water, ammunition, and a few health/mana potions if available.</p>
+      </details>
     </>}
 
     {view==="lookup" && <>
