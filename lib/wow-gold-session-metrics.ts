@@ -21,13 +21,13 @@ export function measureFarm(
       sessions.push({gold,minutes,expenses});
     }
   }
-  // Backward compatibility: previous portal stored one gross-income session.
-  if(sessions.length===0){
-    const gold=parse(read(base+"gold"));
-    const minutes=parse(read(base+"minutes"));
-    if(gold===null||minutes===null||minutes<=0)return null;
-    sessions.push({gold,minutes,expenses:0});
+  // Preserve and include the earlier saved session alongside the newer logs.
+  const savedGold=parse(read(base+"gold"));
+  const savedMinutes=parse(read(base+"minutes"));
+  if(savedGold!==null&&savedMinutes!==null&&savedMinutes>0){
+    sessions.push({gold:savedGold,minutes:savedMinutes,expenses:0});
   }
+  if(sessions.length===0)return null;
   const totalGold=sessions.reduce((n,x)=>n+x.gold,0);
   const expenses=sessions.reduce((n,x)=>n+x.expenses,0);
   const minutes=sessions.reduce((n,x)=>n+x.minutes,0);
