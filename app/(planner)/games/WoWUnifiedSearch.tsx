@@ -7,7 +7,7 @@ import { WOW_FARMS } from "@/lib/wow-portal-extras";
 import { WOW_FOREVER_PET_FAMILIES } from "@/lib/wow-forever-pet-families";
 import { ALL_RECIPE_MATERIALS, materialRoutes, externalMaterialLookup } from "@/lib/wow-material-farms";
 import type { WowGame } from "@/lib/wow-forever-data";
-type Destination="roadmap"|"professions"|"gear"|"gold"|"materials"|"pets"|"combat";
+type Destination="roadmap"|"professions"|"zones"|"gold"|"materials"|"pets"|"combat";
 type Props={game:WowGame;prog:GameProgress;query:string;onQuery:(v:string)=>void;onOpen:(v:Destination,term:string)=>void};
 const small:React.CSSProperties={fontSize:13,opacity:.86,lineHeight:1.5};
 const abilities=[
@@ -50,8 +50,8 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
   {name:"Materials and where to farm them",destination:"materials",entries:materials.map(name=>({
     id:name,title:name,detail:materialRoutes(name).length+" mapped farming leads · open to inspect locations"
   }))},
-  {name:"Dungeon Hunter gear",destination:"gear",entries:gear},
-  {name:"Dungeon profession drops",destination:"gear",entries:dungeonProfessions.map(item=>({
+  {name:"Dungeon Hunter gear",destination:"zones",entries:gear},
+  {name:"Dungeon profession drops",destination:"zones",entries:dungeonProfessions.map(item=>({
     id:item.id,title:item.itemName,
     detail:(WOW_HUNTER_DUNGEONS.find(d=>d.id===item.dungeonId)?.name||"Dungeon")+" · "+item.source+" · "+item.professions.join(", ")
   }))},
@@ -82,7 +82,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
       {g.entries.map(x=><div key={x.id} style={{borderBottom:"1px solid var(--border,#ddd)",padding:"7px 0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
          <strong style={{fontSize:14}}>{x.title}</strong>
-         <button type="button" className="gm-pill" onClick={()=>onOpen(g.destination,x.title)}>Open {g.destination}</button>
+         <button type="button" className="gm-pill" onClick={()=>onOpen(g.destination,x.title)}>Open {g.destination==="zones"?"dungeon":g.destination}</button>
         </div>
         <p style={{...small,margin:"3px 0"}}>{x.detail}</p>
       </div>)}
