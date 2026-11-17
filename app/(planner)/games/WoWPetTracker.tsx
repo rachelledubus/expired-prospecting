@@ -83,13 +83,19 @@ export default function WoWPetTracker({gameId,prog,setField}:Props){
     </div>
   </details>
   <details style={{marginTop:12}}>
+   <summary style={{cursor:"pointer",fontWeight:700}}>Pet troubleshooting · Common problems</summary>
+   <p style={hint}><b>Pet dies quickly:</b> Improve its training, use Mend Pet sooner, and pull smaller groups or choose a sturdier family.</p>
+   <p style={hint}><b>Pet returns after every kill:</b> Check stance, target selection, and whether the next enemy has been ordered. A macro cannot guarantee continuous combat.</p>
+   <p style={hint}><b>Pet does not attack:</b> Check its happiness, ability ranks, Focus, and whether it has a reachable target.</p>
+  </details>
+  <details style={{marginTop:12}}>
    <summary style={{cursor:"pointer",fontWeight:700}}>Pet won't hold several enemies?</summary>
    <ol style={{...hint,paddingLeft:22}}>
     <li>Confirm Growl is trained to the highest usable rank and enabled for <b>solo</b> play.</li>
     <li>Consider an appropriate Screech-capable pet if available in Forever; verify its ability rank.</li>
     <li>Pull small packs, let the pet establish threat before Multi-Shot, and use Mend Pet early.</li>
-    <li>In a dungeon with your Paladin tank: Growl <b>OFF</b>, assist his target, and avoid pulling extra packs.</li>
-    <li>If the pet returns after each kill, verify its stance and whether the next enemy is being targeted; macros cannot force permanent combat when no hostile target remains.</li>
+    <li>In a player-tanked dungeon, switch Growl <b>OFF</b>; see Combat &amp; Macros for your group routine.</li>
+    <li>For retargeting or returning pets, use the troubleshooting section above.</li>
    </ol>
    <p style={hint}>A pet distraction macro cannot guarantee the pet stays behind or holds all enemy aggro while you escape.</p>
   </details>
