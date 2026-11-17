@@ -238,7 +238,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <SmallInfo title="Suggested zone route · choose by your actual level">
         These are flexible areas, not a strict quest-by-quest rail. Choose a nearby zone with quests around your level; if your Paladin partner is there, play together. Dungeon level bands are approximate and may be adjusted in patches.
       </SmallInfo>
-      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField}/>
+      <WoWHunterDungeons gameId={game.id} level={currentLevel} faction={faction==="alliance"?"alliance":"horde"} prog={prog} setCheck={setCheck} setField={setField} highlight={searchTarget}/>
       <details className="gm-card" style={card}>
         <summary style={{cursor:"pointer",fontWeight:700}}>Dungeon run checklist · optional</summary>
         <p><b>Before:</b> Repair, restock ammunition and pet food, and turn Growl off if another player tanks.</p>
@@ -290,7 +290,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       <SmallInfo title="Quick combat reference">
         <p><b>With a Paladin tank:</b> Let the tank establish threat, assist his target, turn Growl OFF and recall before shortcuts.</p>
         <p><b>Solo:</b> Let your pet establish threat with Growl ON, keep Auto Shot running and Mend Pet early.</p>
-        <p><b>Current keys:</b> Mouse 4 = Auto Shot; wheel up = pet attack; wheel down = recall; R = Feign Death. Edit these in the keybind tracker above if your setup changes.</p>
+        <p><b>Your current keys and macros:</b> Use the editable bindings above as the source of truth; the quick reference does not assume your default bindings are unchanged.</p>
         <p><b>When threatened:</b> Intimidation, traps, Wing Clip, and Feign Death are situational controls. Test Forever-specific macro commands in a safe place.</p>
       </SmallInfo>
     </>}
