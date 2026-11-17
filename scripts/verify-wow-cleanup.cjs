@@ -24,6 +24,13 @@ assert.ok(pets.includes("WOW_FOREVER_PET_FAMILIES")&&search.includes("WOW_FOREVE
 assert.ok(!pets.includes("WOW_PET_FAMILIES"),"Do not render the redundant legacy pet directory");
 for(const name of ["last-view","pet-","stock-","price-","source-area-","source-note-","farm-","macro-"])
   assert.ok(data.includes(name),"Keep saved data keys compatible: "+name);
-assert.ok(farm.includes("Existing single-run entry"),"Legacy gold sessions must remain editable");
-assert.ok(farm.includes("Log farming sessions"),"New gold session logger missing");
-console.log("WoW cleanup regression passed: six groups, one pet catalog, old progress supported");
+assert.ok(farm.includes("Earlier saved session")&&farm.includes("Log farming sessions"),"One consolidated log must preserve older gold sessions");
+assert.equal((view.match(/<WoWHunterDungeons /g)||[]).length,1,"Render the full dungeon planner only once");
+assert.ok(!view.includes('F(game.id,"pet-name")'),"Keep pet identity in the roster only");
+assert.ok(view.includes("Advanced · Compare equipment stats"),"Keep manual gear comparison optional");
+assert.ok(view.includes("Other level ranges · early game and upcoming"),"Archive noncurrent leveling brackets");
+assert.ok(search.includes('!prog.checks[recipeHiddenKey(game.id,r.id)]'),"Global search must exclude hidden recipes");
+const play=read("app/(planner)/games/WoWPlaySession.tsx");
+assert.ok(play.includes('{mode==="gold"&&<details'),"Detailed material lookup should be optional in gold mode");
+assert.ok(!play.includes('mode!=="skin-xp"'),"Do not repeat material search for unrelated play goals");
+console.log("WoW cleanup regression passed: six groups, one dungeon planner, consolidated saves and search filtering");

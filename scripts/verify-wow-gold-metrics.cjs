@@ -21,10 +21,10 @@ const history=metric({
  "farm-wc-run-2-gold":"20","farm-wc-run-2-minutes":"60","farm-wc-run-2-expenses":"2",
  "farm-wc-run-3-gold":"17","farm-wc-run-3-minutes":"0"
 });
-assert.equal(history.runs,2,"Incomplete/invalid sessions must be ignored");
-assert.equal(history.minutes,90);
-assert.equal(history.netGold,30);
-assert.equal(history.netPerHour,20);
+assert.equal(history.runs,3,"Earlier valid sessions remain counted; incomplete runs are ignored");
+assert.equal(history.minutes,100);
+assert.equal(history.netGold,130);
+assert.equal(history.netPerHour,78);
 assert.equal(metric({"farm-wc-run-1-gold":"5","farm-wc-run-1-minutes":"20","farm-wc-run-1-expenses":"10"}).netPerHour,-15);
 assert.equal(metric({"farm-wc-run-1-gold":"5","farm-wc-run-1-minutes":"not-a-number"}),null);
 console.log("WoW gold metrics regression passed");

@@ -35,7 +35,7 @@ const formatAmount = (value: string | undefined) =>
 
 export default function WoWPlaySession({ gameId, prog, level, faction, mode, setField, onOpen, onFindMaterial }: Props) {
   const activeKey = wowExtraField(gameId, "session-material");
-  const savedMaterial = prog.fields[activeKey] ?? "Moss Agate";
+  const savedMaterial = prog.fields[activeKey] ?? "";
   const [draft, setDraft] = useState(savedMaterial);
   const [copyStatus, setCopyStatus] = useState("");
   const currentMaterial = savedMaterial.trim();
@@ -102,7 +102,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       </>:<p style={helper}>No documented unmarked Hunter target in your current dungeon range. Look at upcoming dungeons or your equipment comparison.</p>}
       <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gear")}>Open BiS targets, dungeon and equipment guides</button>
     </div>}
-    {mode==="leveling"&&<p style={helper}>Use the leveling objective below. You can still maintain a material target here for later.</p>}
+    {mode==="leveling"&&<p style={helper}>Your next leveling milestone and recommended area are displayed below.</p>}
     {mode==="skin-xp"&&<div className="gm-wow-session-focus" aria-label="XP and Skinning leveling routes">
       <h4>Level up while skinning</h4>
       <p style={helper}>Choose outdoor skinnable creatures near level {level}. Avoid gray enemies when your goal is kill XP. Loot every corpse before skinning; leather and Skinning skill-ups aren't guaranteed.</p>
@@ -127,8 +127,19 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <a href="https://www.wowhead.com/forever/search?q=skinning" target="_blank" rel="noopener noreferrer">Research more skinning sources on Wowhead Forever ↗</a>
     </div>}
 
-    {mode!=="skin-xp"&&<div className="gm-wow-session-focus">
-      <h4>{mode==="gold"?"Find a valuable material":mode==="professions"?"Other material to find":"Optional material to find"}</h4>
+    {mode==="gold"&&<div className="gm-wow-session-focus">
+      <h4>Recommended gold farm without XP</h4>
+      {nextGold ? <>
+        <p><b>{nextGold.name}</b> · {nextGold.zone}</p>
+        <p style={helper}>Approx. mobs {nextGold.minMob}–{nextGold.maxMob}. {nextGold.note}</p>
+        {nextGold.waypoint&&<div className="gm-wow-session-waypoint">
+          <code>{nextGold.waypoint}</code><button className="gm-pill" type="button" onClick={()=>copy(nextGold.waypoint!)}>Copy waypoint</button>
+        </div>}
+      </>:<p style={helper}>No curated farm is entirely in the estimated gray range. Check mob colors in game before farming.</p>}
+      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gold")}>Compare all gold farms</button>
+    </div>}
+    {mode==="gold"&&<details className="gm-wow-session-focus">
+      <summary style={{cursor:"pointer",fontWeight:700}}>Optional · Look up a specific crafting material</summary>
       <div className="gm-wow-session-entry">
         <label>Search or enter any item
           <input style={input} list="wow-session-material-list" value={draft}
@@ -140,7 +151,7 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
         <button className="gm-pill" type="button" disabled={!draft.trim()||draft.trim()===savedMaterial}
           onClick={()=>{setField(activeKey,draft.trim());setCopyStatus("");}}>Set focus</button>
       </div>
-      <p style={helper}><b>Current focus:</b> {currentMaterial||"None"}{owned===null?" · Inventory not recorded":" · Have "+owned}{!materialIsKnown?" · Outside your recipe catalog":""}</p>
+      <p style={helper}><b>Current focus:</b> {currentMaterial||"None chosen"}{owned===null?"":" · Have "+owned}{!materialIsKnown?" · Outside your recipe catalog":""}</p>
       {bestSource ? <>
         <p style={{margin:"7px 0 4px"}}><b>{bestSource.target}</b> · {bestSource.zone}</p>
         <p style={helper}>{bestSource.advice}</p>
@@ -164,24 +175,11 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <div className="gm-wow-session-actions">
         <button className="gm-pill ghost" type="button" disabled={!currentMaterial} onClick={()=>onFindMaterial(currentMaterial)}>See all farming routes</button>
         <a className="gm-pill gm-wowhead-search" target="_blank" rel="noopener noreferrer"
-          href={foreverItemUrl||externalMaterialLookup(currentMaterial||draft.trim()||"Moss Agate")}>
+          href={foreverItemUrl||externalMaterialLookup(currentMaterial||draft.trim()||"leather")}>
           {foreverItemUrl?"Open exact Wowhead Forever item ↗":"Search Wowhead Forever ↗"}
         </a>
       </div>
-    </div>}
-    {mode==="gold"&&<details className="gm-wow-session-focus">
-      <summary style={{cursor:"pointer",fontWeight:700}}>Alternative: farm raw gold or leather</summary>
-      {nextGold ? <>
-        <p><b>{nextGold.name}</b> · {nextGold.zone}</p>
-        <p style={helper}>Approx. mobs {nextGold.minMob}–{nextGold.maxMob}. {nextGold.note}</p>
-        {nextGold.waypoint&&<div className="gm-wow-session-waypoint">
-          <code>{nextGold.waypoint}</code>
-          <button className="gm-pill" type="button" onClick={()=>copy(nextGold.waypoint!)}>Copy waypoint</button>
-        </div>}
-      </>:<p style={helper}>No currently documented farm in this guide is entirely within the estimated gray range. Check mob colors in game before farming.</p>}
-      <button className="gm-pill ghost" type="button" onClick={()=>onOpen("gold")}>Compare all gold farms</button>
     </details>}
-    <p style={helper}>Your guide cannot read your live bags, equipment, NPC colors, prices or server drops. Saved values are manual. Do not rely on Classic reference locations without checking Forever.</p>
     {copyStatus&&<p role="status" style={helper}>{copyStatus}</p>}
   </section>;
 }

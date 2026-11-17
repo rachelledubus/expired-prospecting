@@ -7,7 +7,7 @@ import { WOW_FARMS } from "@/lib/wow-portal-extras";
 import { WOW_FOREVER_PET_FAMILIES } from "@/lib/wow-forever-pet-families";
 import { ALL_RECIPE_MATERIALS, materialRoutes, externalMaterialLookup } from "@/lib/wow-material-farms";
 import type { WowGame } from "@/lib/wow-forever-data";
-type Destination="roadmap"|"professions"|"gear"|"gold"|"materials"|"pets"|"combat";
+type Destination="roadmap"|"professions"|"zones"|"gold"|"materials"|"pets"|"combat";
 type Props={game:WowGame;prog:GameProgress;query:string;onQuery:(v:string)=>void;onOpen:(v:Destination,term:string)=>void};
 const small:React.CSSProperties={fontSize:13,opacity:.86,lineHeight:1.5};
 const abilities=[
@@ -33,6 +33,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
  const steps=q?game.stages.flatMap(s=>s.steps.filter(t=>(t.title+" "+t.how+" "+s.place+" "+s.title).toLowerCase().includes(q))
   .map(t=>({title:t.title,detail:s.place+" · "+t.how,id:s.id+"-"+t.id}))).slice(0,12):[];
  const recipes=q?WOW_RECIPES.filter(r=>!prog.checks[recipeLearnedKey(game.id,r.id)]&&
+    !prog.checks[recipeHiddenKey(game.id,r.id)]&&
    (r.name+" "+r.profession+" "+r.reagents.map(m=>m.name).join(" ")+" "+r.sourceLocations.map(l=>l.area+" "+l.zone+" "+l.npc).join(" ")).toLowerCase().includes(q)).slice(0,20):[];
  const materials=q?ALL_RECIPE_MATERIALS.filter(name=>name.toLowerCase().includes(q)).slice(0,20):[];
  const gear=q?WOW_HUNTER_DUNGEONS.flatMap(d=>d.loot.filter(t=>(d.name+" "+t.name+" "+t.from+" "+t.slot).toLowerCase().includes(q)).map(t=>({id:d.id+"-"+t.id,title:t.name,detail:d.name+" · "+t.from+" · level "+t.requiredLevel}))).slice(0,12):[];
@@ -49,8 +50,8 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
   {name:"Materials and where to farm them",destination:"materials",entries:materials.map(name=>({
     id:name,title:name,detail:materialRoutes(name).length+" mapped farming leads · open to inspect locations"
   }))},
-  {name:"Dungeon Hunter gear",destination:"gear",entries:gear},
-  {name:"Dungeon profession drops",destination:"gear",entries:dungeonProfessions.map(item=>({
+  {name:"Dungeon Hunter gear",destination:"zones",entries:gear},
+  {name:"Dungeon profession drops",destination:"zones",entries:dungeonProfessions.map(item=>({
     id:item.id,title:item.itemName,
     detail:(WOW_HUNTER_DUNGEONS.find(d=>d.id===item.dungeonId)?.name||"Dungeon")+" · "+item.source+" · "+item.professions.join(", ")
   }))},
@@ -74,14 +75,14 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     </a>
     <span style={small}>Works even when your portal has no matching item or verified source.</span>
   </div>}
-  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Learned recipes remain in Recommended Next rather than showing in these general search results.</p>:
+  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Learned and hidden recipes are excluded from general search. Review your saved recipes in Professions.</p>:
    <><p style={small}>{total} results displayed · sections are capped for readability.</p>
     {groups.map(g=>g.entries.length?<section key={g.name} style={{marginTop:14}}>
       <h4 style={{margin:"0 0 5px"}}>{g.name} ({g.entries.length})</h4>
       {g.entries.map(x=><div key={x.id} style={{borderBottom:"1px solid var(--border,#ddd)",padding:"7px 0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
          <strong style={{fontSize:14}}>{x.title}</strong>
-         <button type="button" className="gm-pill" onClick={()=>onOpen(g.destination,x.title)}>Open {g.destination}</button>
+         <button type="button" className="gm-pill" onClick={()=>onOpen(g.destination,x.title)}>Open {g.destination==="zones"?"dungeon":g.destination}</button>
         </div>
         <p style={{...small,margin:"3px 0"}}>{x.detail}</p>
       </div>)}
