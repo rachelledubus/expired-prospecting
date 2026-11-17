@@ -307,19 +307,6 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
           <li>See Combat &amp; Macros for your current keybindings.</li>
         </ol>
       </details>
-      <SmallInfo title="Which pet should I use?">
-        <p><b>Cat — recommended damage pet:</b> Good damage while you attack from range. The Starving Mountain Lion in Hillsbrad Foothills is a documented fast-attack option. The Rake in Mulgore is a rare alternative, not necessary for success.</p>
-        <p><b>Durable pet — comfort option:</b> If your cat keeps dying while soloing, prioritize a sturdier available family and your pet's training rather than chasing theoretical best DPS.</p>
-        <p><b>Higher-level pet:</b> Revisit pet ability ranks and special skills. Not every pet ability can simply be bought from the trainer.</p>
-      </SmallInfo>
-      <SmallInfo title="Pet controls and troubleshooting">
-        <p><b>Pet runs away:</b> Scroll down to recall, ensure Passive/Follow worked, and avoid sending it through dense enemy groups.</p>
-        <p><b>Pet dies fast:</b> Upgrade training, heal earlier, pull one target, and use a sturdier pet if needed.</p>
-        <p><b>Can't hold threat while solo:</b> Growl autocast ON; train its rank and improve your pet's damage.</p>
-        <p><b>Pet pulls off the dungeon tank:</b> Turn Growl OFF and attack the tank's chosen enemy.</p>
-        <p><b>Pet lacks damage:</b> Check happiness, level, ability ranks, Focus usage and whether it's actually attacking.</p>
-        <p><b>With your Paladin:</b> If your partner is tanking, set Growl OFF and have your pet assist his target. Use a tested tank-focus macro rather than allowing your pet to pick unrelated enemies.</p>
-      </SmallInfo>
     </>}
 
     {view==="skyborne" && <details className="gm-card" style={card} open={currentLevel<15}>
