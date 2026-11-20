@@ -38,6 +38,7 @@ export const VERIFIED_WOWHEAD_FOREVER_STOPS: VerifiedAcquisition[] = [
   {id:"h-cook-catfish",name:"Recipe: Bristle Whisker Catfish",profession:"cooking",zone:"Thunder Bluff",area:"Thunder Bluff",npc:"Naal Mistrunner",faction:"horde",method:"buy",skill:100,waypoint:"/way Thunder Bluff 51.0 52.8",sourceUrl:"https://www.wowhead.com/forever/item=6330/recipe-bristle-whisker-catfish",guideUrl:"https://www.wowhead.com/forever/guide/professions/cooking/overview-leveling",note:"Wowhead's 100–150 Cooking path. Raw fish can be acquired without learning Fishing."},
   {id:"h-cook-trout",name:"Recipe: Mithril Head Trout",profession:"cooking",zone:"Orgrimmar",area:"Orgrimmar",npc:"Shankys",faction:"horde",method:"buy",skill:175,waypoint:"/way Orgrimmar 70.0 30.6",sourceUrl:"https://www.wowhead.com/forever/guide/professions/cooking/overview-leveling",note:"Purchase for the 175–225 Cooking step."},
   {id:"neutral-cook-yellowtail",name:"Recipe: Spotted Yellowtail",profession:"cooking",zone:"Tanaris",area:"Steamwheedle Port",npc:"Gikkix",faction:"neutral",method:"buy",skill:225,waypoint:"/way Tanaris 66.6 22.0",sourceUrl:"https://www.wowhead.com/forever/guide/professions/cooking/overview-leveling",note:"Purchase during a Tanaris visit for the 225–300 Cooking step."},
+  {id:"h-lw-trainer-tb",name:"Barbaric Shoulders (trainer) — no pattern to buy",profession:"leatherworking",zone:"Thunder Bluff",area:"Middle Rise",npc:"Una",faction:"horde",method:"train",skill:150,sourceUrl:"https://www.wowhead.com/forever/spell=7151/barbaric-shoulders",note:"Wowhead Forever explicitly lists Una as a trainer for Barbaric Shoulders at Leatherworking 150; also visit Cooking and First Aid while in Thunder Bluff."},
   {id:"h-lw-trainer-desolace",name:"Expert Leatherworking trainer",profession:"leatherworking",zone:"Desolace",area:"Desolace",npc:"Narv Hidecrafter",faction:"horde",method:"train",skill:150,sourceUrl:"https://www.wowhead.com/forever/npc=8153/narv-hidecrafter",note:"Wowhead Forever identifies this NPC as an Expert Leathercrafter. Check the available trainer recipes at your skill."},
   {id:"h-fa-trainer-uc",name:"Journeyman First Aid / Wool Bandage",profession:"first-aid",zone:"Undercity",area:"Rogues' Quarter",npc:"Mary Edras",faction:"horde",method:"train",skill:80,waypoint:"/way Undercity 73.6 55.6",sourceUrl:"https://www.wowhead.com/forever/guide/professions/first-aid/overview",note:"Your First Aid 87 rescue: learn Wool Bandage from the trainer; craft with Wool Cloth."},
   {id:"h-fa-trainer-og",name:"Journeyman First Aid / Wool Bandage",profession:"first-aid",zone:"Orgrimmar",area:"Valley of Spirits",npc:"Arnok",faction:"horde",method:"train",skill:80,waypoint:"/way Orgrimmar 34.0 84.4",sourceUrl:"https://www.wowhead.com/forever/guide/professions/first-aid/overview",note:"Alternative trainer for your First Aid 87 rescue."},
@@ -61,7 +62,7 @@ export const FOREVER_BUDGET_LEVELING_SOURCE_IDS:ReadonlySet<string> = new Set([
   "a-fa-book","a-fa-heavy-silk","a-fa-mageweave",
   "h-cook-catfish","h-cook-book","a-cook-book","h-cook-trout",
   "neutral-cook-yellowtail",
-  "h-lw-trainer-desolace","h-fa-trainer-uc","h-fa-trainer-og","h-fa-trainer-tb",
+  "h-lw-trainer-desolace","h-lw-trainer-tb","h-fa-trainer-uc","h-fa-trainer-og","h-fa-trainer-tb",
   "h-fa-triage","a-fa-triage"
 ]);
 
@@ -77,7 +78,8 @@ export const FOREVER_BUDGET_LEVELING_NOTES:Readonly<Record<string,string>> = {
   "a-cook-book":"Required to raise Cooking's skill cap beyond 150; no need to buy immediately unless nearby.",
   "h-cook-trout":"Buy when approaching Cooking 175; uses one raw fish per craft.",
   "neutral-cook-yellowtail":"Buy when approaching Cooking 225; uses one raw fish per craft.",
-  "h-lw-trainer-desolace":"Trainer visit — no world-drop pattern purchase. Ask for Barbaric Shoulders at 150 and Guardian Gloves at 165.",
+  "h-lw-trainer-desolace":"Optional alternate trainer route; no pattern purchase needed.",
+  "h-lw-trainer-tb":"BEST COMBINED STOP: Learn Barbaric Shoulders at 150. Also buy Bristle Whisker Catfish from Naal Mistrunner and learn Wool Bandage from Pand Stonebinder in this city.",
   "h-fa-trainer-uc":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
   "h-fa-trainer-og":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
   "h-fa-trainer-tb":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
