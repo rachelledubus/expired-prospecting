@@ -331,7 +331,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </details>}
 
-    {view==="professions" && <WoWForeverVerifiedProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
+    {view==="professions" && <WoWForeverVerifiedProfessions key={searchTarget||"forever-verified"} gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget}/>}
     {view==="materials" && <WoWMaterialFarming key={materialTarget} gameId={game.id} level={currentLevel}
       faction={faction==="alliance"?"alliance":"horde"} prog={prog} setField={setField} initialQuery={materialTarget}/>} 
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
