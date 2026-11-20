@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { questKey, type GameProgress } from "@/lib/games-data";
 import { WOW_SOURCES, WOW_TALENT_PATH, type WowGame, type WowStage, type WowStep } from "@/lib/wow-forever-data";
-import WoWProfessions from "./WoWProfessions";
+import WoWForeverVerifiedProfessions from "./WoWForeverVerifiedProfessions";
 import WoWHunterDungeons from "./WoWHunterDungeons";
 import WoWGoldFarming from "./WoWGoldFarming";
 import WoWCombatControls from "./WoWCombatControls";
@@ -331,7 +331,7 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
       </SmallInfo>
     </details>}
 
-    {view==="professions" && <WoWProfessions key={searchTarget||"profession-default"} gameId={game.id} prog={prog} setCheck={setCheck} setField={setField} initialQuery={searchTarget} onFindMaterial={openMaterial}/>}
+    {view==="professions" && <WoWForeverVerifiedProfessions gameId={game.id} prog={prog} setCheck={setCheck} setField={setField}/>}
     {view==="materials" && <WoWMaterialFarming key={materialTarget} gameId={game.id} level={currentLevel}
       faction={faction==="alliance"?"alliance":"horde"} prog={prog} setField={setField} initialQuery={materialTarget}/>} 
     {view==="gold" && <WoWGoldFarming gameId={game.id} level={currentLevel} prog={prog} setField={setField}/>}
