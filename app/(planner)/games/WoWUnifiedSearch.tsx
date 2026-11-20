@@ -7,7 +7,7 @@ import { WOW_FARMS } from "@/lib/wow-portal-extras";
 import { WOW_FOREVER_PET_FAMILIES } from "@/lib/wow-forever-pet-families";
 import { ALL_RECIPE_MATERIALS, materialRoutes, externalMaterialLookup } from "@/lib/wow-material-farms";
 import type { WowGame } from "@/lib/wow-forever-data";
-import { VERIFIED_WOWHEAD_FOREVER_STOPS } from "@/lib/wow-forever-verified-sources";
+import { VERIFIED_WOWHEAD_FOREVER_STOPS, FOREVER_BUDGET_LEVELING_SOURCE_IDS } from "@/lib/wow-forever-verified-sources";
 type Destination="roadmap"|"professions"|"zones"|"gold"|"materials"|"pets"|"combat";
 type Props={game:WowGame;prog:GameProgress;query:string;onQuery:(v:string)=>void;onOpen:(v:Destination,term:string)=>void};
 const small:React.CSSProperties={fontSize:13,opacity:.86,lineHeight:1.5};
@@ -36,6 +36,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
  const faction=prog.fields[game.id+"|faction"]==="alliance"?"alliance":"horde";
  const recipes=q?VERIFIED_WOWHEAD_FOREVER_STOPS.filter(item=>
    (item.faction==="neutral"||item.faction===faction)&&
+   FOREVER_BUDGET_LEVELING_SOURCE_IDS.has(item.id)&&
    !prog.checks[game.id+"|verified-source|"+item.id]&&
    (item.name+" "+item.profession+" "+item.zone+" "+item.area+" "+item.npc+" "+item.note)
      .toLowerCase().includes(q)).slice(0,20):[];
@@ -50,7 +51,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
   matchingAbilities=q?abilities.filter(([name,detail])=>(name+" "+detail).toLowerCase().includes(q)):[];
  const groups:{name:string;destination:Destination;entries:{id:string;title:string;detail:string}[]}[]=[
   {name:"Guide objectives",destination:"roadmap",entries:steps},
-  {name:"Source-checked WoW Forever patterns and books",destination:"professions",entries:recipes.map(r=>({id:r.id,title:r.name,detail:r.profession+" · "+r.area+", "+r.zone+" · "+r.npc+" · "+(r.method==="drop"?"Forever-reported drop":r.method==="buy"?"Buy":"Trainer")}))},
+  {name:"Budget leveling books, recipes & trainers",destination:"professions",entries:recipes.map(r=>({id:r.id,title:r.name,detail:r.profession+" · "+r.area+", "+r.zone+" · "+r.npc+" · "+(r.method==="drop"?"Forever-reported drop":r.method==="buy"?"Buy":"Trainer")}))},
   {name:"Materials and where to farm them",destination:"materials",entries:materials.map(name=>({
     id:name,title:name,detail:materialRoutes(name).length+" mapped farming leads · open to inspect locations"
   }))},
@@ -79,7 +80,7 @@ export default function WoWUnifiedSearch({game,prog,query,onQuery,onOpen}:Props)
     </a>
     <span style={small}>Works even when your portal has no matching item or verified source.</span>
   </div>}
-  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Collected verified-source entries are excluded from search. Review purchases and drop evidence in Professions.</p>:
+  {!q?<p style={{...small,marginTop:10}}>Search stays within your portal's catalog. Only necessary leveling recipes, books, and trainers appear as profession shopping results. Optional patterns are excluded.</p>:
    <><p style={small}>{total} results displayed · sections are capped for readability.</p>
     {groups.map(g=>g.entries.length?<section key={g.name} style={{marginTop:14}}>
       <h4 style={{margin:"0 0 5px"}}>{g.name} ({g.entries.length})</h4>
