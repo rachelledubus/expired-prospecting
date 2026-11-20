@@ -6,15 +6,15 @@ import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions"
 import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
   WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
-type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void};
+type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void;initialQuery?:string};
 const profs:VerifiedProfession[]=["leatherworking","first-aid","cooking"];
 const name=(x:string)=>x==="first-aid"?"First Aid":x==="leatherworking"?"Leatherworking":"Cooking";
 const control:React.CSSProperties={width:"100%",minHeight:42,padding:8,borderRadius:9,background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",font:"inherit"};
 const small:React.CSSProperties={fontSize:13,lineHeight:1.55};
 
-export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setField}:Props){
+export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setField,initialQuery=""}:Props){
   const [area,setArea]=useState("all");
-  const [query,setQuery]=useState("");
+  const [query,setQuery]=useState(initialQuery);
   const [showFuture,setShowFuture]=useState(false);
   const [showCompleted,setShowCompleted]=useState(false);
   const [copyStatus,setCopyStatus]=useState("");
