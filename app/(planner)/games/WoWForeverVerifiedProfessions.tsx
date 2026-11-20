@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions";
 import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
-  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
+  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
+  FOREVER_BUDGET_LEVELING_NOTES, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
 type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void;initialQuery?:string};
 const profs:VerifiedProfession[]=["leatherworking","first-aid","cooking"];
@@ -24,7 +25,10 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
     const raw=prog.fields[professionField(gameId,"skill-"+id)];
     return raw===undefined?(p?.initial??0):Math.max(0,Math.min(300,Number(raw)||0));
   };
-  const entries=VERIFIED_WOWHEAD_FOREVER_STOPS.filter(item=>item.faction===faction||item.faction==="neutral");
+  // Only source-checked, efficient leveling necessities. No collectible, expensive
+  // alternative, or drop-only recipes are displayed as shopping actions.
+  const entries=VERIFIED_WOWHEAD_FOREVER_STOPS.filter(item=>
+    (item.faction===faction||item.faction==="neutral")&&FOREVER_BUDGET_LEVELING_SOURCE_IDS.has(item.id));
   const stops=[...new Set(entries.map(x=>x.zone+"|"+x.area))].sort();
   const visible=entries.filter(item=>{
     const done=!!prog.checks[gameId+"|verified-source|"+item.id];
@@ -68,24 +72,24 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
       </div>
     </div>
     <div className="gm-card" style={{padding:16,marginTop:12}}>
-      <h3 style={{margin:"0 0 5px"}}>📍 Buy, train or farm in this area</h3>
-      <p className="gm-note" style={small}>An area shopping checklist for your skill and faction. You will see future-use books on the same visit, but not outdated Classic vendor tables. A Forever guide is source evidence, not a live stock guarantee.</p>
+      <h3 style={{margin:"0 0 5px"}}>📍 Only buy what you need to level</h3>
+      <p className="gm-note" style={small}>Budget-first area shopping: only required leveling recipes, books, and useful trainer visits. Optional/collectible patterns, reported drops, and the gem-heavy Leatherworking belt are excluded. No live Auction House prices exist in Wowhead Forever, so this is a low-purchase route, not a guaranteed lowest-gold calculation.</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))",gap:8}}>
         <label style={small}>Area
           <select value={area} onChange={e=>setArea(e.target.value)} style={control}>
-            <option value="all">All source-checked areas</option>
+            <option value="all">Budget leveling areas</option>
             {stops.map(key=><option key={key} value={key}>{key.replace("|"," · ")}</option>)}
           </select>
         </label>
-        <label style={small}>Search pattern, vendor or zone
-          <input type="search" value={query} onChange={e=>setQuery(e.target.value)} style={control} placeholder="e.g. Ashenvale, book"/>
+        <label style={small}>Search needed book, trainer or town
+          <input type="search" value={query} onChange={e=>setQuery(e.target.value)} style={control} placeholder="e.g. Thunder Bluff, book"/>
         </label>
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap",margin:"12px 0"}}>
-        <label style={small}><input type="checkbox" checked={showFuture} onChange={e=>setShowFuture(e.target.checked)}/> All future skills</label>
+        <label style={small}><input type="checkbox" checked={showFuture} onChange={e=>setShowFuture(e.target.checked)}/> Needed purchases for future skills</label>
         <label style={small}><input type="checkbox" checked={showCompleted} onChange={e=>setShowCompleted(e.target.checked)}/> Include collected</label>
       </div>
-      <p className="gm-note" style={small}>{visible.length} verified sources across {keys.length} locations. Source completeness varies by zone.</p>
+      <p className="gm-note" style={small}>{visible.length} low-purchase leveling stops across {keys.length} locations. Use the Wowhead Forever Easiest planner with your known recipes and your in-game material prices for a true cost comparison.</p>
       {keys.map(key=><div key={key} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12,marginBottom:10}}>
         <h4 style={{fontSize:15,margin:"0 0 7px"}}>📍 {key.replace("|"," · ")}</h4>
         {visible.filter(item=>item.zone+"|"+item.area===key).map(item=>{
@@ -97,7 +101,7 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
               <div style={{flex:"1 1 200px"}}>
                 <b style={small}>{status} · {item.name}</b>
                 <p style={{...small,margin:"4px 0"}}>{name(item.profession)} · required skill {item.skill} · current {current}</p>
-                <p style={{...small,margin:"4px 0"}}><b>{item.npc}</b> · {item.note}</p>
+                <p style={{...small,margin:"4px 0"}}><b>{item.npc}</b> · {FOREVER_BUDGET_LEVELING_NOTES[item.id]??item.note}</p>
                 {item.concern&&<p className="gm-note" style={{...small,margin:"4px 0"}}><b>Source caveat:</b> {item.concern}</p>}
                 <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={small}>Open WoW Forever evidence ↗</a>
                 {item.waypoint&&<button type="button" className="gm-pill" style={{marginLeft:8}}
@@ -110,7 +114,13 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
           </div>;
         })}
       </div>)}
-      {!visible.length&&<p className="gm-note" style={small}>No matching source-checked items at this skill. Turn on “All future skills” or search another area; this does not mean there are no other drops.</p>}
+      {!visible.length&&<p className="gm-note" style={small}>No necessary purchases match your current skill and filters. You may only need trainer recipes or more materials. Check future skill requirements if planning ahead.</p>}
+      <p className="gm-note" style={{...small,marginTop:12}}>
+        <b>Leatherworking:</b> at skill 152, visit a trainer for Barbaric Shoulders instead of buying the expensive
+        Gem-studded Leather Belt pattern. Save Heavy Leather from Skinning.{" "}
+        <a href="https://www.wowhead.com/forever/profession-leveling-guides/leatherworking"
+          target="_blank" rel="noopener noreferrer">Compare Forever's Easiest route ↗</a>
+      </p>
       {copyStatus&&<p className="gm-note" role="status" style={small}>{copyStatus}</p>}
     </div>
   </section>;
