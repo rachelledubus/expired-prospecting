@@ -41,6 +41,11 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
     <div className="gm-card" style={{padding:16,marginTop:12}}>
       <h3 style={{margin:"0 0 6px"}}>Profession skill-up rescue</h3>
       <p className="gm-note" style={small}>All suggestions below are from Wowhead Forever guides, item pages, or firsthand Forever reports. Updated source review: {VERIFIED_WOWHEAD_FOREVER_REVIEW}. Skill-up colors can change; orange is guaranteed, yellow and green are not.</p>
+      <p className="gm-note" style={small}>
+        <b>November 19 Forever hotfix:</b> Vendors now pay less for some crafted Leatherworking armor, so older vendor-profit advice is unreliable. Journeyman Campfire Kit can now be placed at Cooking 90 (previously 140).{" "}
+        <a href="https://www.wowhead.com/forever/blue-tracker/news/eu/wow-forever-hotfixes-november-19-2026-world-of-warcraft-blizzard-news-24315281"
+          target="_blank" rel="noopener noreferrer">Read the latest Blizzard hotfixes via Wowhead Forever ↗</a>
+      </p>
       <div className="gm-wow-skill-grid">
         {WOW_PROFESSIONS.map(p=><label key={p.id} className="gm-wow-skill-field">
           <span>{p.label}</span>
