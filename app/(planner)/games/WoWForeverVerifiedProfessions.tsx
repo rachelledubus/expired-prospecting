@@ -1,180 +1,112 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
-import {
-  WOW_PROFESSIONS, WOW_RECIPES, professionField, recipeLearnedKey,
-} from "@/lib/wow-forever-professions";
-import {
-  VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
-  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath,
-  type VerifiedAcquisition, type VerifiedProfession,
-} from "@/lib/wow-forever-verified-sources";
+import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions";
+import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
+  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
-type Props={
-  gameId:string;prog:GameProgress;
-  setCheck:(key:string,checked:boolean)=>void;
-  setField:(key:string,value:string)=>void;
-};
+type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void};
+const profs:VerifiedProfession[]=["leatherworking","first-aid","cooking"];
+const name=(x:string)=>x==="first-aid"?"First Aid":x==="leatherworking"?"Leatherworking":"Cooking";
+const control:React.CSSProperties={width:"100%",minHeight:42,padding:8,borderRadius:9,background:"var(--panel,#fff)",color:"var(--text,#222)",border:"1px solid var(--border,#ccc)",font:"inherit"};
 const small:React.CSSProperties={fontSize:13,lineHeight:1.55};
-const selectStyle:React.CSSProperties={minWidth:0,width:"100%",minHeight:42,padding:"8px 10px",background:"var(--panel,#fff)",
-  color:"var(--text,#222)",border:"1px solid var(--border,#bbb)",borderRadius:8,font:"inherit"};
-const order:Record<VerifiedAcquisition["method"],number>={buy:0,train:1,drop:2};
-const tracked=(id:string,itemId:string)=>id+"|verified-source|"+itemId;
-
-const resolvedRecipe=(item:VerifiedAcquisition)=>{
-  const name=item.name.replace(/^(?:Pattern|Recipe): /,"").toLowerCase();
-  return WOW_RECIPES.find(r=>r.profession===item.profession && r.name.toLowerCase()===name);
-};
 
 export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setField}:Props){
-  const faction=prog.fields[gameId+"|faction"]==="alliance"?"alliance":"horde";
   const [area,setArea]=useState("all");
-  const [search,setSearch]=useState("");
-  const [showDistant,setShowDistant]=useState(false);
-  const [showDone,setShowDone]=useState(false);
-  const [message,setMessage]=useState("");
+  const [query,setQuery]=useState("");
+  const [showFuture,setShowFuture]=useState(false);
+  const [showCompleted,setShowCompleted]=useState(false);
+  const [copyStatus,setCopyStatus]=useState("");
+  const faction=prog.fields[gameId+"|faction"]==="alliance"?"alliance":"horde";
   const skill=(id:string)=>{
-    const fallback=WOW_PROFESSIONS.find(p=>p.id===id)?.initial??0;
+    const p=WOW_PROFESSIONS.find(x=>x.id===id);
     const raw=prog.fields[professionField(gameId,"skill-"+id)];
-    return raw===undefined?fallback:Math.max(0,Math.min(300,Number(raw)||0));
+    return raw===undefined?(p?.initial??0):Math.max(0,Math.min(300,Number(raw)||0));
   };
-  const factionRows=VERIFIED_WOWHEAD_FOREVER_STOPS.filter(i=>i.faction===faction||i.faction==="neutral");
-  const isDone=(item:VerifiedAcquisition)=>{
-    const recipe=resolvedRecipe(item);
-    return Boolean(prog.checks[recipe ? recipeLearnedKey(gameId,recipe.id) : tracked(gameId,item.id)]);
-  };
-  const setDone=(item:VerifiedAcquisition,value:boolean)=>{
-    const recipe=resolvedRecipe(item);
-    setCheck(recipe?recipeLearnedKey(gameId,recipe.id):tracked(gameId,item.id),value);
-  };
-  const isUseful=(item:VerifiedAcquisition)=>{
-    if(showDistant)return true;
+  const entries=VERIFIED_WOWHEAD_FOREVER_STOPS.filter(item=>item.faction===faction||item.faction==="neutral");
+  const stops=[...new Set(entries.map(x=>x.zone+"|"+x.area))].sort();
+  const visible=entries.filter(item=>{
+    const done=!!prog.checks[gameId+"|verified-source|"+item.id];
     const current=skill(item.profession);
-    // Once at the books' NPC, collect the full 150-225 book/manual bundle in one visit.
-    if(item.name==="Expert First Aid - Under Wraps"||item.name.startsWith("Manual: ")||
-       item.name==="Expert Cookbook")return current<225;
-    if(item.method==="train")return item.skill<=current+35&&item.skill>=current-80;
-    return item.skill<=current+35&&item.skill>=current-75;
-  };
-  const groupByArea=useMemo(()=>{
-    const map=new Map<string,VerifiedAcquisition[]>();
-    for(const item of factionRows){
-      const key=item.zone+"|"+item.area;
-      if(!map.has(key))map.set(key,[]);
-      map.get(key)!.push(item);
-    }
-    return [...map].sort((a,b)=>a[0].localeCompare(b[0]));
-  },[faction]);
-  const groups=groupByArea.map(([key,all])=>({
-    key,area:all[0].area,zone:all[0].zone,
-    items:all.filter(item=>(showDone||!isDone(item))&&isUseful(item)&&
-      (!search.trim()||(item.name+" "+item.npc+" "+item.area+" "+item.zone+" "+item.note)
-        .toLowerCase().includes(search.trim().toLowerCase())))
-      .sort((a,b)=>order[a.method]-order[b.method]||a.skill-b.skill),
-  })).filter(g=>g.items.length&&(area==="all"||g.key===area));
-  const copy=async(way:string)=>{
-    try{await navigator.clipboard.writeText(way);setMessage("Copied "+way);}
-    catch{setMessage("Could not copy automatically: "+way);}
-  };
-  const professionIds:VerifiedProfession[]=["leatherworking","first-aid","cooking"];
-  return <section className="gm-wow-professions" aria-label="Verified WoW Forever profession planner">
+    const isBundle=item.name==="Expert First Aid - Under Wraps"||item.name==="Expert Cookbook"||item.name.startsWith("Manual: ");
+    const near=showFuture||(isBundle&&current<225)||(item.skill<=current+35&&item.skill>=current-75);
+    const location=item.zone+"|"+item.area;
+    const match=(item.name+" "+item.zone+" "+item.area+" "+item.npc).toLowerCase().includes(query.toLowerCase());
+    return (showCompleted||!done)&&near&&(area==="all"||area===location)&&match;
+  }).sort((a,b)=>a.zone.localeCompare(b.zone)||a.area.localeCompare(b.area)||
+    (a.method==="buy"?0:a.method==="train"?1:2)-(b.method==="buy"?0:b.method==="train"?1:2)||a.skill-b.skill);
+  const keys=[...new Set(visible.map(x=>x.zone+"|"+x.area))];
+  return <section className="gm-wow-professions" aria-label="Wowhead Forever confirmed profession sources">
     <div className="gm-card" style={{padding:16,marginTop:12}}>
-      <div className="gm-wow-section-head">
-        <h3 style={{margin:0}}>Profession rescue · skill-ups now</h3>
-        <span className="gm-wow-subtitle">Wowhead Forever · reviewed {VERIFIED_WOWHEAD_FOREVER_REVIEW}</span>
-      </div>
-      <p className="gm-note" style={small}>Update your skills here. The next craft comes from Wowhead Forever's leveling guides, not the older client catalog's vendor locations. A recommended craft can turn yellow or green: skill-ups are not always guaranteed.</p>
+      <h3 style={{margin:"0 0 6px"}}>Profession skill-up rescue</h3>
+      <p className="gm-note" style={small}>All suggestions below are from Wowhead Forever guides, item pages, or firsthand Forever reports. Updated source review: {VERIFIED_WOWHEAD_FOREVER_REVIEW}. Skill-up colors can change; orange is guaranteed, yellow and green are not.</p>
       <div className="gm-wow-skill-grid">
         {WOW_PROFESSIONS.map(p=><label key={p.id} className="gm-wow-skill-field">
           <span>{p.label}</span>
-          <input type="number" min={0} max={300} inputMode="numeric" className="gm-wow-skill-input"
-            aria-label={p.label+" skill"} value={skill(p.id)}
-            onChange={e=>setField(professionField(gameId,"skill-"+p.id),
-              String(Math.max(0,Math.min(300,Math.floor(Number(e.target.value)||0)))))}/>
+          <input type="number" inputMode="numeric" min={0} max={300} className="gm-wow-skill-input"
+            value={skill(p.id)} onChange={e=>setField(professionField(gameId,"skill-"+p.id),
+            String(Math.max(0,Math.min(300,Math.floor(Number(e.target.value)||0)))))}/>
         </label>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:10,marginTop:12}}>
-        {professionIds.map(id=>{
-          const curr=skill(id),path=nextForeverSkillPath(id,curr);
-          const warnings=id==="leatherworking"&&curr>=145&&curr<155?
-            "At your current level, Toughened Leather Gloves are green; a craft can fail to award skill. At 155, Barbaric Shoulders is trainer-learned and orange.":null;
-          return <div key={id} style={{padding:12,border:"1px solid var(--border,#ddd)",borderRadius:10}}>
-            <strong>{WOW_PROFESSIONS.find(p=>p.id===id)?.label} · {curr}</strong>
-            <p style={{...small,margin:"7px 0 3px"}}><b>{path.name}</b> · guide range {path.range}</p>
-            <p style={{...small,margin:"4px 0"}}>{path.details}</p>
-            <p style={{...small,margin:"4px 0"}}><b>Materials:</b> {path.materials}</p>
-            {warnings&&<p style={{...small,margin:"6px 0"}}>{warnings}</p>}
-            <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[id]} target="_blank" rel="noopener noreferrer" style={small}>
-              Wowhead Forever leveling source ↗
-            </a>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))",gap:10,marginTop:12}}>
+        {profs.map(id=>{
+          const plan=nextForeverSkillPath(id,skill(id));
+          return <div key={id} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
+            <b>{name(id)} {skill(id)}</b>
+            <p style={{...small,margin:"6px 0"}}><b>Next:</b> {plan.name} ({plan.range})</p>
+            <p style={{...small,margin:"6px 0"}}>{plan.details}</p>
+            <p style={{...small,margin:"6px 0"}}><b>Materials:</b> {plan.materials}</p>
+            <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[id]} target="_blank" rel="noopener noreferrer" style={small}>Verify on Wowhead Forever ↗</a>
           </div>;
         })}
       </div>
     </div>
-
     <div className="gm-card" style={{padding:16,marginTop:12}}>
-      <div className="gm-wow-section-head">
-        <h3 style={{margin:0}}>📍 Everything verified for this area</h3>
-        <span className="gm-wow-subtitle">{faction==="horde"?"Horde":"Alliance"} &amp; neutral only</span>
-      </div>
-      <p className="gm-note" style={small}>Prioritize items you can learn now, future books worth buying on the same trip, and relevant drop leads. Each row links directly to a WoW Forever source. Recent firsthand Forever drop reports qualify; unrelated Classic and unverified client location records do not.</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:10}}>
-        <label style={small}>Search a specific area
-          <select value={area} style={selectStyle} onChange={e=>setArea(e.target.value)}>
-            <option value="all">All verified area stops</option>
-            {groupByArea.map(([key,items])=><option key={key} value={key}>{items[0].area} · {items[0].zone} ({items.length})</option>)}
+      <h3 style={{margin:"0 0 5px"}}>📍 Buy, train or farm in this area</h3>
+      <p className="gm-note" style={small}>An area shopping checklist for your skill and faction. You will see future-use books on the same visit, but not outdated Classic vendor tables. A Forever guide is source evidence, not a live stock guarantee.</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))",gap:8}}>
+        <label style={small}>Area
+          <select value={area} onChange={e=>setArea(e.target.value)} style={control}>
+            <option value="all">All source-checked areas</option>
+            {stops.map(key=><option key={key} value={key}>{key.replace("|"," · ")}</option>)}
           </select>
         </label>
-        <label style={small}>Find a recipe, vendor or zone
-          <input type="search" value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="e.g. Ashenvale, book, bracers…" style={selectStyle}/>
+        <label style={small}>Search pattern, vendor or zone
+          <input type="search" value={query} onChange={e=>setQuery(e.target.value)} style={control} placeholder="e.g. Ashenvale, book"/>
         </label>
       </div>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",margin:"12px 0"}}>
-        <label style={small}><input type="checkbox" checked={showDistant}
-          onChange={e=>setShowDistant(e.target.checked)}/> Include all future skill ranges</label>
-        <label style={small}><input type="checkbox" checked={showDone}
-          onChange={e=>setShowDone(e.target.checked)}/> Show collected items</label>
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",margin:"12px 0"}}>
+        <label style={small}><input type="checkbox" checked={showFuture} onChange={e=>setShowFuture(e.target.checked)}/> All future skills</label>
+        <label style={small}><input type="checkbox" checked={showCompleted} onChange={e=>setShowCompleted(e.target.checked)}/> Include collected</label>
       </div>
-      <p className="gm-note" style={small}>
-        {groups.length} locations · {groups.reduce((count,g)=>count+g.items.length,0)} actionable or reported source leads.
-        The list is limited to checked Wowhead Forever entries; it is not a claim that every drop in every zone is cataloged.
-      </p>
-      <div style={{display:"grid",gap:12}}>
-        {groups.map(g=><div key={g.key} style={{border:"1px solid var(--border,#ddd)",padding:12,borderRadius:10}}>
-          <h4 style={{fontSize:16,margin:"0 0 8px"}}>📍 {g.area} · {g.zone} <span style={{fontWeight:400}}>({g.items.length})</span></h4>
-          {g.items.map(item=>{
-            const current=skill(item.profession),canLearn=item.skill<=current;
-            const done=isDone(item);
-            const isFuture=item.skill>current;
-            const heading=item.method==="drop"?"FARM REPORTED DROP":item.method==="train"?"VISIT TRAINER":
-              canLearn?"BUY / LEARN NOW":"BUY FOR LATER";
-            const description=item.profession==="leatherworking"?"Leatherworking":item.profession==="first-aid"?"First Aid":"Cooking";
-            return <div key={item.id} style={{padding:"10px 0",borderTop:"1px solid var(--border,#eee)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
-                <div style={{flex:"1 1 225px",minWidth:0}}>
-                  <div style={{...small,fontWeight:700}}>{heading} · {item.name}</div>
-                  <p style={{...small,margin:"3px 0"}}>{description} required {item.skill} · yours {current}{isFuture?" · collect ahead":""}</p>
-                  <p style={{...small,margin:"3px 0"}}><b>{item.npc}</b> · {item.method==="drop"?"Forever player-reported drop":item.method==="train"?"Forever NPC / trainer":"Forever guide/vendor source"}</p>
-                  <p className="gm-note" style={{...small,margin:"4px 0"}}>{item.note}</p>
-                  {item.concern&&<p className="gm-note" style={{...small,margin:"4px 0"}}><b>Source caveat:</b> {item.concern}</p>}
-                  <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:7}}>
-                    <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={small}>Wowhead Forever evidence ↗</a>
-                    {item.guideUrl&&<a href={item.guideUrl} target="_blank" rel="noopener noreferrer" style={small}>Leveling guide ↗</a>}
-                    {item.waypoint&&<button type="button" className="gm-pill" onClick={()=>copy(item.waypoint!)}>Copy TomTom</button>}
-                  </div>
-                </div>
-                <label style={small}><input type="checkbox" checked={done} onChange={e=>setDone(item,e.target.checked)}/>
-                  {item.method==="train"?"Visited":item.method==="drop"?"Obtained":"Purchased / learned"}</label>
+      <p className="gm-note" style={small}>{visible.length} verified sources across {keys.length} locations. Source completeness varies by zone.</p>
+      {keys.map(key=><div key={key} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12,marginBottom:10}}>
+        <h4 style={{fontSize:15,margin:"0 0 7px"}}>📍 {key.replace("|"," · ")}</h4>
+        {visible.filter(item=>item.zone+"|"+item.area===key).map(item=>{
+          const done=!!prog.checks[gameId+"|verified-source|"+item.id];
+          const current=skill(item.profession);
+          const status=item.method==="drop"?"FOREVER-REPORTED DROP":item.method==="train"?"TRAIN HERE":item.skill>current?"BUY FOR LATER":"BUY NOW";
+          return <div key={item.id} style={{borderTop:"1px solid var(--border,#ddd)",padding:"9px 0"}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+              <div style={{flex:"1 1 200px"}}>
+                <b style={small}>{status} · {item.name}</b>
+                <p style={{...small,margin:"4px 0"}}>{name(item.profession)} · required skill {item.skill} · current {current}</p>
+                <p style={{...small,margin:"4px 0"}}><b>{item.npc}</b> · {item.note}</p>
+                {item.concern&&<p className="gm-note" style={{...small,margin:"4px 0"}}><b>Source caveat:</b> {item.concern}</p>}
+                <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={small}>Open WoW Forever evidence ↗</a>
+                {item.waypoint&&<button type="button" className="gm-pill" style={{marginLeft:8}}
+                  onClick={async()=>{try{await navigator.clipboard.writeText(item.waypoint||"");setCopyStatus("Copied "+item.waypoint);}
+                    catch{setCopyStatus("Copy manually: "+item.waypoint);}}}>TomTom</button>}
               </div>
-            </div>;
-          })}
-        </div>)}
-      </div>
-      {!groups.length&&<p className="gm-note" style={small}>No matching verified, uncollected source in this filter. You can include future skill ranges or show collected items; this does not mean there is nothing to obtain in that area.</p>}
-      {message&&<p className="gm-note" role="status" style={small}>{message}</p>}
-      <p className="gm-note" style={{...small,marginTop:14}}>Only Wowhead Forever pages and relevant Forever-specific reports are used for purchases and sources. Vendor stock, drops, and recipe colors cannot be queried live; check your game before spending gold. Older catalog geography is intentionally excluded.</p>
+              <label style={small}><input type="checkbox" checked={done} onChange={e=>setCheck(gameId+"|verified-source|"+item.id,e.target.checked)}/>
+                {item.method==="train"?"Visited":item.method==="drop"?"Obtained":"Purchased"}</label>
+            </div>
+          </div>;
+        })}
+      </div>)}
+      {!visible.length&&<p className="gm-note" style={small}>No matching source-checked items at this skill. Turn on “All future skills” or search another area; this does not mean there are no other drops.</p>}
+      {copyStatus&&<p className="gm-note" role="status" style={small}>{copyStatus}</p>}
     </div>
   </section>;
 }
