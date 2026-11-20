@@ -48,6 +48,43 @@ export const VERIFIED_WOWHEAD_FOREVER_STOPS: VerifiedAcquisition[] = [
   {id:"h-lw-bracers-drop",name:"Pattern: Barbaric Bracers",profession:"leatherworking",zone:"Ashenvale",area:"North of Raynewood Retreat",npc:"Withered Ancient",faction:"neutral",method:"drop",skill:130,sourceUrl:"https://www.wowhead.com/forever/item=18949/pattern-barbaric-bracers",note:"Recent Forever live comments report a world drop from Withered Ancients. Do NOT send the player to the old Undercity vendor.",concern:"Community-confirmed live drop, not a guaranteed drop; Wowhead's vendor table still shows stale locations."},
 ];
 
+/**
+ * Budget-first leveling purchases: the minimum source-checked books/recipes on
+ * Wowhead Forever's fish-and-bandage leveling route, plus helpful trainers.
+ *
+ * This is NOT an assertion about cheapest server/AH prices. In particular, the
+ * Gem-studded Leather Belt uses expensive gems and is not a default purchase.
+ * Drop-only or completionist recipes never become shopping recommendations.
+ */
+export const FOREVER_BUDGET_LEVELING_SOURCE_IDS:ReadonlySet<string> = new Set([
+  "h-fa-book","h-fa-heavy-silk","h-fa-mageweave",
+  "a-fa-book","a-fa-heavy-silk","a-fa-mageweave",
+  "h-cook-catfish","h-cook-book","a-cook-book","h-cook-trout",
+  "neutral-cook-yellowtail",
+  "h-lw-trainer-desolace","h-fa-trainer-uc","h-fa-trainer-og","h-fa-trainer-tb",
+  "h-fa-triage","a-fa-triage"
+]);
+
+export const FOREVER_BUDGET_LEVELING_NOTES:Readonly<Record<string,string>> = {
+  "h-fa-book":"Required to train Expert First Aid at 125; one book for the 150–225 bandage route.",
+  "a-fa-book":"Required to train Expert First Aid at 125; one book for the 150–225 bandage route.",
+  "h-fa-heavy-silk":"Required for the cheap bandage path at 180. Buy with the Expert book if already visiting this vendor.",
+  "a-fa-heavy-silk":"Required for the cheap bandage path at 180. Buy with the Expert book if already visiting this vendor.",
+  "h-fa-mageweave":"Required for the cheap bandage path at 210. Buy with the other manuals if already visiting this vendor.",
+  "a-fa-mageweave":"Required for the cheap bandage path at 210. Buy with the other manuals if already visiting this vendor.",
+  "h-cook-catfish":"Buy once for the Wowhead Forever 100–175 fish route. Check raw fish prices before committing to batches.",
+  "h-cook-book":"Required to raise Cooking's skill cap beyond 150; no need to buy immediately at 104 unless nearby.",
+  "a-cook-book":"Required to raise Cooking's skill cap beyond 150; no need to buy immediately unless nearby.",
+  "h-cook-trout":"Buy when approaching Cooking 175; uses one raw fish per craft.",
+  "neutral-cook-yellowtail":"Buy when approaching Cooking 225; uses one raw fish per craft.",
+  "h-lw-trainer-desolace":"Trainer visit — no world-drop pattern purchase. Ask for Barbaric Shoulders at 150 and Guardian Gloves at 165.",
+  "h-fa-trainer-uc":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
+  "h-fa-trainer-og":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
+  "h-fa-trainer-tb":"Trainer visit — Wool Bandage for First Aid 80–115; no manual purchase.",
+  "h-fa-triage":"Required quest at First Aid 225, not a pattern purchase.",
+  "a-fa-triage":"Required quest at First Aid 225, not a pattern purchase."
+};
+
 export const WOWHEAD_FOREVER_LEVELING_GUIDES = {
   leatherworking:"https://www.wowhead.com/forever/profession-leveling-guides/leatherworking",
   "first-aid":"https://www.wowhead.com/forever/guide/professions/first-aid/overview",
@@ -73,10 +110,12 @@ export function nextForeverSkillPath(profession:VerifiedProfession, skill:number
     if (skill<225)return {name:"Mithril Headed Trout",range:"175–225",details:"Buy recipe from Shankys in Orgrimmar (Horde).",materials:"Raw Mithril Head Trout"};
     return {name:"Spotted Yellowtail",range:"225–300",details:"Complete Clamlette Surprise for Artisan and buy recipe at Steamwheedle Port.",materials:"Raw Spotted Yellowtail"};
   }
-  if(skill<145)return {name:"Cured Heavy Hide / Dark Leather Belt",range:"125–145",details:"Ask an Expert Leatherworking trainer about these recipes.",materials:"Heavy Hide, Salt, Fine Leather Belt, Cured Medium Hide"};
-  if(skill<150)return {name:"Toughened Leather Gloves",range:"145–150 · skill-up chance",details:"Wowhead Forever's tested route. These gloves are green in this range; skill-ups are not guaranteed.",materials:"4 Medium Leather, 2 Cured Medium Hide, 2 Elixir of Lesser Defense, 2 Spider's Silk, 2 Fine Thread"};
-  if(skill<170)return {name:"Barbaric Shoulders",range:"150–170 · orange, guaranteed +1",details:"LEARN NOW at Leatherworking 150 from an Expert trainer. Wowhead Forever lists orange 150–169; this is a better guaranteed skill-up at 152 than green gloves.",materials:"8 Heavy Leather, 1 Cured Heavy Hide, 2 Fine Thread"};
-  if(skill<180)return {name:"Barbaric Shoulders",range:"170–180 · yellow, skill-up chance",details:"This remains a trainer recipe but can fail to award skill after 170.",materials:"8 Heavy Leather, 1 Cured Heavy Hide, 2 Fine Thread"};
-  if(skill<190)return {name:"Gem-studded Leather Belt",range:"180–190 · guide route",details:"Wowhead Forever's route lists Rikqiz as the vendor; limited-stock availability has not been verified live. Check before travelling.",materials:"4 Cured Heavy Hide, 2 Iridescent Pearl, 2 Jade, 1 Citrine, 1 Fine Thread"};
-  return {name:"Review current Wowhead Forever Leatherworking steps",range:"185+",details:"Use the skill-aware Wowhead guide; do not guess a pattern or vendor.",materials:"Open source"};
+  if(skill<145)return {name:"Cured Heavy Hide / Dark Leather Belt",range:"125–145",details:"Trainer recipes first; avoid purchasing collection patterns.",materials:"Heavy Hide, Salt, Fine Leather Belt, Cured Medium Hide"};
+  if(skill<150)return {name:"Toughened Leather Gloves",range:"145–150 · chance",details:"Trainer recipe only; materials can be expensive, so compare to other known orange trainer options.",materials:"Medium Leather, Cured Medium Hide, Elixir of Lesser Defense, Spider's Silk, Fine Thread"};
+  if(skill<165)return {name:"Barbaric Shoulders",range:"150–170 · orange to 169",details:"Train at skill 150. Guaranteed +1 while orange. No vendor pattern purchase required.",materials:"8 Heavy Leather, 1 Cured Heavy Hide, 2 Fine Thread"};
+  if(skill<185)return {name:"Guardian Gloves",range:"165–185 · orange to 184",details:"Trainer recipe. Uses half as much Heavy Leather per craft as Barbaric Shoulders; compare Silken Thread costs. No pattern purchase.",materials:"4 Heavy Leather, 1 Cured Heavy Hide, 1 Silken Thread"};
+  if(skill<195)return {name:"Guardian Gloves",range:"185–195 · yellow",details:"Trainer recipe. Chance of skill-up; compare inventory and cost of alternative trainer crafts before buying any pattern.",materials:"4 Heavy Leather, 1 Cured Heavy Hide, 1 Silken Thread"};
+  if(skill<210)return {name:"Thick Armor Kit",range:"195–210 · yellow/green",details:"Trainer recipe. Cheap-looking material list (Thick Leather + thread), but skill-ups become less likely; buy no new pattern by default.",materials:"5 Thick Leather, 1 Silken Thread"};
+  if(skill<240)return {name:"Nightscape Pants",range:"210–240 · orange/yellow/green",details:"Trainer recipe; buy no new pattern unless the current Wowhead Easiest plan and your actual AH prices prove it saves gold.",materials:"14 Thick Leather, 4 Silken Thread"};
+  return {name:"Check Wowhead Forever Easiest plan before purchasing",range:"240–300",details:"High-skill patterns vary widely in material costs. Do not buy a pattern until a source-checked route and local material prices justify it.",materials:"Compare your AH/owned materials"};
 }
