@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
-import WoWProfessionRun from "./WoWProfessionRun";
+import { nextForeverSkillPath, WOWHEAD_FOREVER_LEVELING_GUIDES, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { WOW_HUNTER_BIS_LEADS } from "@/lib/wow-hunter-bis";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
@@ -85,9 +85,23 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":mode==="skin-xp"?"Level + Skin":"Leveling"}</span>
       {mode==="gold"&&<span>Gray estimate: level {cutoff} or lower</span>}
     </div>
-    {mode==="professions"&&<WoWProfessionRun gameId={gameId} level={level} faction={faction}
-      prog={prog} setField={setField} onFindMaterial={onFindMaterial}
-      onOpenProfessions={()=>onOpen("professions")}/>}
+    {mode==="professions"&&<div className="gm-wow-session-focus">
+      <h4>Current WoW Forever skill-up routes</h4>
+      {(["leatherworking","first-aid","cooking"] as VerifiedProfession[]).map(p=>{
+        const saved=prog.fields[professionField(gameId,"skill-"+p)];
+        const fallback=p==="leatherworking"?152:p==="first-aid"?87:104;
+        const skill=saved===undefined?fallback:Number(saved)||0;
+        const plan=nextForeverSkillPath(p,skill);
+        return <div key={p} style={{borderBottom:"1px solid var(--border,#ddd)",padding:"8px 0"}}>
+          <p style={{...helper,margin:"0 0 4px"}}><b>{p==="leatherworking"?"Leatherworking":p==="first-aid"?"First Aid":"Cooking"} {skill}:</b> {plan.name} · {plan.range}</p>
+          <p style={{...helper,margin:"0 0 4px"}}>{plan.details}</p>
+          <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[p]} target="_blank" rel="noopener noreferrer">Wowhead Forever guide ↗</a>
+        </div>;
+      })}
+      <button type="button" className="gm-pill" onClick={()=>onOpen("professions")} style={{marginTop:10}}>
+        Find verified purchases and skill-up steps
+      </button>
+    </div>
     {mode==="gear"&&<div className="gm-wow-session-focus">
       <h4>Current Hunter gear lead</h4>
       {nextBis&&<div style={{border:"1px solid var(--accent,#659e8b)",borderRadius:9,padding:10,marginBottom:12}}>
