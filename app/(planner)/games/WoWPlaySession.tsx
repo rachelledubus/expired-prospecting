@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
-import WoWProfessionRun from "./WoWProfessionRun";
+
 import { rankHunterDungeons, dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import { WOW_HUNTER_BIS_LEADS } from "@/lib/wow-hunter-bis";
 import { ALL_RECIPE_MATERIALS, externalMaterialLookup, materialRoutes } from "@/lib/wow-material-farms";
@@ -85,9 +85,14 @@ export default function WoWPlaySession({ gameId, prog, level, faction, mode, set
       <span>{mode==="gold"?"Gold without XP":mode==="professions"?"Improve professions":mode==="gear"?"Find Hunter gear":mode==="skin-xp"?"Level + Skin":"Leveling"}</span>
       {mode==="gold"&&<span>Gray estimate: level {cutoff} or lower</span>}
     </div>
-    {mode==="professions"&&<WoWProfessionRun gameId={gameId} level={level} faction={faction}
-      prog={prog} setField={setField} onFindMaterial={onFindMaterial}
-      onOpenProfessions={()=>onOpen("professions")}/>}
+    {mode==="professions"&&<div className="gm-wow-session-focus">
+      <h4>Next profession skill-up and purchases</h4>
+      <p style={helper}>Your saved Leatherworking, Cooking and First Aid skills determine the next steps in the verified professions guide. That guide also lists source-checked books, patterns and vendors by area.</p>
+      <p style={helper}>Current source policy: Wowhead Forever guides, Forever item pages and relevant recent live-player reports only. Outdated Classic vendor routes are excluded.</p>
+      <button className="gm-pill" type="button" onClick={()=>onOpen("professions")}>
+        Open verified skill-ups and area shopping
+      </button>
+    </div>}
     {mode==="gear"&&<div className="gm-wow-session-focus">
       <h4>Current Hunter gear lead</h4>
       {nextBis&&<div style={{border:"1px solid var(--accent,#659e8b)",borderRadius:9,padding:10,marginBottom:12}}>
