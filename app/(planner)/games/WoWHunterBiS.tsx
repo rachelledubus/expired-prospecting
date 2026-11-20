@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import WoWHunterEndgameBiS from "./WoWHunterEndgameBiS";
 import type { GameProgress } from "@/lib/games-data";
 import { dungeonLootOwnedKey } from "@/lib/wow-forever-dungeon-gear";
 import {
@@ -18,6 +19,7 @@ const hint:React.CSSProperties={fontSize:13,lineHeight:1.55,opacity:.85};
 const title:React.CSSProperties={fontSize:15,fontWeight:700};
 
 export default function WoWHunterBiS({gameId,level,faction,prog,setCheck,setField}:Props){
+  const [bisMode,setBisMode]=useState<"leveling"|"pve60"|"pvp60">(level>=60?"pve60":"leveling");
   const [hideOwned,setHideOwned]=useState(false);
   const [showFuture,setShowFuture]=useState(true);
   const ownedKey=(x:HunterBisLead)=>x.dungeonId&&x.targetId
@@ -66,8 +68,22 @@ export default function WoWHunterBiS({gameId,level,faction,prog,setCheck,setFiel
       </a>
     </div>;
   };
-  return <section className="gm-card" style={{padding:16,marginTop:12}}
-    aria-label="Every Hunter gear slot and BiS candidate">
+  return <>
+    <nav aria-label="Hunter BiS gear modes" className="gm-card" style={{padding:12,marginTop:12}}>
+      <div className="gm-panel-label">Beast Mastery · Gear planning</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
+        {([
+          ["leveling","Leveling BiS"],
+          ["pve60","Level 60 PvE BiS"],
+          ["pvp60","Level 60 PvP BiS"]
+        ] as const).map(([id,label])=><button key={id} type="button"
+          className={"gm-chip"+(bisMode===id?" on":"")}
+          aria-pressed={bisMode===id}
+          onClick={()=>setBisMode(id)}>{label}</button>)}
+      </div>
+    </nav>
+    {bisMode==="leveling" && <section className="gm-card" style={{padding:16,marginTop:12}}
+    aria-label="Every Hunter gear slot and leveling BiS candidate">
     <div className="gm-panel-label">Beast Mastery Hunter · Gear by slot · level {level}</div>
     <h3 style={{margin:"6px 0"}}>★ BiS and practical upgrades — every equipment slot</h3>
     <p style={hint}>All <b>{WOW_HUNTER_BIS_SLOTS.length}</b> combat equipment positions are tracked, including two rings and two trinkets.
@@ -121,5 +137,8 @@ export default function WoWHunterBiS({gameId,level,faction,prog,setCheck,setFiel
         View the source-ranked Beast Mastery level-40 slot chart ↗
       </a>
     </p>
-  </section>;
+  </section>}
+    {bisMode!=="leveling" && <WoWHunterEndgameBiS gameId={gameId} level={level}
+      faction={faction} prog={prog} setField={setField} mode={bisMode}/>}
+  </>;
 }
