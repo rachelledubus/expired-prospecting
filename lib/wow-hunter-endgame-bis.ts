@@ -339,7 +339,7 @@ export const FOREVER_PVP60_TARGETS:ForeverEndgameItem[]=[
   {
     "slot": "ring",
     "name": "Theramore Signet",
-    "itemId": 271974,
+    "itemId": 271908,
     "where": "The Barrens · Bryanna Embreeze",
     "how": "Earn Theramore Expeditionary Force Honored from Darkspear Islands.",
     "note": "Alliance ring; check source page before travel.",
