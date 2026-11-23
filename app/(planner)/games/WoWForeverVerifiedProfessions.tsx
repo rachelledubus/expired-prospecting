@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions";
 import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
-  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_LATE_LEATHERWORKING_STEPS, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
+  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_LATE_LEATHERWORKING_STEPS, FOREVER_NO_EPL_LW_MINIMUM, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
   FOREVER_BUDGET_LEVELING_NOTES, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
 type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void;initialQuery?:string};
@@ -67,9 +67,10 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
             <p style={{...small,margin:"6px 0"}}>{plan.details}</p>
             <p style={{...small,margin:"6px 0"}}><b>Materials:</b> {plan.materials}</p>
             <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[id]} target="_blank" rel="noopener noreferrer" style={small}>Verify on Wowhead Forever ↗</a>
-            {id==="leatherworking"&&skill(id)<300&&<details style={{marginTop:12,borderTop:"1px solid var(--border,#ddd)",paddingTop:9}}>
-              <summary style={{...small,cursor:"pointer",fontWeight:650}}>Leatherworking 225–300 · full step-by-step route</summary>
-              <p className="gm-note" style={small}>Budget-baseline with two vendor patterns, not a claim about live AH prices. Each step shows the craft, exact materials, and who sells or teaches it. Do not prebuy all possible yellow/green crafts.</p>
+            {id==="leatherworking"&&skill(id)<300&&<details open={skill(id)>=265} style={{marginTop:12,borderTop:"1px solid var(--border,#ddd)",paddingTop:9}}>
+              <summary style={{...small,cursor:"pointer",fontWeight:650}}>Leatherworking 225–300 · cheapest-materials route without Eastern Plaguelands</summary>
+              <p className="gm-note" style={small}>This is a low-material route, not a verified lowest-gold route: late patterns are tradeable mob drops and may cost gold on the Auction House. At level 51, check AH first and farm Felwood if needed; Burning Steppes mobs are level 55–56 and may need a group. No Eastern Plaguelands travel is required. Do not prebuy all yellow crafts.</p>
+              {skill(id)<275&&<p style={{...small,margin:"7px 0"}}><b>Minimum materials from skill 265 to 300:</b> {FOREVER_NO_EPL_LW_MINIMUM.from265.ruggedLeather} Rugged Leather, {FOREVER_NO_EPL_LW_MINIMUM.from265.blackDye} Black Dye, {FOREVER_NO_EPL_LW_MINIMUM.from265.blueDye} Blue Dye, {FOREVER_NO_EPL_LW_MINIMUM.from265.runeThread} Rune Thread and <b>no Runecloth</b>. These are optimistic minimums: yellow crafts above 295 will need more. They exclude pattern costs.</p>}
               {FOREVER_LATE_LEATHERWORKING_STEPS.filter(step=>step.to>skill(id)).map(step=><div key={step.from} style={{borderTop:"1px solid var(--border,#ddd)",padding:"10px 0"}}>
                 <b style={small}>{step.from}–{step.to}: {step.name}</b>
                 <p style={{...small,margin:"4px 0"}}><b>Craft:</b> {step.materials}</p>
@@ -137,7 +138,7 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
       </div>)}
       {!visible.length&&<p className="gm-note" style={small}>No necessary purchases match your current skill and filters. You may only need trainer recipes or more materials. Check future skill requirements if planning ahead.</p>}
       <p className="gm-note" style={{...small,marginTop:12}}>
-        <b>Shopping rule:</b> Leatherworking's late route lists the exact two baseline vendor patterns above. Skip Gem-studded Leather Belt and expensive specialty patterns unless your own material prices make a different route cheaper. Vendor stock and AH prices are not live-checked.
+        <b>Shopping rule:</b> The default 265–300 path now avoids Eastern Plaguelands. Check the US PvE Auction House for Wicked Leather Headband and Blue Suede Bracers patterns before farming their mobs. The latter uses 10 Rugged Leather and no Runecloth, but high AH pattern prices can outweigh material savings. Buy only enough materials for your next skill bracket.
       </p>
       {copyStatus&&<p className="gm-note" role="status" style={small}>{copyStatus}</p>}
     </div>
