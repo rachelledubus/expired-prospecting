@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions";
 import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
-  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
+  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_LATE_LEATHERWORKING_STEPS, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
   FOREVER_BUDGET_LEVELING_NOTES, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
 type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void;initialQuery?:string};
@@ -58,7 +58,7 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
             String(Math.max(0,Math.min(300,Math.floor(Number(e.target.value)||0)))))}/>
         </label>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,220px),1fr))",gap:10,marginTop:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:10,marginTop:12}}>
         {profs.map(id=>{
           const plan=nextForeverSkillPath(id,skill(id));
           return <div key={id} style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
@@ -67,8 +67,29 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
             <p style={{...small,margin:"6px 0"}}>{plan.details}</p>
             <p style={{...small,margin:"6px 0"}}><b>Materials:</b> {plan.materials}</p>
             <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[id]} target="_blank" rel="noopener noreferrer" style={small}>Verify on Wowhead Forever ↗</a>
+            {id==="leatherworking"&&skill(id)<300&&<details style={{marginTop:12,borderTop:"1px solid var(--border,#ddd)",paddingTop:9}}>
+              <summary style={{...small,cursor:"pointer",fontWeight:650}}>Leatherworking 225–300 · full step-by-step route</summary>
+              <p className="gm-note" style={small}>Budget-baseline with two vendor patterns, not a claim about live AH prices. Each step shows the craft, exact materials, and who sells or teaches it. Do not prebuy all possible yellow/green crafts.</p>
+              {FOREVER_LATE_LEATHERWORKING_STEPS.filter(step=>step.to>skill(id)).map(step=><div key={step.from} style={{borderTop:"1px solid var(--border,#ddd)",padding:"10px 0"}}>
+                <b style={small}>{step.from}–{step.to}: {step.name}</b>
+                <p style={{...small,margin:"4px 0"}}><b>Craft:</b> {step.materials}</p>
+                <p style={{...small,margin:"4px 0"}}><b>Learn / buy:</b> {step.where}</p>
+                <p style={{...small,margin:"4px 0"}}>{step.how}</p>
+                <p style={{...small,margin:"4px 0"}}><b>Acquisition:</b> {step.purchase}</p>
+                <a href={step.url} target="_blank" rel="noopener noreferrer" style={small}>Forever recipe & evidence ↗</a>
+              </div>)}
+            </details>}
           </div>;
         })}
+        <div style={{border:"1px solid var(--border,#ddd)",borderRadius:10,padding:12}}>
+          <b>Skinning {skill("skinning")}</b>
+          {skill("skinning")>=300?<p style={small}>Max skill reached · 300/300.</p>:<>
+            <p style={{...small,margin:"7px 0"}}><b>Next:</b> Skin fully looted beasts, then move to higher-level beasts as skill rises. At skill {skill("skinning")}, beasts up to about level {Math.floor(skill("skinning")/5)} are skinable without bonuses (level 21+ rule).</p>
+            {skill("skinning")<225?<p style={{...small,margin:"7px 0"}}><b>Go to:</b> Stranglethorn Vale, Thousand Needles (Shimmering Flats), or Arathi Highlands for the 175–225 band, then advance to higher-level beasts.</p>:<p style={{...small,margin:"7px 0"}}><b>225–300:</b> Work up through beasts around level {Math.max(40,Math.floor(skill("skinning")/5)-3)}–{Math.floor(skill("skinning")/5)}. As your skill increases, target higher-level beasts; check their levels before committing to a farm. No recipe purchase is needed.</p>}
+            <p style={{...small,margin:"7px 0"}}><b>Artisan:</b> Learn at 200 Skinning if your cap is still 225. Horde trainers include Kulleg Stonehorn at Camp Mojache, Feralas (/way 74.4 43.0), and Thuwd in Orgrimmar (/way 63.2 45.2).</p>
+            <a href="https://www.wowhead.com/forever/guide/professions/skinning/overview-leveling" target="_blank" rel="noopener noreferrer" style={small}>Wowhead Forever Skinning source ↗</a>
+          </>}
+        </div>
       </div>
     </div>
     <div className="gm-card" style={{padding:16,marginTop:12}}>
@@ -116,10 +137,7 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
       </div>)}
       {!visible.length&&<p className="gm-note" style={small}>No necessary purchases match your current skill and filters. You may only need trainer recipes or more materials. Check future skill requirements if planning ahead.</p>}
       <p className="gm-note" style={{...small,marginTop:12}}>
-        <b>Leatherworking:</b> at skill 152, visit a trainer for Barbaric Shoulders instead of buying the expensive
-        Gem-studded Leather Belt pattern. Save Heavy Leather from Skinning.{" "}
-        <a href="https://www.wowhead.com/forever/profession-leveling-guides/leatherworking"
-          target="_blank" rel="noopener noreferrer">Compare Forever's Easiest route ↗</a>
+        <b>Shopping rule:</b> Leatherworking's late route lists the exact two baseline vendor patterns above. Skip Gem-studded Leather Belt and expensive specialty patterns unless your own material prices make a different route cheaper. Vendor stock and AH prices are not live-checked.
       </p>
       {copyStatus&&<p className="gm-note" role="status" style={small}>{copyStatus}</p>}
     </div>
