@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameProgress } from "@/lib/games-data";
 import { WOW_PROFESSIONS, professionField } from "@/lib/wow-forever-professions";
 import { VERIFIED_WOWHEAD_FOREVER_REVIEW, VERIFIED_WOWHEAD_FOREVER_STOPS,
-  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_LATE_LEATHERWORKING_STEPS, FOREVER_NO_EPL_LW_MINIMUM, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
+  WOWHEAD_FOREVER_LEVELING_GUIDES, nextForeverSkillPath, FOREVER_LATE_LEATHERWORKING_STEPS, FOREVER_LW_276_OPTIONS, foreverExpectedCrafts, FOREVER_BUDGET_LEVELING_SOURCE_IDS,
   FOREVER_BUDGET_LEVELING_NOTES, type VerifiedProfession } from "@/lib/wow-forever-verified-sources";
 
 type Props = {gameId:string;prog:GameProgress;setCheck:(key:string,value:boolean)=>void;setField:(key:string,value:string)=>void;initialQuery?:string};
@@ -19,6 +19,18 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
   const [showFuture,setShowFuture]=useState(false);
   const [showCompleted,setShowCompleted]=useState(false);
   const [copyStatus,setCopyStatus]=useState("");
+  const [materialPrices,setMaterialPrices]=useState({
+    ruggedLeather:"", heavyScorpidScale:"", curedRuggedHide:"", runeThread:"", leggingsPatternGold:"0"
+  });
+  const lw276Marker=gameId+"|profession-lw-276-update-20261123";
+  const initializedLw276=useRef(false);
+  useEffect(()=>{
+    if(initializedLw276.current||prog.fields[lw276Marker]==="done")return;
+    initializedLw276.current=true;
+    const saved=Number(prog.fields[professionField(gameId,"skill-leatherworking")]??152);
+    if(!Number.isFinite(saved)||saved<276)setField(professionField(gameId,"skill-leatherworking"),"276");
+    setField(lw276Marker,"done");
+  },[gameId,lw276Marker,prog.fields,setField]);
   const faction=prog.fields[gameId+"|faction"]==="alliance"?"alliance":"horde";
   const skill=(id:string)=>{
     const p=WOW_PROFESSIONS.find(x=>x.id===id);
@@ -41,6 +53,23 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
   }).sort((a,b)=>a.zone.localeCompare(b.zone)||a.area.localeCompare(b.area)||
     (a.method==="buy"?0:a.method==="train"?1:2)-(b.method==="buy"?0:b.method==="train"?1:2)||a.skill-b.skill);
   const keys=[...new Set(visible.map(x=>x.zone+"|"+x.area))];
+  const priceFields=[
+    {key:"ruggedLeather",label:"Rugged Leather"},
+    {key:"heavyScorpidScale",label:"Heavy Scorpid Scale"},
+    {key:"curedRuggedHide",label:"Cured Rugged Hide"},
+    {key:"runeThread",label:"Rune Thread"}
+  ] as const;
+  const hasMaterialPrices=priceFields.every(p=>materialPrices[p.key].trim()!==""&&Number.isFinite(Number(materialPrices[p.key]))&&Number(materialPrices[p.key])>=0);
+  const estimates=FOREVER_LW_276_OPTIONS.map(option=>{
+    const attempts=foreverExpectedCrafts(skill("leatherworking"),300,option.yellowAt,option.greenAt,option.grayAt);
+    const silver=attempts*(option.ruggedLeather*Number(materialPrices.ruggedLeather||0)+
+       option.heavyScorpidScale*Number(materialPrices.heavyScorpidScale||0)+
+       option.curedRuggedHide*Number(materialPrices.curedRuggedHide||0)+
+       option.runeThread*Number(materialPrices.runeThread||0))+
+       (option.id==="helm"?250:100*Number(materialPrices.leggingsPatternGold||0));
+    return {...option,attempts,estimatedGold:silver/100};
+  });
+  const cheapest=hasMaterialPrices?estimates.reduce((a,b)=>a.estimatedGold<=b.estimatedGold?a:b):null;
   return <section className="gm-wow-professions" aria-label="Wowhead Forever confirmed profession sources">
     <div className="gm-card" style={{padding:16,marginTop:12}}>
       <h3 style={{margin:"0 0 6px"}}>Profession skill-up rescue</h3>
@@ -68,9 +97,29 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
             <p style={{...small,margin:"6px 0"}}><b>Materials:</b> {plan.materials}</p>
             <a href={WOWHEAD_FOREVER_LEVELING_GUIDES[id]} target="_blank" rel="noopener noreferrer" style={small}>Verify on Wowhead Forever ↗</a>
             {id==="leatherworking"&&skill(id)<300&&<details open={skill(id)>=265} style={{marginTop:12,borderTop:"1px solid var(--border,#ddd)",paddingTop:9}}>
-              <summary style={{...small,cursor:"pointer",fontWeight:650}}>Leatherworking 225–300 · cheapest-materials route without Eastern Plaguelands</summary>
-              <p className="gm-note" style={small}>This is a low-material route, not a verified lowest-gold route: late patterns are tradeable mob drops and may cost gold on the Auction House. At level 51, check AH first and farm Felwood if needed; Burning Steppes mobs are level 55–56 and may need a group. No Eastern Plaguelands travel is required. Do not prebuy all yellow crafts.</p>
-              {skill(id)<275&&<p style={{...small,margin:"7px 0"}}><b>Minimum materials from skill 265 to 300:</b> {FOREVER_NO_EPL_LW_MINIMUM.from265.ruggedLeather} Rugged Leather, {FOREVER_NO_EPL_LW_MINIMUM.from265.blackDye} Black Dye, {FOREVER_NO_EPL_LW_MINIMUM.from265.blueDye} Blue Dye, {FOREVER_NO_EPL_LW_MINIMUM.from265.runeThread} Rune Thread and <b>no Runecloth</b>. These are optimistic minimums: yellow crafts above 295 will need more. They exclude pattern costs.</p>}
+              <summary style={{...small,cursor:"pointer",fontWeight:650}}>Leatherworking 276–300 · cheapest gold, not just fewest materials</summary>
+              <p className="gm-note" style={small}>You are already at skill 276. Do not buy Wicked Leather Headband or Blue Suede Bracers patterns at inflated AH prices. Compare a farmable Heavy Scorpid Leggings pattern against the 2g 50s vendor Heavy Scorpid Helm pattern. Neither requires Eastern Plaguelands. The lower gold cost depends on your material prices and the time you spend farming.</p>
+              {skill(id)>=275&&<div style={{border:"1px solid var(--border,#ddd)",padding:10,borderRadius:8,margin:"9px 0"}}>
+                <b style={small}>Compare total gold cost · starting at skill {skill(id)}</b>
+                <p style={{...small,margin:"6px 0"}}>Enter your Auctionator buyout prices in <b>silver per item</b>. The calculator includes the pattern and estimated extra yellow/green crafts, not just recipe materials.</p>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(115px,1fr))",gap:8}}>
+                  {priceFields.map(p=><label key={p.key} style={small}>{p.label}
+                    <input type="number" min={0} step="0.01" placeholder="Silver per 1" style={{...control,minHeight:36}} value={materialPrices[p.key]}
+                      onChange={e=>setMaterialPrices(prev=>({...prev,[p.key]:e.target.value}))}/>
+                  </label>)}
+                  <label style={small}>Leggings pattern (gold)
+                    <input type="number" min={0} step="0.01" style={{...control,minHeight:36}} value={materialPrices.leggingsPatternGold}
+                      onChange={e=>setMaterialPrices(prev=>({...prev,leggingsPatternGold:e.target.value}))}/>
+                    <span className="gm-note">0 if farming it yourself</span>
+                  </label>
+                </div>
+                {hasMaterialPrices?<div style={{marginTop:10}}>
+                  {estimates.map(e=><p key={e.id} style={{...small,margin:"6px 0"}}>
+                    <b>{e.name}: {e.estimatedGold.toFixed(2)}g</b> · about {e.attempts} crafts {cheapest?.id===e.id?"· lowest estimated gold":""}
+                  </p>)}
+                  <p className="gm-note" style={small}>Craft estimates: one per orange point, ~1.5 per yellow, ~3 per green. Actual attempts, pattern-drop time and sales proceeds vary. Recalculate using current market prices.</p>
+                </div>:<p className="gm-note" style={{...small,margin:"8px 0 0"}}>Enter all four reagent prices to see which route has the lower estimated total gold.</p>}
+              </div>}
               {FOREVER_LATE_LEATHERWORKING_STEPS.filter(step=>step.to>skill(id)).map(step=><div key={step.from} style={{borderTop:"1px solid var(--border,#ddd)",padding:"10px 0"}}>
                 <b style={small}>{step.from}–{step.to}: {step.name}</b>
                 <p style={{...small,margin:"4px 0"}}><b>Craft:</b> {step.materials}</p>
@@ -138,7 +187,7 @@ export default function WoWForeverVerifiedProfessions({gameId,prog,setCheck,setF
       </div>)}
       {!visible.length&&<p className="gm-note" style={small}>No necessary purchases match your current skill and filters. You may only need trainer recipes or more materials. Check future skill requirements if planning ahead.</p>}
       <p className="gm-note" style={{...small,marginTop:12}}>
-        <b>Shopping rule:</b> The default 265–300 path now avoids Eastern Plaguelands. Check the US PvE Auction House for Wicked Leather Headband and Blue Suede Bracers patterns before farming their mobs. The latter uses 10 Rugged Leather and no Runecloth, but high AH pattern prices can outweigh material savings. Buy only enough materials for your next skill bracket.
+        <b>Shopping rule:</b> You are already Leatherworking 276: do not buy earlier patterns or overpriced rare drops. The gold-first calculator compares a farmable Burning Steppes pattern and a limited-stock Silithus vendor pattern using your actual material prices. Buy only a few crafts' materials at a time; neither route is a guaranteed cheapest choice without market prices.
       </p>
       {copyStatus&&<p className="gm-note" role="status" style={small}>{copyStatus}</p>}
     </div>
