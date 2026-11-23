@@ -70,7 +70,7 @@ export const FOREVER_BUDGET_LEVELING_SOURCE_IDS:ReadonlySet<string> = new Set([
   "h-cook-catfish","h-cook-book","a-cook-book","h-cook-trout",
   "neutral-cook-yellowtail",
   "h-lw-trainer-desolace","h-lw-trainer-tb","h-lw-artisan-feralas","a-lw-artisan-hinterlands",
-  "h-lw-wicked-gauntlets","a-lw-wicked-gauntlets","neutral-lw-runic-headband","h-fa-trainer-uc","h-fa-trainer-og","h-fa-trainer-tb",
+  "h-lw-wicked-gauntlets","a-lw-wicked-gauntlets","h-fa-trainer-uc","h-fa-trainer-og","h-fa-trainer-tb",
   "h-fa-triage","a-fa-triage"
 ]);
 
