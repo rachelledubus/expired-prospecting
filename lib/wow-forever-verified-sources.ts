@@ -106,26 +106,39 @@ export const WOWHEAD_FOREVER_LEVELING_GUIDES = {
   cooking:"https://www.wowhead.com/forever/guide/professions/cooking/overview-leveling",
 } as const;
 
-/** Raw-material-minimizing 225–300 path WITHOUT Eastern Plaguelands.
- * Forever spell breakpoints checked 2026-11-23 on Wowhead Forever.
- * The 265+ patterns are tradeable drops; AH prices are NOT known. If expensive,
- * the true lowest gold-cost route can differ. Guaranteed skill-ups until orange ends.
+/** Gold-first Leatherworking routes. At 276, AH patterns are NOT a default.
+ * Wowhead Forever 2026-11-23, checked with client recipe data (1.60.1.70862).
+ * Yellow/green attempts are uncertain; "expected" counts are illustrative.
  */
 export const FOREVER_LATE_LEATHERWORKING_STEPS = [
-  {from:225,to:235,name:"Nightscape Pants",materials:"14 Thick Leather + 4 Silken Thread per craft",where:"Train Artisan Leatherworking at 200 (character level 35) from Hahrana Ironhide in Camp Mojache, Feralas; learn Nightscape Pants there.",how:"Yellow in this range; make small batches until 235, then use Wicked Leather Gauntlets. No pattern vendor trip.",url:"https://www.wowhead.com/forever/profession-leveling-guides/leatherworking?guide=5",purchase:"Trainer only"},
-  {from:235,to:265,name:"Wicked Leather Gauntlets",materials:"8 Rugged Leather + 1 Black Dye + 1 Rune Thread per craft",where:"Horde: Werg Thickblade at the Bulwark in Tirisfal Glades. Alliance: Leonard Porter at Chillwind Camp, Western Plaguelands.",how:"Orange through 254, yellow through 264. Buy materials in small batches. If you already know Wicked Leather Headband, use it from 255 rather than forcing yellow crafts.",url:"https://www.wowhead.com/forever/spell=19049/wicked-leather-gauntlets",purchase:"One limited-stock vendor pattern"},
-  {from:265,to:275,name:"Wicked Leather Headband",materials:"12 Rugged Leather + 1 Black Dye + 1 Rune Thread per craft",where:"Check the Auction House for Pattern: Wicked Leather Headband. Otherwise Jadefire Tricksters (level 52–53) in Jadefire Run, Felwood (/way Felwood 42.7 15.9), drop the tradeable pattern; approximately 1.4% reported on Wowhead Forever.",how:"Orange through 274: 10 crafts for 10 guaranteed skill points if starting at 265. At character level 51, Felwood is an option; compare AH pattern cost against farming time.",url:"https://www.wowhead.com/forever/item=15744/pattern-wicked-leather-headband",purchase:"Auction House or Felwood drop (not a vendor purchase)"},
-  {from:275,to:300,name:"Blue Suede Bracers",materials:"10 Rugged Leather + 1 Blue Dye + 1 Rune Thread per craft",where:"Check the Auction House for Pattern: Blue Suede Bracers. It drops from Blackrock Soldiers (level 55–56) in Burning Steppes around /way Burning Steppes 42.5 56.1, at about 2% in Wowhead Forever data; group if farming at level 51.",how:"Orange through 294: the first 20 skill points are guaranteed. Yellow from 295 to 300, so budget extra crafts. This Forever-only recipe needs NO Runecloth and NO Eastern Plaguelands visit.",url:"https://www.wowhead.com/forever/item=252888/pattern-blue-suede-bracers",purchase:"Auction House or Burning Steppes drop (not a vendor purchase)"},
+ {from:225,to:235,name:"Nightscape Pants",materials:"14 Thick Leather + 4 Silken Thread per attempt",where:"Artisan Leatherworking trainer, Hahrana Ironhide in Camp Mojache, Feralas.",how:"Yellow at 225, green at 235. Continue only until 235.",url:"https://www.wowhead.com/forever/profession-leveling-guides/leatherworking?guide=5",purchase:"Trainer"},
+ {from:235,to:265,name:"Wicked Leather Gauntlets",materials:"8 Rugged Leather + Black Dye + Rune Thread per attempt",where:"Horde vendor Werg Thickblade at The Bulwark, Tirisfal Glades (limited stock).",how:"Orange until 255, yellow 255–264, green 265–274. Do not buy AH-resold patterns.",url:"https://www.wowhead.com/forever/spell=19049/wicked-leather-gauntlets",purchase:"Cheap vendor pattern"},
+ {from:265,to:275,name:"Wicked Leather Gauntlets (if already learned)",materials:"8 Rugged Leather + Black Dye + Rune Thread per attempt",where:"Use the recipe you already learned; no new pattern purchase.",how:"Green at 265, grey at 275. Only craft if no cheaper known recipe.",url:"https://www.wowhead.com/forever/spell=19049/wicked-leather-gauntlets",purchase:"No new pattern"},
+ {from:275,to:300,name:"Compare Heavy Scorpid Leggings versus Heavy Scorpid Helm",materials:"Leggings: 8 Rugged Leather + 12 Heavy Scorpid Scale + Rune Thread. Helm: same plus 1 Cured Rugged Hide, but better high-skill colors.",where:"Leggings pattern drops from Blackrock Slayers (level 56–57) in Burning Steppes (~4% recorded). Helm pattern is limited stock for about 2g 50s from Zannok Hidepiercer at Valor's Rest, Silithus. Neither requires Eastern Plaguelands.",how:"At 276, do not buy expensive AH patterns. Leggings are orange to 280, yellow to 290, green 290–299; helm is orange to 290, yellow 290–299. Farm or compare actual scale/hide and pattern costs before purchasing materials. If you cannot safely travel at character level 51, postpone or go with your Paladin partner.",url:"https://www.wowhead.com/forever/item=15748/pattern-heavy-scorpid-leggings",purchase:"Farmable drop or a ~2g 50s limited-stock vendor pattern"}
 ] as const;
 
-/** Minimum material quantities assuming every craft earns one point.
- * Real totals are higher when crafting yellow/green recipes. Comparisons are
- * material quantities, not gold prices; patterns are separate acquisition costs.
+/** Gold-first candidates; counts model 1 guaranteed orange craft per skill,
+ * 1.5 yellow crafts per skill, 3 green crafts per skill, rounded up by band.
+ * Estimates are NOT guaranteed; empty price fields must never imply cheapest.
  */
-export const FOREVER_NO_EPL_LW_MINIMUM = {
-  from265: {ruggedLeather:370,blackDye:10,blueDye:25,runeThread:35,runecloth:0},
-  notes:"265–275: 10 Wicked Leather Headbands. 275–300: at least 25 Blue Suede Bracers. Buy small batches; extra crafts are likely at 295–300.",
-} as const;
+export const FOREVER_LW_276_OPTIONS = [
+ {id:"leggings",name:"Heavy Scorpid Leggings",from:260,yellowAt:280,greenAt:290,grayAt:300,patternPriceGold:null,
+   acquisition:"Farm Pattern: Heavy Scorpid Leggings from level 56–57 Blackrock Slayers in Burning Steppes (~4% reported on Wowhead Forever). Do not buy an overpriced AH listing.",where:"Burning Steppes · Blackrock Slayers",materials:"8 Rugged Leather, 12 Heavy Scorpid Scale, 1 Rune Thread. No Cured Rugged Hide.",ruggedLeather:8,heavyScorpidScale:12,curedRuggedHide:0,runeThread:1,
+   link:"https://www.wowhead.com/forever/item=15748/pattern-heavy-scorpid-leggings",
+   caveat:"At character level 51, the level 56–57 mobs are dangerous; bring your Paladin partner or buy only if the pattern is genuinely cheap."},
+ {id:"helm",name:"Heavy Scorpid Helm",from:270,yellowAt:290,greenAt:300,grayAt:310,patternPriceGold:2.5,
+   acquisition:"Zannok Hidepiercer sells the bind-on-pickup pattern at Valor's Rest in Silithus for about 2g 50s, limited stock; do not expect guaranteed availability.",where:"Silithus · Valor's Rest",materials:"8 Rugged Leather, 12 Heavy Scorpid Scale, 1 Cured Rugged Hide, 1 Rune Thread.",ruggedLeather:8,heavyScorpidScale:12,curedRuggedHide:1,runeThread:1,
+   link:"https://www.wowhead.com/forever/item=15762/pattern-heavy-scorpid-helm",
+   caveat:"Silithus travel at level 51 is dangerous and each craft consumes a Cured Rugged Hide. Check the hide price before choosing this route."}
+] as const;
+
+export function foreverExpectedCrafts(fromSkill:number, toSkill:number, yellowAt:number, greenAt:number, grayAt:number):number {
+  let crafts=0;
+  for(let skill=Math.max(1,fromSkill);skill<Math.min(toSkill,grayAt);skill++){
+    crafts+=skill<yellowAt?1:skill<greenAt?1.5:3;
+  }
+  return Math.ceil(crafts);
+}
 
 export function nextForeverSkillPath(profession:VerifiedProfession, skill:number) {
   if (profession==="first-aid") {
