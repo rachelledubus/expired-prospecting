@@ -117,21 +117,21 @@ export default function WoWForeverView({game,prog,setCheck,setField}:Props) {
   const [searchTarget,setSearchTarget]=useState("");
   const [materialTarget,setMaterialTarget]=useState("Moss Agate");
   const [showAllTalent,setShowAllTalent]=useState(false);
-  // User confirmed level 40 on Nov 15, 2026. Save that change once when
-  // the authenticated guide next opens, without resetting later progress.
-  const level40Marker=wowExtraField(game.id,"level-40-update-20261115");
+  // User confirmed level 51 on Nov 23, 2026. Migrate upward only once,
+  // so future user edits and progress never get reset on later visits.
+  const level51Marker=wowExtraField(game.id,"level-51-update-20261123");
   const levelMigrationStarted=useRef(false);
-  const storedLevel=Number(prog.fields[F(game.id,"level")]||"40")||40;
-  const needsLevel40Migration=prog.fields[level40Marker]!=="done";
+  const storedLevel=Number(prog.fields[F(game.id,"level")]||"51")||51;
+  const needsLevel51Migration=prog.fields[level51Marker]!=="done";
   const currentLevel=Math.max(1,Math.min(60,
-    needsLevel40Migration?Math.max(40,storedLevel):storedLevel));
+    needsLevel51Migration?Math.max(51,storedLevel):storedLevel));
   useEffect(()=>{
-    if(!needsLevel40Migration||levelMigrationStarted.current)return;
+    if(!needsLevel51Migration||levelMigrationStarted.current)return;
     levelMigrationStarted.current=true;
-    if(storedLevel<40)setField(F(game.id,"level"),"40");
+    if(storedLevel<51)setField(F(game.id,"level"),"51");
     if(!prog.fields[wowExtraField(game.id,"play-mode")])setField(wowExtraField(game.id,"play-mode"),"skin-xp");
-    setField(level40Marker,"done");
-  },[game.id,level40Marker,needsLevel40Migration,prog.fields,setField,storedLevel]);
+    setField(level51Marker,"done");
+  },[game.id,level51Marker,needsLevel51Migration,prog.fields,setField,storedLevel]);
   const playMode=prog.fields[wowExtraField(game.id,"play-mode")]||"gold";
   const openView=(next:View)=>{setView(next);setField(wowExtraField(game.id,"last-view"),next);};
   const openMaterial=(name:string)=>{setMaterialTarget(name);openView("materials");};
